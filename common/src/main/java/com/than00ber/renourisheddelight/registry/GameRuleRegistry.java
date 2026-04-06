@@ -7,9 +7,10 @@ public final class GameRuleRegistry {
     public static void init() {
         // do nothing
     }
-    
+
     public static final GameRules.Key<GameRules.IntegerValue> PLAYER_STARTING_HEARTS = GameRules.register("renourisheddelight:playerStartingHearts", GameRules.Category.PLAYER, GameRules.IntegerValue.create(20));
     public static final GameRules.Key<GameRules.IntegerValue> MAX_CONSUMABLE_FOOD = GameRules.register("renourisheddelight:maxConsumableFood", GameRules.Category.PLAYER, GameRules.IntegerValue.create(3));
+    public static final GameRules.Key<GameRules.BooleanValue> ALLOW_FOOD_REPLENISHMENT = GameRules.register("renourisheddelight:allowFoodReplenishment", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> ALLOW_EATING_SAME_ITEM = GameRules.register("renourisheddelight:allowEatingTheSameItem", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> FOOD_ITEM_STACKS = GameRules.register("renourisheddelight:foodItemStacks", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
     public static final GameRules.Key<GameRules.IntegerValue> HUNGER_FOOD_DRAIN = GameRules.register("renourisheddelight:hungerFoodDrain", GameRules.Category.PLAYER, GameRules.IntegerValue.create(2));
