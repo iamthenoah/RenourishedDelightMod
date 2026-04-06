@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "com.example.fabric.mixin",
+  "package": "com.than00ber.renourisheddelight.forge.mixin",
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "injectors": {
