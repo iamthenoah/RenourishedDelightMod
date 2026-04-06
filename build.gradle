@@ -1,0 +1,78 @@
+plugins {
+    id 'dev.architectury.loom' version '1.11-SNAPSHOT' apply false
+    id 'com.gradleup.shadow' version '8.3.6' apply false
+    id 'com.modrinth.minotaur' version '2.+' apply false
+    id 'architectury-plugin' version '3.4-SNAPSHOT'
+}
+
+architectury {
+    minecraft = minecraftVersion
+}
+
+allprojects {
+    group = modGroup
+    version = modVersion
+}
+
+subprojects {
+    apply plugin: 'dev.architectury.loom'
+    apply plugin: 'architectury-plugin'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.gradleup.shadow'
+    apply plugin: 'com.modrinth.minotaur'
+
+    configurations {
+        compileClasspath.extendsFrom common
+        runtimeClasspath.extendsFrom common
+
+        common {
+            canBeResolved = true
+            canBeConsumed = false
+        }
+        shadowBundle {
+            canBeResolved = true
+            canBeConsumed = false
+        }
+    }
+
+    base {
+        archivesName = modId
+    }
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    dependencies {
+        minecraft "net.minecraft:minecraft:$minecraftVersion"
+        mappings loom.officialMojangMappings()
+    }
+
+    java {
+        withSourcesJar()
+
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        it.options.release = 17
+    }
+
+    shadowJar {
+        configurations = [project.configurations.shadowBundle]
+        archiveClassifier = 'dev-shadow'
+    }
+
+    remapJar {
+        inputFile.set shadowJar.archiveFile
+    }
+
+    modrinth {
+        token = System.getenv('MODRINTH_TOKEN')
+        gameVersions = [minecraftVersion]
+        projectId = project.archivesBaseName
+        versionType = version?.split('-')[1] ?: 'alpha'
+        uploadFile = remapJar
+    }
+}

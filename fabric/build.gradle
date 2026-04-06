@@ -1,0 +1,26 @@
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+configurations {
+    developmentFabric.extendsFrom common
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:$fabricLoaderVersion"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion"
+    modImplementation "dev.architectury:architectury-fabric:$architecturyApiVersion"
+
+    common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+    shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
+}
+
+processResources {
+    def properties = project.properties.findAll { _, value -> value instanceof CharSequence }
+    inputs.properties(properties)
+
+    filesMatching('fabric.mod.json') {
+        expand(properties)
+    }
+}
