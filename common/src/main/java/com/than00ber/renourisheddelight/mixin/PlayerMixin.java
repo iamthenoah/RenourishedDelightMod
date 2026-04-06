@@ -59,6 +59,10 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
             if (diet.canEat(player, stack).isSuccess()) {
                 ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
+
+                if (level.getGameRules().getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT)) {
+                    diet.getSlots().removeIf(x -> x.item == stack.getItem());
+                }
                 diet.addToSlot(player, food.create(stack.getItem()));
                 entityData.set(DIET_ACCESSOR, diet, true);
             }

@@ -32,7 +32,7 @@ public class Diet {
 
         @Override
         public @NotNull Diet copy(@NotNull Diet value) {
-            return value;
+            return Diet.load(Diet.save(value));
         }
     };
 
@@ -48,10 +48,14 @@ public class Diet {
     }
 
     public EatingOutcome canEat(ServerPlayer player, ItemStack stack) {
-        boolean flexible = player.level().getGameRules().getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
-        boolean enough = slots.size() < player.level().getGameRules().getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-        boolean balanced = flexible || slots.stream().noneMatch(x -> x.item == stack.getItem());
-        return !enough ? EatingOutcome.TOO_MANY : !balanced ? EatingOutcome.NOT_BALANCED : EatingOutcome.SUCCESS;
+        GameRules rules = player.level().getGameRules();
+        boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
+        boolean replenishable = rules.getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT);
+        boolean alreadyExists = slots.stream().anyMatch(x -> x.item == stack.getItem());
+        boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+        boolean hasRoom = enoughSpace || replenishable && alreadyExists;
+        boolean allowed = allowSameItem || !alreadyExists || replenishable;
+        return !hasRoom ? EatingOutcome.TOO_MANY : !allowed ? EatingOutcome.NOT_BALANCED : EatingOutcome.SUCCESS;
     }
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
