@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
-    @Shadow public abstract void die(DamageSource arg);
+    @Shadow public abstract void die(DamageSource source);
 
     @Unique private static final EntityDataAccessor<Diet> DIET_ACCESSOR = SynchedEntityData.defineId(Player.class, Diet.DATA_SERIALIZER);
 
@@ -63,7 +63,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
             EatingOutcome outcome = diet.toOutcome(player, stack);
 
             if (outcome.isSuccess()) {
-                outcome.process(player, diet, stack);
+                outcome.consume(player, diet, stack);
                 entityData.set(DIET_ACCESSOR, diet, true);
             }
         }

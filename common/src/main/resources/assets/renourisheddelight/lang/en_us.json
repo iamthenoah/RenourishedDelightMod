@@ -9,6 +9,8 @@
   "gamerule.renourisheddelight:maxConsumableFood.description": "Maximum number of different foods a player can have active at the same time.",
   "gamerule.renourisheddelight:allowEatingTheSameItem": "Allow Eating The Same Item",
   "gamerule.renourisheddelight:allowEatingTheSameItem.description": "Whether players are allowed to consume multiple of the same food item.",
+  "gamerule.renourisheddelight:replaceLowestFoodItem": "Replace Lowest Food Item",
+  "gamerule.renourisheddelight:replaceLowestFoodItem.description": "Whether eating food will replace the lowest level food item.",
   "gamerule.renourisheddelight:foodReplenishableThreshold": "Food Replenishable Threshold",
   "gamerule.renourisheddelight:foodReplenishableThreshold.description": "At what point as a % can the player start eating again to replenish a food's level.",
   "gamerule.renourisheddelight:foodItemStacks": "Food Item Stacks",

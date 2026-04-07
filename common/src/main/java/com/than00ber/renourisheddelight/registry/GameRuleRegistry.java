@@ -13,6 +13,7 @@ public final class GameRuleRegistry {
     public static final GameRules.Key<GameRules.IntegerValue> MAX_CONSUMABLE_FOOD = register("maxConsumableFood", GameRules.IntegerValue.create(3));
     public static final GameRules.Key<GameRules.IntegerValue> FOOD_REPLENISHABLE_THRESHOLD = register("foodReplenishableThreshold", GameRules.IntegerValue.create(50));
     public static final GameRules.Key<GameRules.BooleanValue> ALLOW_EATING_SAME_ITEM = register("allowEatingTheSameItem", GameRules.BooleanValue.create(false));
+    public static final GameRules.Key<GameRules.BooleanValue> REPLACE_LOWEST_FOOD_ITEM = register("replaceLowestFoodItem", GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> FOOD_ITEM_STACKS = register("foodItemStacks", GameRules.BooleanValue.create(true));
     public static final GameRules.Key<GameRules.IntegerValue> HUNGER_FOOD_DRAIN = register("hungerFoodDrain", GameRules.IntegerValue.create(2));
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_HEALTH_TICK_INTERVAL = register("regenHealthTickInterval", GameRules.IntegerValue.create(60));

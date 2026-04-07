@@ -8,12 +8,14 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.Optional;
 
 public enum EatingOutcome {
     CONSUME(true, null),
     EFFECTS_ONLY(true, null),
     REPLENISH(true, null),
+    REPLACE_LOW(true, null),
     TOO_MANY(false, "message.eating_too_many"),
     NOT_BALANCED(false, "message.eating_not_balanced");
 
@@ -33,7 +35,7 @@ public enum EatingOutcome {
         return message != null ? Optional.of(Component.translatable(message)) : Optional.empty();
     }
     
-    public void process(ServerPlayer player, Diet diet, ItemStack stack) {
+    public void consume(ServerPlayer player, Diet diet, ItemStack stack) {
         switch (this) {
             case CONSUME -> {
                 ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
@@ -49,12 +51,23 @@ public enum EatingOutcome {
             case REPLENISH -> {
                 ConsumableFoodInstance instance = diet.getSlots().stream()
                         .filter(x -> x.item == stack.getItem())
-                        .findFirst().orElse(null);
+                        .findFirst()
+                        .orElse(null);
 
                 if (instance != null) {
                     ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
-                    ConsumableFoodInstance target = food.create(stack.getItem());
-                    instance.time += target.time;
+                    instance.time -= Math.max(0, food.create(stack.getItem()).duration);
+                }
+            }
+            case REPLACE_LOW -> {
+                ConsumableFoodInstance instance = diet.getSlots().stream()
+                        .min(Comparator.comparingInt(x -> x.duration - x.time))
+                        .orElse(null);
+
+                if (instance != null) {
+                    diet.removeFromSlot(player, instance);
+                    ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
+                    diet.addToSlot(player, food.create(stack.getItem()));
                 }
             }
         }

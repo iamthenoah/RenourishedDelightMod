@@ -152,10 +152,10 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick) {
         int timeLeft = food.duration - food.time;
-        float minute = 60 * 20;
-        if (timeLeft > minute) return 0;
-        float lowFactor = Mth.clamp(timeLeft / minute, 0.0F, 1.0F);
-        int wobble = Mth.clamp(Math.round(lowFactor * 20), 1, 20);
-        return tick % (wobble * 3 + 1) == 0 ? ((tick + index) % 2 == 0) ? 1 : -1 : 0;
+        float warningTime = 120 * 20;
+        if (timeLeft > warningTime) return 0;
+        float factor = 1.0F - Mth.clamp(timeLeft / warningTime, 0.0F, 1.0F);
+        int interval = Mth.clamp(Math.round(80 - factor * 76), 4, 80);
+        return tick % interval == 0 ? (tick + index) % 2 == 0 ? 1 : -1 : 0;
     }
 }

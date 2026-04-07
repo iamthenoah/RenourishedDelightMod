@@ -52,23 +52,35 @@ public class Diet {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
         boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-        int replenishThreshold = rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
+        boolean replaceLowest = rules.getBoolean(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
+        int replenishThreshold = 100 - rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
 
         FoodProperties properties = stack.getItem().getFoodProperties();
         boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
+
         ConsumableFoodInstance existing = slots.stream()
                 .filter(x -> x.item == stack.getItem())
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
+        boolean replenishable = existing != null && existing.time * 100 / existing.duration > replenishThreshold;
 
-        boolean alreadyExists = existing != null;
-        boolean replenishable = alreadyExists && existing.time * 100 / existing.duration > 100 - replenishThreshold;
-
-        return !enoughSpace && !replenishable
-                ? EatingOutcome.TOO_MANY : allowSameItem || !alreadyExists
-                ? EatingOutcome.CONSUME : hasEffect
-                ? EatingOutcome.EFFECTS_ONLY : replenishable
+        return replenishable
                 ? EatingOutcome.REPLENISH
-                : EatingOutcome.NOT_BALANCED;
+                : allowSameItem || existing == null
+                /*  */ ? enoughSpace
+                /*      */ ? EatingOutcome.CONSUME
+                /*      */ : replaceLowest
+                /*          */ ? EatingOutcome.REPLACE_LOW
+                /*          */ : hasEffect 
+                /*              */ ? EatingOutcome.EFFECTS_ONLY 
+                /*              */ : EatingOutcome.TOO_MANY
+                /*  */ : hasEffect
+                /*      */ ? EatingOutcome.EFFECTS_ONLY
+                /*      */ : enoughSpace
+                /*          */ ? EatingOutcome.NOT_BALANCED
+                /*          */ : replaceLowest
+                /*              */ ? EatingOutcome.REPLACE_LOW
+                /*              */ : EatingOutcome.TOO_MANY;
     }
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
@@ -77,6 +89,11 @@ public class Diet {
         player.heal((float) (instance.hearts.getAmount() / 2.0F));
     }
 
+    public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
+        slots.remove(instance);
+        Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
+    }
+    
     public boolean tick(ServerPlayer player) {
         boolean changed = false;
         GameRules rules = player.level().getGameRules();
@@ -101,8 +118,7 @@ public class Diet {
                 changed = true;
             }
             if (instance.time >= instance.duration) {
-                slots.remove(i);
-                Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
+                removeFromSlot(player, instance);
             }
         }
         return changed;
