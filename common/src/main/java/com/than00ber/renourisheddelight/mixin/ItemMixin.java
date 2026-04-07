@@ -35,7 +35,7 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
         ItemStack stack = player.getItemInHand(hand);
 
         if (stack.isEdible() && !level.isClientSide() && player instanceof DietHolder holder) {
-            EatingOutcome outcome = holder.getDiet().canEat((ServerPlayer) player, stack);
+            EatingOutcome outcome = holder.getDiet().toOutcome((ServerPlayer) player, stack);
 
             if (outcome.isSuccess()) {
                 player.startUsingItem(hand);
