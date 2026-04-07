@@ -1,6 +1,6 @@
 {  
-  "tooltip.fed": "Fed (%s)",
   "tooltip.eaten": "When Eaten:",
+  "tooltip.fed": "Fed (%s)",
   "message.eating_too_many": "I'm full right now.",
   "message.eating_not_balanced": "I can't eat the same thing twice!",
   "gamerule.renourisheddelight:playerStartingHearts": "Player Starting Hearts",
@@ -9,6 +9,8 @@
   "gamerule.renourisheddelight:maxConsumableFood.description": "Maximum number of different foods a player can have active at the same time.",
   "gamerule.renourisheddelight:allowEatingTheSameItem": "Allow Eating The Same Item",
   "gamerule.renourisheddelight:allowEatingTheSameItem.description": "Whether players are allowed to consume multiple of the same food item.",
+  "gamerule.renourisheddelight:allowFoodReplenishment": "Allow Food Replenishment",
+  "gamerule.renourisheddelight:allowFoodReplenishment.description": "Whether players are allowed to consume an eaten food item to replenish its food level.",
   "gamerule.renourisheddelight:foodItemStacks": "Food Item Stacks",
   "gamerule.renourisheddelight:foodItemStacks.description": "Whether same eaten food items tick down simultaneously.",
   "gamerule.renourisheddelight:hungerFoodDrain": "Hunger Food Drain",
