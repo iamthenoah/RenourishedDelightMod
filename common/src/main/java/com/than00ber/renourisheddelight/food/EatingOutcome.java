@@ -48,6 +48,6 @@ public enum EatingOutcome {
     }
 
     public Component message() {
-        return Component.translatable(key != null ? key : "");
+        return key != null ? Component.translatable(key) : Component.empty();
     }
 }
