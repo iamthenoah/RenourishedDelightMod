@@ -10,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
@@ -47,15 +48,20 @@ public class Diet {
         return slots;
     }
 
-    public EatingOutcome canEat(ServerPlayer player, ItemStack stack) {
+    public EatingOutcome toOutcome(ServerPlayer player, ItemStack stack) {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
         boolean replenishable = rules.getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT);
-        boolean alreadyExists = slots.stream().anyMatch(x -> x.item == stack.getItem());
         boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-        boolean hasRoom = enoughSpace || replenishable && alreadyExists;
-        boolean allowed = allowSameItem || !alreadyExists || replenishable;
-        return !hasRoom ? EatingOutcome.TOO_MANY : !allowed ? EatingOutcome.NOT_BALANCED : EatingOutcome.SUCCESS;
+
+        FoodProperties properties = stack.getItem().getFoodProperties();
+        boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
+        boolean alreadyExists = slots.stream().anyMatch(x -> x.item == stack.getItem());
+        return !enoughSpace && (!replenishable || !alreadyExists) ? EatingOutcome.TOO_MANY
+                : allowSameItem || !alreadyExists ? EatingOutcome.SUCCESS
+                : hasEffect ? EatingOutcome.SUCCESS_EFFECTS_ONLY
+                : replenishable ? EatingOutcome.SUCCESS_REPLENISH
+                : EatingOutcome.NOT_BALANCED;
     }
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
