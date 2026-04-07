@@ -1,11 +1,14 @@
 package com.than00ber.renourisheddelight.food;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 public enum EatingOutcome {
     CONSUME(true, null),
@@ -26,8 +29,8 @@ public enum EatingOutcome {
         return success;
     }
 
-    public Component message() {
-        return message != null ? Component.translatable(message) : Component.empty();
+    public Optional<MutableComponent> message() {
+        return message != null ? Optional.of(Component.translatable(message)) : Optional.empty();
     }
     
     public void process(ServerPlayer player, Diet diet, ItemStack stack) {
