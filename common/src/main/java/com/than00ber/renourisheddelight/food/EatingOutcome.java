@@ -8,39 +8,18 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 public enum EatingOutcome {
-    SUCCESS(true, null),
-    SUCCESS_EFFECTS_ONLY(true, null),
-    SUCCESS_REPLENISH(true, null),
+    CONSUME(true, null),
+    EFFECTS_ONLY(true, null),
+    REPLENISH(true, null),
     TOO_MANY(false, "message.eating_too_many"),
     NOT_BALANCED(false, "message.eating_not_balanced");
 
     final boolean success;
-    final @Nullable String key;
+    final @Nullable String message;
 
-    EatingOutcome(boolean success, @Nullable String key) {
+    EatingOutcome(boolean success, @Nullable String message) {
         this.success = success;
-        this.key = key;
-    }
-
-    public void process(ServerPlayer player, Diet diet, ItemStack stack) {
-        switch (this) {
-            case SUCCESS -> {
-                ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
-                diet.addToSlot(player, food.create(stack.getItem()));
-            }
-            case SUCCESS_EFFECTS_ONLY -> {
-                FoodProperties properties = stack.getItem().getFoodProperties();
-
-                if (properties != null) {
-                    properties.getEffects().forEach(x -> player.addEffect(new MobEffectInstance(x.getFirst())));
-                }
-            }
-            case SUCCESS_REPLENISH -> {
-                diet.getSlots().removeIf(x -> x.item == stack.getItem());
-                ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
-                diet.addToSlot(player, food.create(stack.getItem()));
-            }
-        }
+        this.message = message;
     }
 
     public boolean isSuccess() {
@@ -48,6 +27,33 @@ public enum EatingOutcome {
     }
 
     public Component message() {
-        return key != null ? Component.translatable(key) : Component.empty();
+        return message != null ? Component.translatable(message) : Component.empty();
+    }
+    
+    public void process(ServerPlayer player, Diet diet, ItemStack stack) {
+        switch (this) {
+            case CONSUME -> {
+                ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
+                diet.addToSlot(player, food.create(stack.getItem()));
+            }
+            case EFFECTS_ONLY -> {
+                FoodProperties properties = stack.getItem().getFoodProperties();
+
+                if (properties != null) {
+                    properties.getEffects().forEach(x -> player.addEffect(new MobEffectInstance(x.getFirst())));
+                }
+            }
+            case REPLENISH -> {
+                ConsumableFoodInstance instance = diet.getSlots().stream()
+                        .filter(x -> x.item == stack.getItem())
+                        .findFirst().orElse(null);
+
+                if (instance != null) {
+                    ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
+                    ConsumableFoodInstance target = food.create(stack.getItem());
+                    instance.time += target.time;
+                }
+            }
+        }
     }
 }

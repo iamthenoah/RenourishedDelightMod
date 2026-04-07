@@ -51,16 +51,23 @@ public class Diet {
     public EatingOutcome toOutcome(ServerPlayer player, ItemStack stack) {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
-        boolean replenishable = rules.getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT);
         boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+        int replenishThreshold = rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
 
         FoodProperties properties = stack.getItem().getFoodProperties();
         boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
-        boolean alreadyExists = slots.stream().anyMatch(x -> x.item == stack.getItem());
-        return !enoughSpace && (!replenishable || !alreadyExists) ? EatingOutcome.TOO_MANY
-                : allowSameItem || !alreadyExists ? EatingOutcome.SUCCESS
-                : hasEffect ? EatingOutcome.SUCCESS_EFFECTS_ONLY
-                : replenishable ? EatingOutcome.SUCCESS_REPLENISH
+        ConsumableFoodInstance existing = slots.stream()
+                .filter(x -> x.item == stack.getItem())
+                .findFirst().orElse(null);
+
+        boolean alreadyExists = existing != null;
+        boolean replenishable = alreadyExists && existing.time * 100 / existing.duration > 100 - replenishThreshold;
+
+        return !enoughSpace && !replenishable
+                ? EatingOutcome.TOO_MANY : allowSameItem || !alreadyExists
+                ? EatingOutcome.CONSUME : hasEffect
+                ? EatingOutcome.EFFECTS_ONLY : replenishable
+                ? EatingOutcome.REPLENISH
                 : EatingOutcome.NOT_BALANCED;
     }
 
@@ -86,15 +93,16 @@ public class Diet {
                 player.heal(1.0F);
                 instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
                 regen = 0;
+                changed = true;
             }
             if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                 ticked.add(instance.item);
                 instance.time += player.hasEffect(MobEffects.HUNGER) ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                changed = true;
             }
             if (instance.time >= instance.duration) {
                 slots.remove(i);
                 Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
-                changed = true;
             }
         }
         return changed;
