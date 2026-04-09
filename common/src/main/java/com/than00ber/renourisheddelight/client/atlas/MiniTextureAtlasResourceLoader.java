@@ -9,10 +9,12 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,25 +39,25 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         try {
-            List<Item> entries = BuiltInRegistries.ITEM.stream()
+            List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                     .filter(Item::isEdible)
-                    .toList();
-            MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(entries.size());
+                    .toList());
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());
+            addDefaultFoodIcon(manager, builder);
 
-            for (Item item : entries) {
+            for (Item item : items) {
                 ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
                 String name = "textures/item/" + key.getPath() + ".png";
                 ResourceLocation path = new ResourceLocation(key.getNamespace(), name);
-                Optional<Resource> resource = manager.getResource(path);
-
-                if (resource.isPresent()) {
-                    try (InputStream stream = resource.get().open()) {
-                        NativeImage base = makeBase(NativeImage.read(stream));
-                        builder.appendTexture(0, item, base)
-                                .appendTexture(1, item, makeHunger(base))
-                                .appendTexture(2, item, makeSilhouette(base))
-                                .appendTexture(3, item, makeOutlined(base));
-                    }
+                NativeImage image = resourceToImage(manager, path);
+                
+                if (image != null) {
+                    NativeImage base = makeBase(image);
+                    builder.appendTexture(0, item, base)
+                            .appendTexture(1, item, makeHunger(base))
+                            .appendTexture(2, item, makeSilhouette(base))
+                            .appendTexture(3, item, makeOutlined(base));
                 }
             }
             atlas = builder.done();
@@ -145,5 +147,39 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
             }
         }
         return output;
+    }
+    
+    private void addDefaultFoodIcon(ResourceManager manager, MiniTextureAtlas.Builder builder) {
+        ResourceLocation path = new ResourceLocation("textures/gui/icons.png");
+        NativeImage icons = resourceToImage(manager, path);
+        
+        if (icons != null) {
+            NativeImage icon = new NativeImage(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS, true);
+
+            for (int x = 0; x < MiniTexture.DIMENSIONS; x++) {
+                for (int y = 0; y < MiniTexture.DIMENSIONS; y++) {
+                    icon.setPixelRGBA(x, y, icons.getPixelRGBA(52 + x, 27 + y));
+                }
+            }
+            builder.appendTexture(0, Items.AIR, icon)
+                    .appendTexture(1, Items.AIR, makeHunger(icon))
+                    .appendTexture(2, Items.AIR, makeSilhouette(icon))
+                    .appendTexture(3, Items.AIR, makeOutlined(icon));
+        }
+    }
+    
+    private @Nullable NativeImage resourceToImage(ResourceManager manager, ResourceLocation path) {
+        try {
+            Optional<Resource> resource = manager.getResource(path);
+
+            if (resource.isPresent()) {
+                try (InputStream stream = resource.get().open()) {
+                    return NativeImage.read(stream);
+                }
+            }
+        } catch (Exception exception) {
+            // do nothing
+        }
+        return null;
     }
 }

@@ -12,7 +12,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,18 +47,18 @@ public class Diet {
         return slots;
     }
 
-    public EatingOutcome toOutcome(ServerPlayer player, ItemStack stack) {
+    public EatingOutcome toOutcome(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
         boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
         boolean replaceLowest = rules.getBoolean(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
         int replenishThreshold = 100 - rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
 
-        FoodProperties properties = stack.getItem().getFoodProperties();
+        FoodProperties properties = item.getFoodProperties();
         boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
 
         ConsumableFoodInstance existing = slots.stream()
-                .filter(x -> x.item == stack.getItem())
+                .filter(x -> x.item == item)
                 .findFirst()
                 .orElse(null);
         boolean replenishable = existing != null && existing.time * 100 / existing.duration > replenishThreshold;
