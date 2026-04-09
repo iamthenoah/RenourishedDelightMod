@@ -60,10 +60,10 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     public void eat(Level level, ItemStack stack, CallbackInfoReturnable<ItemStack> callback) {
         if (self() instanceof ServerPlayer player) {
             Diet diet = getDiet();
-            EatingOutcome outcome = diet.toOutcome(player, stack);
+            EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
 
             if (outcome.isSuccess()) {
-                outcome.consume(player, diet, stack);
+                outcome.consume(player, diet, stack.getItem());
                 entityData.set(DIET_ACCESSOR, diet, true);
             }
         }
