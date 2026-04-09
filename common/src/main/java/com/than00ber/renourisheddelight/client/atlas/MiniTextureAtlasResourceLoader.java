@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,12 +38,13 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         try {
-            List<Item> entries = BuiltInRegistries.ITEM.stream()
+            List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                     .filter(Item::isEdible)
-                    .toList();
-            MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(entries.size());
+                    .toList());
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());
 
-            for (Item item : entries) {
+            for (Item item : items) {
                 ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
                 String name = "textures/item/" + key.getPath() + ".png";
                 ResourceLocation path = new ResourceLocation(key.getNamespace(), name);
