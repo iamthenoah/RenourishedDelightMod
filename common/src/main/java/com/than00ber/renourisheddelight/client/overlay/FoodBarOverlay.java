@@ -76,7 +76,6 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private void renderFood(GuiGraphics graphics, MiniTextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
         MiniTexture[] textures = atlas.getTextures(instance.item);
-        if (textures == null) return; // TODO - render default food icons
         int width = (size * 8) - (int) ((((float) size / instance.duration) * instance.time) * 8);
 
         for (int i = 0; i < size; i++) {

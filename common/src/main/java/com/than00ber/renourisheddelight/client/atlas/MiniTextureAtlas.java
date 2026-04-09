@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +17,7 @@ public record MiniTextureAtlas(Map<Item, MiniTexture[]> textures) {
     private static final int MAX_ROWS = 30;
 
     public MiniTexture[] getTextures(Item item) {
-        return textures.get(item);
+        return textures.getOrDefault(item, textures.get(Items.AIR));
     }
 
     public static class Builder {
