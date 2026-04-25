@@ -58,16 +58,16 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     private void renderFoodBar(GuiGraphics graphics, MiniTextureAtlas atlas, Point pos, Player player, List<ConsumableFoodInstance> slots) {
-        int tick = Minecraft.getInstance().gui.getGuiTicks();      
+        int tick = Minecraft.getInstance().gui.getGuiTicks();
         int count = slots.size();
-        
+
         if (count < previousFoodCount) {
-            foodBlinkEndTick = tick + 20;     
+            foodBlinkEndTick = tick + 20;
         }
         previousFoodCount = count;
         boolean blink = foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
         boolean hunger = player.hasEffect(MobEffects.HUNGER);
-        
+
         for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
             renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger);
             pos.x += 8 * entry.getValue();
