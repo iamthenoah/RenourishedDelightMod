@@ -8,6 +8,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 
+import java.util.UUID;
+
 public class ConsumableFood {
 
     private static final int ONE_HEART = 1;
@@ -29,7 +31,7 @@ public class ConsumableFood {
         FoodProperties properties = item.components().get(DataComponents.FOOD);
         int duration = properties != null ? toDuration(properties.nutrition(), properties.saturation()) : THIRTY_SECONDS;
         int hearts = properties != null ? toHearts(properties.nutrition()) : ONE_HEART;
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_hearts");
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         AttributeModifier modifier = new AttributeModifier(id, hearts, AttributeModifier.Operation.ADD_VALUE);
         return new ConsumableFoodInstance(item, modifier, duration, 0);
     }

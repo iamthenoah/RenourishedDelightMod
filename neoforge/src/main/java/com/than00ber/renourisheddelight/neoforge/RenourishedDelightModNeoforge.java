@@ -14,7 +14,9 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 public final class RenourishedDelightModNeoforge {
 
     public RenourishedDelightModNeoforge(IEventBus bus) {
-        DeferredRegister<EntityDataSerializer<?>> serializers = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, RenourishedDelightMod.MOD_ID);
+        DeferredRegister<EntityDataSerializer<?>> serializers = DeferredRegister.create(
+                NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, 
+                RenourishedDelightMod.MOD_ID);
         serializers.register("diet", () -> Diet.DATA_SERIALIZER);
         serializers.register(bus);
 
