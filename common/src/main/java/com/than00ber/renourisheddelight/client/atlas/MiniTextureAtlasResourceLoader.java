@@ -1,20 +1,30 @@
 package com.than00ber.renourisheddelight.client.atlas;
 
+import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import dev.architectury.registry.ReloadListenerRegistry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
-import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 
 public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadListener {
 
@@ -36,45 +46,76 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        try {
-            List<Item> entries = BuiltInRegistries.ITEM.stream()
-                    .filter(Item::isEdible)
-                    .toList();
-            MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(entries.size());
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.executeBlocking(() -> {
+            try {
+                List<Item> entries = BuiltInRegistries.ITEM.stream()
+                        .filter(Item::isEdible)
+                        .toList();
+                MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(entries.size());
 
-            for (Item item : entries) {
-                ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
-                String name = "textures/item/" + key.getPath() + ".png";
-                ResourceLocation path = new ResourceLocation(key.getNamespace(), name);
-                Optional<Resource> resource = manager.getResource(path);
+                for (Item item : entries) {
+                    NativeImage base = renderItemToNativeImage(item);
 
-                if (resource.isPresent()) {
-                    try (InputStream stream = resource.get().open()) {
-                        NativeImage base = makeBase(NativeImage.read(stream));
+                    if (base != null) {
                         builder.appendTexture(0, item, base)
                                 .appendTexture(1, item, makeHunger(base))
                                 .appendTexture(2, item, makeSilhouette(base))
                                 .appendTexture(3, item, makeOutlined(base));
                     }
                 }
+                atlas = builder.done();
+            } catch (Exception e) {
+                // silent fail
             }
-            atlas = builder.done();
-        } catch (Exception exception) {
-            // do nothing
-        }
+        });
     }
 
-    private NativeImage makeBase(NativeImage input) {
-        int width = input.getWidth();
-        int height = input.getHeight();
-        NativeImage output = new NativeImage(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS, true);
+    private @Nullable NativeImage renderItemToNativeImage(Item item) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ItemRenderer itemRenderer = minecraft.getItemRenderer();
+        ItemStack stack = new ItemStack(item);
 
-        for (int x = 0; x < width / 2; x++) {
-            for (int y = 0; y < height / 2; y++) {
-                output.setPixelRGBA(x, y, input.getPixelRGBA(x * (width / 8), y * (height / 8)));
-            }
+        RenderTarget target = new MainTarget(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS);
+        target.setClearColor(0f, 0f, 0f, 0f);
+        target.clear(Minecraft.ON_OSX);
+        target.bindWrite(true);
+
+        RenderSystem.backupProjectionMatrix();
+        Matrix4f projection = new Matrix4f().setOrtho(0, 16, 16, 0, -1000, 1000);
+        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
+
+        PoseStack poseStack = new PoseStack();
+        poseStack.pushPose();
+        poseStack.translate(8f, 8f, 150f); // 150 matches GuiGraphics.renderItem z depth
+        poseStack.scale(1f, -1f, 1f);      // flip Y to match screen coords
+        poseStack.scale(16f, 16f, 16f);    // scale to fill the 16x16 space
+
+        Lighting.setupForFlatItems();
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        BakedModel model = itemRenderer.getModel(stack, null, null, 0);
+
+        try {
+            itemRenderer.render(stack, ItemDisplayContext.GUI, false, poseStack, bufferSource, 0xF000F0, OverlayTexture.NO_OVERLAY, model);
+            bufferSource.endBatch();
+            poseStack.popPose();
+            Lighting.setupFor3DItems();
+            RenderSystem.restoreProjectionMatrix();
+
+            NativeImage image = new NativeImage(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS, false);
+            target.bindRead();
+            image.downloadTexture(0, false);
+            image.flipY();
+            minecraft.getMainRenderTarget().bindWrite(false);
+            target.destroyBuffers();
+            return image;
+        } catch (Exception e) {
+            poseStack.popPose();
+            Lighting.setupFor3DItems();
+            RenderSystem.restoreProjectionMatrix();
+            target.destroyBuffers();
+            return null;
         }
-        return output;
     }
 
     private NativeImage makeHunger(NativeImage base) {
@@ -99,7 +140,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
         }
         return output;
     }
-    
+
     private NativeImage makeOutlined(NativeImage input) {
         int width = input.getWidth();
         int height = input.getHeight();
@@ -110,23 +151,11 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                 int a = (input.getPixelRGBA(x, y) >> 24) & 0xFF;
 
                 if (a == 0) {
-                    boolean neighbor = false;
-
-                    if (x > 0) {
-                        if (((input.getPixelRGBA(x - 1, y) >> 24) & 0xFF) != 0) neighbor = true;
-                    }
-                    if (!neighbor && x < width - 1) {
-                        if (((input.getPixelRGBA(x + 1, y) >> 24) & 0xFF) != 0) neighbor = true;
-                    }
-                    if (!neighbor && y > 0) {
-                        if (((input.getPixelRGBA(x, y - 1) >> 24) & 0xFF) != 0) neighbor = true;
-                    }
-                    if (!neighbor && y < height - 1) {
-                        if (((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0) neighbor = true;
-                    }
-                    if (neighbor) {
-                        output.setPixelRGBA(x, y, 0xFFFFFFFF);
-                    }
+                    boolean neighbor = x > 0 && ((input.getPixelRGBA(x - 1, y) >> 24) & 0xFF) != 0;
+                    if (!neighbor && x < width - 1 && ((input.getPixelRGBA(x + 1, y) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (!neighbor && y > 0 && ((input.getPixelRGBA(x, y - 1) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (!neighbor && y < height - 1 && ((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (neighbor) output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 }
             }
         }
