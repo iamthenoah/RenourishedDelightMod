@@ -76,12 +76,16 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private void renderFood(GuiGraphics graphics, MiniTextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
         MiniTexture[] textures = atlas.getTextures(instance.item);
-        int width = (size * 8) - (int) ((((float) size / instance.duration) * instance.time) * 8);
+        float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
+        int width = Math.round(size * 8 * fillRatio);
 
+        // existing silhouette pass
         for (int i = 0; i < size; i++) {
             int offset = pos.y + computeWobbleOffset(instance, i, tick);
             textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
         }
+
+        // existing filled pass
         graphics.pose().pushPose();
         graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
 
@@ -92,6 +96,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         graphics.disableScissor();
         graphics.pose().popPose();
 
+        // existing outline pass
         for (int i = 0; i < size; i++) {
             int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
             int offset = pos.y + computeWobbleOffset(instance, i, tick);

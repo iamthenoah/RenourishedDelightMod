@@ -10,8 +10,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,21 +47,50 @@ public class Diet {
         return slots;
     }
 
-    public EatingOutcome canEat(ServerPlayer player, ItemStack stack) {
+    public EatingOutcome toOutcome(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
-        boolean replenishable = rules.getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT);
-        boolean alreadyExists = slots.stream().anyMatch(x -> x.item == stack.getItem());
         boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-        boolean hasRoom = enoughSpace || replenishable && alreadyExists;
-        boolean allowed = allowSameItem || !alreadyExists || replenishable;
-        return !hasRoom ? EatingOutcome.TOO_MANY : !allowed ? EatingOutcome.NOT_BALANCED : EatingOutcome.SUCCESS;
+        boolean replaceLowest = rules.getBoolean(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
+        int replenishThreshold = 100 - rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
+
+        FoodProperties properties = item.getFoodProperties();
+        boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
+
+        ConsumableFoodInstance existing = slots.stream()
+                .filter(x -> x.item == item)
+                .findFirst()
+                .orElse(null);
+        boolean replenishable = existing != null && existing.time * 100 / existing.duration > replenishThreshold;
+
+        return replenishable
+                ? EatingOutcome.REPLENISH
+                : allowSameItem || existing == null
+                /*  */ ? enoughSpace
+                /*      */ ? EatingOutcome.CONSUME
+                /*      */ : replaceLowest
+                /*          */ ? EatingOutcome.REPLACE_LOW
+                /*          */ : hasEffect
+                /*              */ ? EatingOutcome.EFFECTS_ONLY
+                /*              */ : EatingOutcome.TOO_MANY
+                /*  */ : hasEffect
+                /*      */ ? EatingOutcome.EFFECTS_ONLY
+                /*      */ : enoughSpace
+                /*          */ ? EatingOutcome.NOT_BALANCED
+                /*          */ : replaceLowest
+                /*              */ ? EatingOutcome.REPLACE_LOW
+                /*              */ : EatingOutcome.TOO_MANY;
     }
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
         Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.addPermanentModifier(instance.hearts));
         player.heal((float) (instance.hearts.getAmount() / 2.0F));
+    }
+
+    public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
+        slots.remove(instance);
+        Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
     }
 
     public boolean tick(ServerPlayer player) {
@@ -80,15 +109,15 @@ public class Diet {
                 player.heal(1.0F);
                 instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
                 regen = 0;
+                changed = true;
             }
             if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                 ticked.add(instance.item);
                 instance.time += player.hasEffect(MobEffects.HUNGER) ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                changed = true;
             }
             if (instance.time >= instance.duration) {
-                slots.remove(i);
-                Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
-                changed = true;
+                removeFromSlot(player, instance);
             }
         }
         return changed;
