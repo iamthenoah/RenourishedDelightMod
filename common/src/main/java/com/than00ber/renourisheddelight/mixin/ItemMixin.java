@@ -1,9 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.ConsumableFood;
-import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import com.than00ber.renourisheddelight.food.DietHolder;
-import com.than00ber.renourisheddelight.food.EatingOutcome;
+import com.than00ber.renourisheddelight.food.*;
 import dev.architectury.extensions.injected.InjectedItemExtension;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
@@ -12,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureElement;
@@ -51,9 +49,23 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
         }
     }
 
+    @Inject(method = "finishUsingItem", at = @At("HEAD"))
+    public void onFinishUsingItem(ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
+        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {
+            Diet diet = holder.getDiet();
+            EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
+
+            if (outcome.isSuccess()) {
+                outcome.consume(player, diet, stack.getItem());
+                holder.updateDiet();
+            }
+        }
+    }
+    
     @Inject(method = "appendHoverText(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/Item$TooltipContext;Ljava/util/List;Lnet/minecraft/world/item/TooltipFlag;)V", at = @At("TAIL"))
     private void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag, CallbackInfo callback) {
         FoodProperties properties = stack.get(DataComponents.FOOD);
+
         if (properties != null) {
             ConsumableFoodInstance instance = new ConsumableFood(properties).create(stack.getItem());
 
@@ -62,9 +74,9 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
             tooltip.add(Component.empty());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
-            String amount = String.format("%.2f", instance.hearts.amount());
-            Component description = Component.translatable(Attributes.MAX_HEALTH.getRegisteredName());
-            String key = "attribute.modifier.plus." + instance.hearts.operation().getSerializedName();
+            String amount = String.valueOf(instance.hearts.amount());
+            Component description = Component.translatable(Attributes.MAX_HEALTH.value().getDescriptionId());
+            String key = "attribute.modifier.plus." + instance.hearts.operation().id();
             tooltip.add(Component.translatable(key, amount, description).withStyle(ChatFormatting.BLUE));
         }
     }
