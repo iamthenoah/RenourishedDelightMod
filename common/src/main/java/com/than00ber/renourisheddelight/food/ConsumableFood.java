@@ -16,8 +16,12 @@ public class ConsumableFood {
     public final int hearts;
 
     public ConsumableFood(FoodProperties properties) {
-        duration = properties != null ? toDuration(properties.getNutrition(), properties.getSaturationModifier()) : THIRTY_SECONDS;
-        hearts = properties != null ? toHearts(properties.getNutrition()) : ONE_HEART;
+        this(properties != null ? properties.getNutrition() : 2, properties != null ? properties.getSaturationModifier() : 0.0F);
+    }
+
+    public ConsumableFood(int nutrition, float saturation) {
+        duration = toDuration(nutrition, saturation);
+        hearts = toHearts(nutrition);
     }
 
     public ConsumableFoodInstance create(Item item) {

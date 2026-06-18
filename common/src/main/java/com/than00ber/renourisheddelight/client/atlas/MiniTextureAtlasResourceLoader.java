@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadListener {
@@ -49,12 +50,13 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.executeBlocking(() -> {
             try {
-                List<Item> entries = BuiltInRegistries.ITEM.stream()
+                List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                         .filter(Item::isEdible)
-                        .toList();
-                MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(entries.size());
+                        .toList());
+                BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+                MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());
 
-                for (Item item : entries) {
+                for (Item item : items) {
                     NativeImage base = renderItemToNativeImage(item);
 
                     if (base != null) {

@@ -1,14 +1,15 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.ConsumableFood;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.food.EatingOutcome;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,6 +27,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
+
+    @Shadow public abstract void die(DamageSource source);
 
     @Unique private static final EntityDataAccessor<Diet> DIET_ACCESSOR = SynchedEntityData.defineId(Player.class, Diet.DATA_SERIALIZER);
 
@@ -51,19 +55,15 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     public void canEat(boolean invulnerable, CallbackInfoReturnable<Boolean> callback) {
         callback.setReturnValue(true);
     }
-    
+
     @Inject(method = "eat", at = @At("HEAD"))
     public void eat(Level level, ItemStack stack, CallbackInfoReturnable<ItemStack> callback) {
         if (self() instanceof ServerPlayer player) {
             Diet diet = getDiet();
+            EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
 
-            if (diet.canEat(player, stack).isSuccess()) {
-                ConsumableFood food = new ConsumableFood(stack.getItem().getFoodProperties());
-
-                if (level.getGameRules().getBoolean(GameRuleRegistry.ALLOW_FOOD_REPLENISHMENT)) {
-                    diet.getSlots().removeIf(x -> x.item == stack.getItem());
-                }
-                diet.addToSlot(player, food.create(stack.getItem()));
+            if (outcome.isSuccess()) {
+                outcome.consume(player, diet, stack.getItem());
                 entityData.set(DIET_ACCESSOR, diet, true);
             }
         }
