@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.client.atlas.MiniTextureAtlasResourceLoa
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import dev.architectury.event.events.client.ClientGuiEvent;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -41,7 +42,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     @Override
-    public void renderHud(GuiGraphics graphics, float partialTicks) {
+    public void renderHud(GuiGraphics graphics, DeltaTracker deltaTracker) {
         MiniTextureAtlas atlas = MiniTextureAtlasResourceLoader.getInstance().getAtlas();
         Player player = Minecraft.getInstance().player;
 

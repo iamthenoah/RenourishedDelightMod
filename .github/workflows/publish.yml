@@ -28,14 +28,14 @@ jobs:
       - name: Make Gradlew Executable
         run: chmod +x ./gradlew
 
-      - name: Build Forge
-        run: ./gradlew :forge:remapJar
+      - name: Build Neoforge
+        run: ./gradlew :neoforge:remapJar
 
       - name: Build Fabric
         run: ./gradlew :fabric:remapJar
 
-      - name: Publish Forge to Modrinth
-        run: ./gradlew :forge:modrinth
+      - name: Publish Neoforge to Modrinth
+        run: ./gradlew :neoforge:modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 

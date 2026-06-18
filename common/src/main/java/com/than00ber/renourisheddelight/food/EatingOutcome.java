@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,16 +37,16 @@ public enum EatingOutcome {
     }
 
     public void consume(ServerPlayer player, Diet diet, Item item) {
+        FoodProperties properties = item.components().get(DataComponents.FOOD);
+
         switch (this) {
             case CONSUME -> {
-                ConsumableFood food = new ConsumableFood(item.getFoodProperties());
+                ConsumableFood food = new ConsumableFood(properties);
                 diet.addToSlot(player, food.create(item));
             }
             case EFFECTS_ONLY -> {
-                FoodProperties properties = item.getFoodProperties();
-
                 if (properties != null) {
-                    properties.getEffects().forEach(x -> player.addEffect(new MobEffectInstance(x.getFirst())));
+                    properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
                 }
             }
             case REPLENISH -> {
@@ -55,7 +56,7 @@ public enum EatingOutcome {
                         .orElse(null);
 
                 if (instance != null) {
-                    ConsumableFood food = new ConsumableFood(item.getFoodProperties());
+                    ConsumableFood food = new ConsumableFood(properties);
                     instance.time -= Math.max(0, food.create(item).duration);
                 }
             }
@@ -66,7 +67,7 @@ public enum EatingOutcome {
 
                 if (instance != null) {
                     diet.removeFromSlot(player, instance);
-                    ConsumableFood food = new ConsumableFood(item.getFoodProperties());
+                    ConsumableFood food = new ConsumableFood(properties);
                     diet.addToSlot(player, food.create(item));
                 }
             }

@@ -1,11 +1,12 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
-
-import java.util.UUID;
 
 public class ConsumableFood {
 
@@ -16,7 +17,7 @@ public class ConsumableFood {
     public final int hearts;
 
     public ConsumableFood(FoodProperties properties) {
-        this(properties != null ? properties.getNutrition() : 2, properties != null ? properties.getSaturationModifier() : 0.0F);
+        this(properties != null ? properties.nutrition() : 2, properties != null ? properties.saturation() : 0.0F);
     }
 
     public ConsumableFood(int nutrition, float saturation) {
@@ -25,10 +26,11 @@ public class ConsumableFood {
     }
 
     public ConsumableFoodInstance create(Item item) {
-        FoodProperties properties = item.getFoodProperties();
-        int duration = properties != null ? toDuration(properties.getNutrition(), properties.getSaturationModifier()) : THIRTY_SECONDS;
-        int hearts = properties != null ? toHearts(properties.getNutrition()) : ONE_HEART;
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "food_hearts", hearts, AttributeModifier.Operation.ADDITION);
+        FoodProperties properties = item.components().get(DataComponents.FOOD);
+        int duration = properties != null ? toDuration(properties.nutrition(), properties.saturation()) : THIRTY_SECONDS;
+        int hearts = properties != null ? toHearts(properties.nutrition()) : ONE_HEART;
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_hearts");
+        AttributeModifier modifier = new AttributeModifier(id, hearts, AttributeModifier.Operation.ADD_VALUE);
         return new ConsumableFoodInstance(item, modifier, duration, 0);
     }
 

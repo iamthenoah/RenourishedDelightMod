@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[${forgeLoaderVersion},)"
+loaderVersion = "[${neoforgeLoaderVersion},)"
 license = "${modLicense}"
 
 [[mods]]
@@ -13,22 +13,22 @@ displayURL = "${modDisplayURL}"
 issueTrackerURL = "${modIssueTrackerURL}"
 
 [[dependencies.${modId}]]
-modId = "forge"
+modId = "neoforge"
 mandatory = true
-versionRange = "[${forgeLoaderVersion},)"
+versionRange = "[${neoforgeLoaderVersion},)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${modId}]]
 modId = "minecraft"
-mandatory = true
+type = "required"
 versionRange = "[${minecraftVersion},)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${modId}]]
 modId = "architectury"
-mandatory = true
+type = "required"
 versionRange = "[${architecturyApiVersion},)"
 ordering = "AFTER"
 side = "BOTH"

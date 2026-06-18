@@ -15,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,8 +48,8 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "defineSynchedData", at = @At("TAIL"))
-    private void defineSynchedData(CallbackInfo callback) {
-        entityData.define(DIET_ACCESSOR, new Diet());
+    private void defineSynchedData(SynchedEntityData.Builder builder, CallbackInfo callback) {
+        builder.define(DIET_ACCESSOR, new Diet());
     }
 
     @Inject(method = "canEat", at = @At("HEAD"), cancellable = true)
@@ -57,7 +58,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "eat", at = @At("HEAD"))
-    public void eat(Level level, ItemStack stack, CallbackInfoReturnable<ItemStack> callback) {
+    public void eat(Level level, ItemStack stack, FoodProperties foodProperties, CallbackInfoReturnable<ItemStack> callback) {
         if (self() instanceof ServerPlayer player) {
             Diet diet = getDiet();
             EatingOutcome outcome = diet.toOutcome(player, stack.getItem());

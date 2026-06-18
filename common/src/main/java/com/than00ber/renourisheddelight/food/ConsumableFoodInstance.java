@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.food;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 
@@ -33,7 +34,7 @@ public class ConsumableFoodInstance {
     }
 
     public static ConsumableFoodInstance load(CompoundTag compoundTag) {
-        Item item = BuiltInRegistries.ITEM.get(new net.minecraft.resources.ResourceLocation(compoundTag.getString("Item")));
+        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(compoundTag.getString("Item")));
         AttributeModifier hearts = AttributeModifier.load(compoundTag.getCompound("Hearts"));
         int duration = compoundTag.getInt("Duration");
         int time = compoundTag.getInt("Time");

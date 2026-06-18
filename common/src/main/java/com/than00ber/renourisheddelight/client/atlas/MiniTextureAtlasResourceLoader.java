@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -51,7 +52,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
         minecraft.executeBlocking(() -> {
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
-                        .filter(Item::isEdible)
+                        .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
                 MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());

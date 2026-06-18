@@ -1,12 +1,13 @@
 package com.than00ber.renourisheddelight.food;
 
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -21,24 +22,23 @@ public class Diet {
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
         @Override
-        public void write(@NotNull FriendlyByteBuf buffer, @NotNull Diet value) {
-            buffer.writeNbt(Diet.save(value));
-        }
-
-        @Override
-        public @NotNull Diet read(FriendlyByteBuf buffer) {
-            return Diet.load(Objects.requireNonNull(buffer.readNbt()));
+        public @NotNull StreamCodec<? super RegistryFriendlyByteBuf, Diet> codec() {
+            return StreamCodec.of(this::write, this::read);
         }
 
         @Override
         public @NotNull Diet copy(@NotNull Diet value) {
             return Diet.load(Diet.save(value));
         }
-    };
 
-    public static void init() {
-        EntityDataSerializers.registerSerializer(Diet.DATA_SERIALIZER);
-    }
+        private void write(@NotNull RegistryFriendlyByteBuf buffer, @NotNull Diet value) {
+            buffer.writeNbt(Diet.save(value));
+        }
+
+        private @NotNull Diet read(@NotNull RegistryFriendlyByteBuf buffer) {
+            return Diet.load(Objects.requireNonNull(buffer.readNbt()));
+        }
+    };
 
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
     private int regen;
@@ -54,8 +54,8 @@ public class Diet {
         boolean replaceLowest = rules.getBoolean(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
         int replenishThreshold = 100 - rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
 
-        FoodProperties properties = item.getFoodProperties();
-        boolean hasEffect = properties != null && !properties.getEffects().isEmpty();
+        FoodProperties properties = item.components().get(DataComponents.FOOD);
+        boolean hasEffect = properties != null && !properties.effects().isEmpty();
 
         ConsumableFoodInstance existing = slots.stream()
                 .filter(x -> x.item == item)
@@ -85,7 +85,7 @@ public class Diet {
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
         Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.addPermanentModifier(instance.hearts));
-        player.heal((float) (instance.hearts.getAmount() / 2.0F));
+        player.heal((float) (instance.hearts.amount() / 2.0F));
     }
 
     public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
