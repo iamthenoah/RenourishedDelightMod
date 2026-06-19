@@ -17,7 +17,7 @@ public final class RenderEvent {
         }
 
         // Push other right-side elements up to make room if diet is active
-        if (event.getName().equals(VanillaGuiLayers.EXPERIENCE_BAR) || event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
+        if (event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
             if (Minecraft.getInstance().player instanceof DietHolder holder && !holder.getDiet().getSlots().isEmpty()) {
                 event.getGuiGraphics().pose().pushPose();
                 event.getGuiGraphics().pose().translate(0, -10, 0);
@@ -27,7 +27,7 @@ public final class RenderEvent {
 
     @SubscribeEvent
     public static void onRenderGuiLayerPost(RenderGuiLayerEvent.Post event) {
-        if (event.getName().equals(VanillaGuiLayers.EXPERIENCE_BAR) || event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
+        if (event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
             if (Minecraft.getInstance().player instanceof DietHolder holder && !holder.getDiet().getSlots().isEmpty()) {
                 event.getGuiGraphics().pose().popPose();
             }
