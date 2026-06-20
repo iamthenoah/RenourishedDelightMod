@@ -23,6 +23,7 @@
   "gamerule.renourisheddelight:regenHealthTickInterval.description": "Number of ticks between natural health regeneration.",
   "gamerule.renourisheddelight:regenHealthFoodDrain": "Health Regen Food Drain",
   "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs.",
+  "effect.renourisheddelight.fed": "Fed",
   "item.minecraft.potion.effect.metabolic_burst": "Potion of Metabolic Burst",
   "item.minecraft.splash_potion.effect.metabolic_burst": "Splash Potion of Metabolic Burst",
   "item.minecraft.lingering_potion.effect.metabolic_burst": "Lingering Potion of Metabolic Burst",

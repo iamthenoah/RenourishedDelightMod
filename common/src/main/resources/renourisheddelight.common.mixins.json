@@ -6,7 +6,9 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "client": [],
+  "client": [
+    "client.EffectRenderingInventoryScreenMixin"
+  ],
   "mixins": [
     "FoodDataMixin",
     "ItemMixin",
