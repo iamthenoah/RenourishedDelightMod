@@ -161,8 +161,6 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                     if (!neighbor && y < height - 1 && ((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0) neighbor = true;
                     if (neighbor) output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 } else if (onBorder) {
-                    // item content reaches the edge of the cell with no transparent
-                    // pixel to anchor an outline on — force the border pixel itself
                     output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 }
             }
