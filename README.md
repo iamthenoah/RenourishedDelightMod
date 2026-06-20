@@ -5,7 +5,7 @@
 <br>
 
 <div align="center">
-  <a href="https://modrinth.com/mod/renourished-delight">
+  <a href="https://modrinth.com/mod/renourisheddelight">
     <img src="https://img.shields.io/badge/dynamic/json?labelColor=black&color=grey&label=&suffix=%20downloads&query=downloads&url=https://api.modrinth.com/v2/project/renourisheddelight&style=flat&logo=modrinth" alt="Modrinth Downloads" />
   </a>
   <a href="https://github.com/iamthenoah/RenourishedDelightMod/actions/workflows/publish.yml">
