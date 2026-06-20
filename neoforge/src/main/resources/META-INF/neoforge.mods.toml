@@ -32,3 +32,9 @@ type = "required"
 versionRange = "[${architecturyApiVersion},)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config = "${modId}.common.mixins.json"
+
+[[mixins]]
+config = "${modId}.neoforge.mixins.json"

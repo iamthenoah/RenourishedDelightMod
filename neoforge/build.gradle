@@ -27,14 +27,3 @@ processResources {
         expand(properties)
     }
 }
-
-loom {
-    neoForge {
-        mixin {
-            configurations {
-                "${modId}.common.mixins.json"
-                "${modId}.neoforge.mixins.json"
-            }
-        }
-    }
-}
