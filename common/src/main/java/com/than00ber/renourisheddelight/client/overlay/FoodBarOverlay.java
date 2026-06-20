@@ -92,7 +92,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
         for (int i = 0; i < size; i++) {
             int offset = pos.y + computeWobbleOffset(instance, i, tick);
-            textures[hunger ? 1 : 4].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
+            textures[hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
         }
         graphics.disableScissor();
         graphics.pose().popPose();
