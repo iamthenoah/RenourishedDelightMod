@@ -14,22 +14,9 @@ public final class RenderEvent {
     public static void onRenderGuiLayerPre(RenderGuiLayerEvent.Pre event) {
         if (event.getName().equals(VanillaGuiLayers.FOOD_LEVEL)) {
             event.setCanceled(true);
-        }
 
-        // Push other right-side elements up to make room if diet is active
-        if (event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
             if (Minecraft.getInstance().player instanceof DietHolder holder && !holder.getDiet().getSlots().isEmpty()) {
-                event.getGuiGraphics().pose().pushPose();
-                event.getGuiGraphics().pose().translate(0, -10, 0);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onRenderGuiLayerPost(RenderGuiLayerEvent.Post event) {
-        if (event.getName().equals(VanillaGuiLayers.JUMP_METER)) {
-            if (Minecraft.getInstance().player instanceof DietHolder holder && !holder.getDiet().getSlots().isEmpty()) {
-                event.getGuiGraphics().pose().popPose();
+                Minecraft.getInstance().gui.rightHeight += 10;
             }
         }
     }

@@ -150,7 +150,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             remainingSlots -= extra;
         }
         if (remainingSlots > 0) {
-            ConsumableFoodInstance last = merged.get(merged.size() - 1);
+            ConsumableFoodInstance last = merged.getLast();
             result.put(last, result.get(last) + remainingSlots);
         }
         return result;
