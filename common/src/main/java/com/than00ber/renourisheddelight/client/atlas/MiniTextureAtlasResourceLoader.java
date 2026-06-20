@@ -7,7 +7,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import dev.architectury.registry.ReloadListenerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -15,7 +14,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -38,10 +36,6 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
 
     public static MiniTextureAtlasResourceLoader getInstance() {
         return INSTANCE;
-    }
-
-    public static void init() {
-        ReloadListenerRegistry.register(PackType.CLIENT_RESOURCES, MiniTextureAtlasResourceLoader.getInstance());
     }
 
     private MiniTextureAtlas atlas;
