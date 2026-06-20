@@ -98,10 +98,8 @@ public class Diet {
         GameRules rules = player.level().getGameRules();
         Set<Item> ticked = new HashSet<>();
         boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
+        if (needsRegen) regen++;
 
-        if (needsRegen) {
-            regen++;
-        }
         for (int i = slots.size() - 1; i >= 0; i--) {
             ConsumableFoodInstance instance = slots.get(i);
 
@@ -134,10 +132,7 @@ public class Diet {
     public static Diet load(CompoundTag compoundTag) {
         Diet diet = new Diet();
         ListTag list = compoundTag.getList("Slots", Tag.TAG_COMPOUND);
-
-        for (int i = 0; i < list.size(); i++) {
-            diet.slots.add(ConsumableFoodInstance.load(list.getCompound(i)));
-        }
+        list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
         return diet;
     }
 }

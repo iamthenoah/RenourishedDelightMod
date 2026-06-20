@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
@@ -50,28 +49,27 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
         builder.define(DIET_ACCESSOR, new Diet());
     }
 
-    @Inject(method = "canEat", at = @At("HEAD"), cancellable = true)
-    public void canEat(boolean invulnerable, CallbackInfoReturnable<Boolean> callback) {
-        callback.setReturnValue(true);
-    }
-
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo callback) {
         if (self() instanceof ServerPlayer player) {
             AttributeInstance attribute = self().getAttribute(Attributes.MAX_HEALTH);
             int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
-            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(Math.max(2, Math.min(40, hearts)));
+            AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
             
-            if (attribute != null) {
-                Diet diet = getDiet();
+            if (maxHealth != null) {
+                maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
 
-                if (isDeadOrDying()) {
-                    for (ConsumableFoodInstance instance : diet.getSlots()) {
-                        attribute.removeModifier(instance.hearts);
+                if (attribute != null) {
+                    Diet diet = getDiet();
+
+                    if (isDeadOrDying()) {
+                        for (ConsumableFoodInstance instance : diet.getSlots()) {
+                            attribute.removeModifier(instance.hearts);
+                        }
+                        updateDiet();
+                    } else if (diet.tick(player)) {
+                        updateDiet();
                     }
-                    updateDiet();
-                } else if (diet.tick(player)) {
-                    updateDiet();
                 }
             }
         }

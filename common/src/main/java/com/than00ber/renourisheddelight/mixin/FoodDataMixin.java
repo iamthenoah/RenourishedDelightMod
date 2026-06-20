@@ -15,14 +15,20 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(FoodData.class)
 public abstract class FoodDataMixin {
 
     @Unique @Nullable private ServerPlayer player;
 
-    @Inject(method = "eat(IF)V", at = @At("HEAD"), cancellable = true)
-    public void eat(int nutrition, float saturation, CallbackInfo callback) {
+    @Inject(method = "needsFood", at = @At("HEAD"), cancellable = true)
+    public void needsFood(CallbackInfoReturnable<Boolean> callback) {
+        callback.setReturnValue(true);
+    }
+    
+    @Inject(method = "add", at = @At("HEAD"), cancellable = true)
+    public void add(int nutrition, float saturation, CallbackInfo callback) {
         if (player instanceof DietHolder holder && player.pick(5.0D, 0.0F, false) instanceof BlockHitResult result) {
             if (result.getType() == HitResult.Type.BLOCK) {
                 BlockState state = player.level().getBlockState(result.getBlockPos());

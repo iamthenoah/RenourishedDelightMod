@@ -50,7 +50,7 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
     }
 
     @Inject(method = "finishUsingItem", at = @At("HEAD"))
-    public void onFinishUsingItem(ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
+    public void finishUsingItem(ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
         if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {
             Diet diet = holder.getDiet();
             EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
