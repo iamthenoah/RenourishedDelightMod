@@ -152,7 +152,6 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int a = (input.getPixelRGBA(x, y) >> 24) & 0xFF;
-                boolean onBorder = x == 0 || y == 0 || x == width - 1 || y == height - 1;
 
                 if (a == 0) {
                     boolean neighbor = x > 0 && ((input.getPixelRGBA(x - 1, y) >> 24) & 0xFF) != 0;
@@ -160,7 +159,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                     if (!neighbor && y > 0 && ((input.getPixelRGBA(x, y - 1) >> 24) & 0xFF) != 0) neighbor = true;
                     if (!neighbor && y < height - 1 && ((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0) neighbor = true;
                     if (neighbor) output.setPixelRGBA(x, y, 0xFFFFFFFF);
-                } else if (onBorder) {
+                } else if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
                     output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 }
             }
