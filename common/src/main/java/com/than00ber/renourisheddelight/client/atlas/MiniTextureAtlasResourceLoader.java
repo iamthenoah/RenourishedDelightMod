@@ -18,6 +18,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadListener {
@@ -56,6 +60,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
                 MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());
+                int[] goldenPalette = getGoldenPalette();
 
                 for (Item item : items) {
                     NativeImage base = renderItemToNativeImage(item);
@@ -64,7 +69,8 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                         builder.appendTexture(0, item, base)
                                 .appendTexture(1, item, makeHunger(base))
                                 .appendTexture(2, item, makeSilhouette(base))
-                                .appendTexture(3, item, makeOutlined(base));
+                                .appendTexture(3, item, makeOutlined(base))
+                                .appendTexture(4, item, makeGolden(base, goldenPalette));
                     }
                 }
                 atlas = builder.done();
@@ -179,5 +185,102 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
             }
         }
         return output;
+    }
+
+    private NativeImage makeGolden(NativeImage input, int[] palette) {
+        int width = input.getWidth();
+        int height = input.getHeight();
+        NativeImage output = new NativeImage(width, height, true);
+
+        if (palette == null || palette.length == 0) {
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    output.setPixelRGBA(x, y, input.getPixelRGBA(x, y));
+                }
+            }
+            return output;
+        }
+        float minBrightness = 1f, maxBrightness = 0f;
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = input.getPixelRGBA(x, y);
+                int a = (pixel >> 24) & 0xFF;
+                if (a != 0) {
+                    float brightness = brightness(pixel);
+                    minBrightness = Math.min(minBrightness, brightness);
+                    maxBrightness = Math.max(maxBrightness, brightness);
+                }
+            }
+        }
+        float range = Math.max(0.01f, maxBrightness - minBrightness);
+        Integer[] boxedPalette = new Integer[palette.length];
+
+        for (int i = 0; i < palette.length; i++) {
+            boxedPalette[i] = palette[i];
+        }
+        Arrays.sort(boxedPalette, (p1, p2) -> Float.compare(brightness(p1), brightness(p2)));
+
+        int[] sortedPalette = new int[boxedPalette.length];
+
+        for (int i = 0; i < boxedPalette.length; i++) {
+            sortedPalette[i] = boxedPalette[i];
+        }
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = input.getPixelRGBA(x, y);
+                int a = (pixel >> 24) & 0xFF;
+
+                if (a != 0) {
+                    float brightness = brightness(pixel);
+                    float t = (brightness - minBrightness) / range;
+                    t = (float) Math.pow(t, 0.7);
+                    int index = Mth.clamp((int) (t * (sortedPalette.length - 1)), 0, sortedPalette.length - 1);
+                    int goldPixel = sortedPalette[index];
+                    int r = (goldPixel >> 16) & 0xFF;
+                    int g = (goldPixel >> 8) & 0xFF;
+                    int b = goldPixel & 0xFF;
+                    output.setPixelRGBA(x, y, (a << 24) | (r << 16) | (g << 8) | b);
+                } else {
+                    output.setPixelRGBA(x, y, 0x00000000);
+                }
+            }
+        }
+        return output;
+    }
+    
+    private int[] getGoldenPalette() {
+        NativeImage carrotImage = renderItemToNativeImage(net.minecraft.world.item.Items.GOLDEN_CARROT);
+        if (carrotImage == null) return null;
+
+        int width = carrotImage.getWidth();
+        int height = carrotImage.getHeight();
+        List<Integer> opaquePixels = new ArrayList<>();
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = carrotImage.getPixelRGBA(x, y);
+                int a = (pixel >> 24) & 0xFF;
+                if (a != 0) {
+                    opaquePixels.add(pixel);
+                }
+            }
+        }
+        if (opaquePixels.isEmpty()) return null;
+        opaquePixels.sort(Comparator.comparingInt(MiniTextureAtlasResourceLoader::luminance));
+        int[] palette = new int[opaquePixels.size()];
+
+        for (int i = 0; i < palette.length; i++) {
+            palette[i] = opaquePixels.get(i);
+        }
+        return palette;
+    }
+
+    private static int luminance(int pixel) {
+        return (((pixel >> 16) & 0xFF) * 299 + ((pixel >> 8) & 0xFF) * 587 + (pixel & 0xFF) * 114) / 1000;
+    }
+
+    private static float brightness(int pixel) {
+        return Color.RGBtoHSB((pixel >> 16) & 0xFF, (pixel >> 8) & 0xFF, pixel & 0xFF, null)[2];
     }
 }

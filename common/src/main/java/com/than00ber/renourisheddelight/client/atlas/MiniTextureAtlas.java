@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public record MiniTextureAtlas(Map<Item, MiniTexture[]> textures) {
 
-    private static final int ICONS_PER_ROW = 4;
+    private static final int ICONS_PER_ROW = 5;
     private static final int MAX_ROWS = 30;
 
     public MiniTexture[] getTextures(Item item) {
