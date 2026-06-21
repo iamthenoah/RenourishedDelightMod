@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +16,7 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
     private static final int ICONS_PER_ROW = 5;
     private static final int MAX_ROWS = 30;
 
-    public Texture[] getTextures(Item item) {
+    public @Nullable Texture[] getTextures(Item item) {
         return textures.get(item);
     }
 

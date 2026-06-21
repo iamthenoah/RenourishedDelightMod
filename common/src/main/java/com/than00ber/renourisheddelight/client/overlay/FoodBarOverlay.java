@@ -77,31 +77,33 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
         Texture[] textures = atlas.getTextures(instance.item);
-        float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
-        int width = Math.round(size * 8 * fillRatio);
-
-        // existing silhouette pass
-        for (int i = 0; i < size; i++) {
-            int offset = pos.y + computeWobbleOffset(instance, i, tick);
-            textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
-        }
-
-        // existing filled pass
-        graphics.pose().pushPose();
-        graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
-
-        for (int i = 0; i < size; i++) {
-            int offset = pos.y + computeWobbleOffset(instance, i, tick);
-            textures[hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
-        }
-        graphics.disableScissor();
-        graphics.pose().popPose();
-
-        // existing outline pass
-        for (int i = 0; i < size; i++) {
-            int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
-            int offset = pos.y + computeWobbleOffset(instance, i, tick);
-            textures[3].render(graphics, pos.x + i * 8, offset, color);
+        
+        if (textures != null) {
+            float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
+            int width = Math.round(size * 8 * fillRatio);
+    
+            // existing silhouette pass
+            for (int i = 0; i < size; i++) {
+                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
+            }
+            // existing filled pass
+            graphics.pose().pushPose();
+            graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
+    
+            for (int i = 0; i < size; i++) {
+                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                textures[hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
+            }
+            graphics.disableScissor();
+            graphics.pose().popPose();
+    
+            // existing outline pass
+            for (int i = 0; i < size; i++) {
+                int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
+                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                textures[3].render(graphics, pos.x + i * 8, offset, color);
+            }
         }
     }
 
