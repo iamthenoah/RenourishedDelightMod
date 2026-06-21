@@ -52,8 +52,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        Minecraft minecraft = Minecraft.getInstance();
-        minecraft.executeBlocking(() -> {
+        Minecraft.getInstance().executeBlocking(() -> {
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                         .filter(item -> item.components().has(DataComponents.FOOD))
