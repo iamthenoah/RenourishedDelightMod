@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -28,19 +28,25 @@ public class ConsumableFood {
     }
 
     public ConsumableFoodInstance create(Item item) {
-        FoodProperties properties = item.components().get(DataComponents.FOOD);
-        int duration = properties != null ? toDuration(properties.nutrition(), properties.saturation()) : THIRTY_SECONDS;
-        int hearts = properties != null ? toHearts(properties.nutrition()) : ONE_HEART;
+        Configuration.Common.ItemConfig itemConfig = Configuration.getItemConfig(item);
+        int hearts = itemConfig != null ? itemConfig.hearts : ONE_HEART;
+        int duration = itemConfig != null ? itemConfig.duration : THIRTY_SECONDS;
+
+        double heartsMult = Configuration.Common.getInstance().foodHeartsMultiplier;
+        double durationMult = Configuration.Common.getInstance().foodDurationMultiplier;
+        hearts = Math.max(1, Math.round(hearts * (float) heartsMult));
+        duration = Math.round(duration * (float) durationMult);
+
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         AttributeModifier modifier = new AttributeModifier(id, hearts, AttributeModifier.Operation.ADD_VALUE);
         return new ConsumableFoodInstance(item, modifier, duration, 0);
     }
 
-    private static int toHearts(int nutrition) {
+    public static int toHearts(int nutrition) {
         return Math.toIntExact(Mth.clamp(nutrition / 2, 1, 10));
     }
 
-    private static int toDuration(int nutrition, float saturation) {
+    public static int toDuration(int nutrition, float saturation) {
         int base = THIRTY_SECONDS + (int) (THIRTY_SECONDS * (nutrition * saturation * 2.0F));
         return Math.round(base / (float) THIRTY_SECONDS) * THIRTY_SECONDS;
     }
