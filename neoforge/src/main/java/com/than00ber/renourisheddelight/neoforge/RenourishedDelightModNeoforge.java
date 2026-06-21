@@ -4,9 +4,12 @@ import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.effect.NourishmentMobEffect;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import com.than00ber.renourisheddelight.registry.PotionRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.item.alchemy.Potion;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -26,6 +29,11 @@ public final class RenourishedDelightModNeoforge {
                 RenourishedDelightMod.MOD_ID);
         EffectRegistry.NOURISHMENT = effects.register("nourishment", NourishmentMobEffect::new);
         effects.register(bus);
+        DeferredRegister<Potion> potions = DeferredRegister.create(
+                Registries.POTION,
+                RenourishedDelightMod.MOD_ID);
+        PotionRegistry.NOURISHMENT = potions.register("nourishment", () -> new Potion(new MobEffectInstance(EffectRegistry.NOURISHMENT, 9600, 0)));
+        potions.register(bus);
         RenourishedDelightMod.init();
     }
 }

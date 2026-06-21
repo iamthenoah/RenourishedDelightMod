@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.food.EatingOutcome;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -29,7 +30,10 @@ public abstract class FoodDataMixin {
     
     @Inject(method = "add", at = @At("HEAD"), cancellable = true)
     public void add(int nutrition, float saturation, CallbackInfo callback) {
-        if (player instanceof DietHolder holder && player.pick(5.0D, 0.0F, false) instanceof BlockHitResult result) {
+        if (player instanceof DietHolder holder
+                && !player.getMainHandItem().has(DataComponents.FOOD)
+                && !player.getOffhandItem().has(DataComponents.FOOD)
+                && player.pick(5.0D, 0.0F, false) instanceof BlockHitResult result) {
             if (result.getType() == HitResult.Type.BLOCK) {
                 BlockState state = player.level().getBlockState(result.getBlockPos());
                 Item item = state.getBlock().asItem();
