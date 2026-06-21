@@ -1,8 +1,12 @@
 package com.than00ber.renourisheddelight.neoforge;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.effect.NourishmentMobEffect;
 import com.than00ber.renourisheddelight.food.Diet;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataSerializer;
+import net.minecraft.world.effect.MobEffect;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -17,6 +21,11 @@ public final class RenourishedDelightModNeoforge {
                 RenourishedDelightMod.MOD_ID);
         serializers.register("diet", () -> Diet.DATA_SERIALIZER);
         serializers.register(bus);
+        DeferredRegister<MobEffect> effects = DeferredRegister.create(
+                Registries.MOB_EFFECT,
+                RenourishedDelightMod.MOD_ID);
+        EffectRegistry.NOURISHMENT = effects.register("nourishment", NourishmentMobEffect::new);
+        effects.register(bus);
         RenourishedDelightMod.init();
     }
 }
