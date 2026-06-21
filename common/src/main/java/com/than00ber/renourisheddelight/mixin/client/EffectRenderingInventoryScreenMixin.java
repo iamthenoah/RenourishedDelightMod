@@ -5,6 +5,7 @@ import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringUtil;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -71,8 +73,9 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                     Texture[] textures = atlas.getTextures(slot.item);
 
                     if (textures != null && textures.length > 0) {
-                        boolean hunger = player.hasEffect(net.minecraft.world.effect.MobEffects.HUNGER);
-                        int index = hunger && textures.length > 1 ? 1 : 0;
+                        boolean hunger = player.hasEffect(MobEffects.HUNGER);
+                        boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+                        int index = nourished ? 4 : hunger ? 1 : 0;
                         textures[index].render(guiGraphics, x + (large ? 6 : 7), k + 7, 0xFFFFFFFF);
                         
                         if (hunger) {
