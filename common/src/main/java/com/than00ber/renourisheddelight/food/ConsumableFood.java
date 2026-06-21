@@ -36,7 +36,8 @@ public class ConsumableFood {
         hearts = Math.max(1, Math.round(hearts * (float) common.foodHeartsMultiplier));
         duration = Math.round(duration * (float) common.foodDurationMultiplier);
 
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
+        String name = String.valueOf(UUID.randomUUID());
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, name);
         AttributeModifier modifier = new AttributeModifier(id, hearts, AttributeModifier.Operation.ADD_VALUE);
         return new ConsumableFoodInstance(item, modifier, duration, 0);
     }
