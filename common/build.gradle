@@ -4,4 +4,5 @@ architectury {
 
 dependencies {
     modImplementation "dev.architectury:architectury:$architecturyApiVersion"
+    modCompileOnly "me.shedaniel.cloth:cloth-config:$clothConfigVersion"
 }
