@@ -6,6 +6,6 @@ import net.minecraft.world.effect.MobEffectCategory;
 public final class NourishmentMobEffect extends MobEffect {
 
     public NourishmentMobEffect() {
-        super(MobEffectCategory.NEUTRAL, 0xE8A33D);
+        super(MobEffectCategory.BENEFICIAL, 0xE8A33D);
     }
 }
