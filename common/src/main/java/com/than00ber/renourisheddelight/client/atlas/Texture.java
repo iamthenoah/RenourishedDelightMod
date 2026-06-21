@@ -6,10 +6,8 @@ import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.Objects;
 
-public record MiniTexture(MiniTextureAtlas.Builder builder, int u, int v) {
+public record Texture(TextureAtlas.Builder builder, int u, int v, int dimensions) {
 
-    public static final int DIMENSIONS = 9;
-    
     public void render(GuiGraphics graphics, int x, int y, int color) {
         float a = ((color >> 24) & 0xFF) / 255.0F;
         float r = ((color >> 16) & 0xFF) / 255.0F;
@@ -18,7 +16,7 @@ public record MiniTexture(MiniTextureAtlas.Builder builder, int u, int v) {
 
         RenderSystem.setShaderColor(r, g, b, a);
         NativeImage texture = Objects.requireNonNull(builder.texture.getPixels());
-        graphics.blit(builder.name, x, y, u, v, DIMENSIONS, DIMENSIONS, texture.getWidth(), texture.getHeight());
+        graphics.blit(builder.name, x, y, u, v, dimensions, dimensions, texture.getWidth(), texture.getHeight());
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 }

@@ -17,7 +17,6 @@ public final class RenourishedDelightModNeoforge {
                 RenourishedDelightMod.MOD_ID);
         serializers.register("diet", () -> Diet.DATA_SERIALIZER);
         serializers.register(bus);
-
         RenourishedDelightMod.init();
     }
 }

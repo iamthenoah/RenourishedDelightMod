@@ -1,9 +1,9 @@
 package com.than00ber.renourisheddelight.client.overlay;
 
 import com.mojang.blaze3d.platform.Window;
-import com.than00ber.renourisheddelight.client.atlas.MiniTexture;
-import com.than00ber.renourisheddelight.client.atlas.MiniTextureAtlas;
-import com.than00ber.renourisheddelight.client.atlas.MiniTextureAtlasResourceLoader;
+import com.than00ber.renourisheddelight.client.atlas.Texture;
+import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
+import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import dev.architectury.event.events.client.ClientGuiEvent;
@@ -43,7 +43,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     @Override
     public void renderHud(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        MiniTextureAtlas atlas = MiniTextureAtlasResourceLoader.getInstance().getAtlas();
+        TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
         Player player = Minecraft.getInstance().player;
 
         if (isVisible() && atlas != null && player instanceof DietHolder holder) {
@@ -58,7 +58,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private void renderFoodBar(GuiGraphics graphics, MiniTextureAtlas atlas, Point pos, Player player, List<ConsumableFoodInstance> slots) {
+    private void renderFoodBar(GuiGraphics graphics, TextureAtlas atlas, Point pos, Player player, List<ConsumableFoodInstance> slots) {
         int tick = Minecraft.getInstance().gui.getGuiTicks();      
         int count = slots.size();
         
@@ -75,8 +75,8 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private void renderFood(GuiGraphics graphics, MiniTextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
-        MiniTexture[] textures = atlas.getTextures(instance.item);
+    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
+        Texture[] textures = atlas.getTextures(instance.item);
         float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
         int width = Math.round(size * 8 * fillRatio);
 

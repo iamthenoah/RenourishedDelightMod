@@ -9,8 +9,6 @@
   "gamerule.renourisheddelight:maxConsumableFood.description": "Maximum number of different foods a player can have active at the same time.",
   "gamerule.renourisheddelight:allowEatingTheSameItem": "Allow Eating The Same Item",
   "gamerule.renourisheddelight:allowEatingTheSameItem.description": "Whether players are allowed to consume multiple of the same food item.",
-  "gamerule.renourisheddelight:allowFoodReplenishment": "Allow Food Replenishment",
-  "gamerule.renourisheddelight:allowFoodReplenishment.description": "Whether players are allowed to consume an eaten food item to replenish its food level.",
   "gamerule.renourisheddelight:replaceLowestFoodItem": "Replace Lowest Food Item",
   "gamerule.renourisheddelight:replaceLowestFoodItem.description": "Whether eating food will replace the lowest level food item.",
   "gamerule.renourisheddelight:foodReplenishableThreshold": "Food Replenishable Threshold",
@@ -22,9 +20,5 @@
   "gamerule.renourisheddelight:regenHealthTickInterval": "Health Regen Interval",
   "gamerule.renourisheddelight:regenHealthTickInterval.description": "Number of ticks between natural health regeneration.",
   "gamerule.renourisheddelight:regenHealthFoodDrain": "Health Regen Food Drain",
-  "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs.",
-  "item.minecraft.potion.effect.metabolic_burst": "Potion of Metabolic Burst",
-  "item.minecraft.splash_potion.effect.metabolic_burst": "Splash Potion of Metabolic Burst",
-  "item.minecraft.lingering_potion.effect.metabolic_burst": "Lingering Potion of Metabolic Burst",
-  "effect.renourisheddelight.metabolic_burst": "Metabolic Burst"
+  "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs."
 }

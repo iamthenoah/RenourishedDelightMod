@@ -7,7 +7,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import dev.architectury.registry.ReloadListenerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -15,13 +14,13 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -32,22 +31,23 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadListener {
+public class TextureAtlasResourceLoader implements ResourceManagerReloadListener {
 
-    private static final MiniTextureAtlasResourceLoader INSTANCE = new MiniTextureAtlasResourceLoader();
+    private static final TextureAtlasResourceLoader INSTANCE = new TextureAtlasResourceLoader();
 
-    public static MiniTextureAtlasResourceLoader getInstance() {
+    public static TextureAtlasResourceLoader getInstance() {
         return INSTANCE;
     }
 
-    public static void init() {
-        ReloadListenerRegistry.register(PackType.CLIENT_RESOURCES, MiniTextureAtlasResourceLoader.getInstance());
+    private @Nullable TextureAtlas miniAtlas;
+    private @Nullable TextureAtlas largeAtlas;
+
+    public @Nullable TextureAtlas getMiniAtlas() {
+        return miniAtlas;
     }
 
-    private MiniTextureAtlas atlas;
-
-    public @Nullable MiniTextureAtlas getAtlas() {
-        return atlas;
+    public @Nullable TextureAtlas getLargeAtlas() {
+        return largeAtlas;
     }
 
     @Override
@@ -59,33 +59,43 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
                         .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-                MiniTextureAtlas.Builder builder = new MiniTextureAtlas.Builder(items.size());
+                TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
+                TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
                 int[] goldenPalette = getGoldenPalette();
 
                 for (Item item : items) {
-                    NativeImage base = renderItemToNativeImage(item);
+                    NativeImage baseMini = itemToNativeImage(item, 9);
+                    NativeImage baseLarge = itemToNativeImage(item, 18);
 
-                    if (base != null) {
-                        builder.appendTexture(0, item, base)
-                                .appendTexture(1, item, makeHunger(base))
-                                .appendTexture(2, item, makeSilhouette(base))
-                                .appendTexture(3, item, makeOutlined(base))
-                                .appendTexture(4, item, makeGolden(base, goldenPalette));
+                    if (baseMini != null) {
+                        miniBuilder.appendTexture(0, item, baseMini)
+                                .appendTexture(1, item, makeHunger(baseMini))
+                                .appendTexture(2, item, makeSilhouette(baseMini))
+                                .appendTexture(3, item, makeOutlined(baseMini))
+                                .appendTexture(4, item, makeGolden(baseMini, goldenPalette));
+                    }
+                    if (baseLarge != null) {
+                        largeBuilder.appendTexture(0, item, baseLarge)
+                                .appendTexture(1, item, makeHunger(baseLarge))
+                                .appendTexture(2, item, makeSilhouette(baseLarge))
+                                .appendTexture(3, item, makeOutlined(baseLarge))
+                                .appendTexture(4, item, makeGolden(baseLarge, goldenPalette));
                     }
                 }
-                atlas = builder.done();
+                miniAtlas = miniBuilder.done();
+                largeAtlas = largeBuilder.done();
             } catch (Exception e) {
                 // silent fail
             }
         });
     }
 
-    private @Nullable NativeImage renderItemToNativeImage(Item item) {
+    private @Nullable NativeImage itemToNativeImage(Item item, int dimensions) {
         Minecraft minecraft = Minecraft.getInstance();
         ItemRenderer itemRenderer = minecraft.getItemRenderer();
         ItemStack stack = new ItemStack(item);
 
-        RenderTarget target = new MainTarget(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS);
+        RenderTarget target = new MainTarget(dimensions, dimensions);
         target.setClearColor(0f, 0f, 0f, 0f);
         target.clear(Minecraft.ON_OSX);
         target.bindWrite(true);
@@ -111,7 +121,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
             Lighting.setupFor3DItems();
             RenderSystem.restoreProjectionMatrix();
 
-            NativeImage image = new NativeImage(MiniTexture.DIMENSIONS, MiniTexture.DIMENSIONS, false);
+            NativeImage image = new NativeImage(dimensions, dimensions, false);
             target.bindRead();
             image.downloadTexture(0, false);
             image.flipY();
@@ -250,7 +260,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
     }
     
     private int[] getGoldenPalette() {
-        NativeImage carrotImage = renderItemToNativeImage(net.minecraft.world.item.Items.GOLDEN_CARROT);
+        NativeImage carrotImage = itemToNativeImage(Items.GOLDEN_CARROT, 16);
         if (carrotImage == null) return null;
 
         int width = carrotImage.getWidth();
@@ -267,7 +277,7 @@ public class MiniTextureAtlasResourceLoader implements ResourceManagerReloadList
             }
         }
         if (opaquePixels.isEmpty()) return null;
-        opaquePixels.sort(Comparator.comparingInt(MiniTextureAtlasResourceLoader::luminance));
+        opaquePixels.sort(Comparator.comparingInt(TextureAtlasResourceLoader::luminance));
         int[] palette = new int[opaquePixels.size()];
 
         for (int i = 0; i < palette.length; i++) {
