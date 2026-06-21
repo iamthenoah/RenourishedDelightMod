@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import dev.architectury.event.events.client.ClientGuiEvent;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -70,14 +71,15 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         previousFoodCount = count;
         boolean blink = foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
         boolean hunger = player.hasEffect(MobEffects.HUNGER);
+        boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
         
         for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
-            renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger);
+            renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished);
             pos.x += 8 * entry.getValue();
         }
     }
 
-    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger) {
+    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished) {
         Texture[] textures = atlas.getTextures(instance.item);
         
         if (textures != null) {
@@ -95,7 +97,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     
             for (int i = 0; i < size; i++) {
                 int offset = pos.y + computeWobbleOffset(instance, i, tick);
-                textures[hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
+                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
             }
             graphics.disableScissor();
             graphics.pose().popPose();

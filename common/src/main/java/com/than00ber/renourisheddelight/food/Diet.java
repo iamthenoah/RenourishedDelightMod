@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -97,13 +98,14 @@ public class Diet {
         boolean changed = false;
         GameRules rules = player.level().getGameRules();
         Set<Item> ticked = new HashSet<>();
+        boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
         boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
         if (needsRegen) regen++;
 
         for (int i = slots.size() - 1; i >= 0; i--) {
             ConsumableFoodInstance instance = slots.get(i);
 
-            if (needsRegen && regen >= rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL)) {
+            if (needsRegen && regen >= (nourished ? 5 : rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL))) {
                 player.heal(1.0F);
                 instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
                 regen = 0;
@@ -111,7 +113,8 @@ public class Diet {
             }
             if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                 ticked.add(instance.item);
-                instance.time += player.hasEffect(MobEffects.HUNGER) ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
+                instance.time += hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
                 changed = true;
             }
             if (instance.time >= instance.duration) {

@@ -1,5 +1,8 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -13,18 +16,20 @@ import java.util.Comparator;
 import java.util.Optional;
 
 public enum EatingOutcome {
-    CONSUME(true, null),
-    EFFECTS_ONLY(true, null),
-    REPLENISH(true, null),
-    REPLACE_LOW(true, null),
-    TOO_MANY(false, "message.eating_too_many"),
-    NOT_BALANCED(false, "message.eating_not_balanced");
+    CONSUME(true, true, null),
+    EFFECTS_ONLY(true, false, null),
+    REPLENISH(true, true, null),
+    REPLACE_LOW(true, true, null),
+    TOO_MANY(false, false, "message.eating_too_many"),
+    NOT_BALANCED(false, false, "message.eating_not_balanced");
 
     final boolean success;
+    final boolean nourishable;
     final @Nullable String message;
 
-    EatingOutcome(boolean success, @Nullable String message) {
+    EatingOutcome(boolean success, boolean nourishable, @Nullable String message) {
         this.success = success;
+        this.nourishable = nourishable;
         this.message = message;
     }
 
@@ -69,6 +74,19 @@ public enum EatingOutcome {
                     diet.removeFromSlot(player, instance);
                     ConsumableFood food = new ConsumableFood(properties);
                     diet.addToSlot(player, food.create(item));
+                }
+            }
+        }
+        if (nourishable) {
+            int maxSlots = player.level().getGameRules().getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+
+            if (diet.getSlots().size() >= maxSlots) {
+                int smallest = diet.getSlots().stream().mapToInt(slot -> slot.duration).min().orElse(0);
+                double percent = Configuration.Common.getInstance().nourishmentDurationPercent;
+                int duration = Math.toIntExact(Math.round(smallest * percent));
+
+                if (duration > 0) {
+                    player.addEffect(new MobEffectInstance(EffectRegistry.NOURISHMENT, duration, 0, false, false, true));
                 }
             }
         }

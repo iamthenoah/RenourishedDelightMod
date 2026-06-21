@@ -12,6 +12,7 @@
   "mixins": [
     "FoodDataMixin",
     "ItemMixin",
+    "LivingEntityMixin",
     "PlayerMixin"
   ]
 }
