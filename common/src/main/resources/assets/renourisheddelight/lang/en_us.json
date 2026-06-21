@@ -20,5 +20,9 @@
   "gamerule.renourisheddelight:regenHealthTickInterval": "Health Regen Interval",
   "gamerule.renourisheddelight:regenHealthTickInterval.description": "Number of ticks between natural health regeneration.",
   "gamerule.renourisheddelight:regenHealthFoodDrain": "Health Regen Food Drain",
-  "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs."
+  "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs.",
+  "item.minecraft.potion.effect.nourishment": "Potion of Nourishment",
+  "item.minecraft.splash_potion.effect.nourishment": "Splash Potion of Nourishment",
+  "item.minecraft.lingering_potion.effect.nourishment": "Lingering Potion of Nourishment",
+  "effect.renourisheddelight.nourishment": "Nourishment"
 }

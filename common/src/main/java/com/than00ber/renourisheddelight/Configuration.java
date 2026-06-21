@@ -76,6 +76,10 @@ public final class Configuration {
         @Comment("Multiplier applied to how long food effects last (default: 1.0)")
         public double foodDurationMultiplier = 1.0;
 
+        @ConfigEntry.Gui.Tooltip
+        @Comment("Percentage of the smallest active food's duration granted as Nourishment when eating while full (default: 0.1 = 10%)")
+        public double nourishmentDurationPercent = 0.1;
+        
         @ConfigEntry.Gui.Tooltip(count = 3)
         @Comment("""
             Per-item food data overrides:

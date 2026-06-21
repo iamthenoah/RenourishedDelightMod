@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.component.DataComponents;
@@ -81,7 +82,8 @@ public enum EatingOutcome {
 
             if (diet.getSlots().size() >= maxSlots) {
                 int smallest = diet.getSlots().stream().mapToInt(slot -> slot.duration).min().orElse(0);
-                int duration = Math.round(smallest * 0.1F);
+                double percent = Configuration.Common.getInstance().nourishmentDurationPercent;
+                int duration = Math.toIntExact(Math.round(smallest * percent));
 
                 if (duration > 0) {
                     player.addEffect(new MobEffectInstance(EffectRegistry.NOURISHMENT, duration, 0, false, false, true));
