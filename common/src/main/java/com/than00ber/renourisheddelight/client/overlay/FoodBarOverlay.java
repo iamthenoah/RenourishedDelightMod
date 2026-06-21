@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.client.overlay;
 
 import com.mojang.blaze3d.platform.Window;
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.client.atlas.Texture;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
@@ -51,8 +52,9 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             
             if (!slots.isEmpty()) {
                 Window window = Minecraft.getInstance().getWindow();
-                int x = window.getGuiScaledWidth() / 2 + 10;
-                int y = window.getGuiScaledHeight() - 39;
+                Configuration.Client config = Configuration.Client.getInstance();
+                int x = window.getGuiScaledWidth() / 2 + 10 + config.foodBarOffsetX;
+                int y = window.getGuiScaledHeight() - 39 + config.foodBarOffsetY;
                 renderFoodBar(graphics, atlas, new Point(x, y), player, slots);
             }
         }

@@ -17,6 +17,8 @@ dependencies {
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionNeoForge')
+
+    modImplementation "me.shedaniel.cloth:cloth-config-neoforge:$clothConfigVersion"
 }
 
 processResources {
