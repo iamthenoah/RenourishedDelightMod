@@ -8,6 +8,7 @@ public final class RenourishedDelightMod {
     public static final String MOD_ID = "renourisheddelight";
 
     public static void init() {
+        Configuration.init();
         FoodBarOverlay.init();
         GameRuleRegistry.init();
     }
