@@ -34,15 +34,15 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     @Shadow @Final private static ResourceLocation EFFECT_BACKGROUND_LARGE_SPRITE;
     @Shadow @Final private static ResourceLocation EFFECT_BACKGROUND_SMALL_SPRITE;
 
-    @Unique private int rd$savedTopPos = -1;
+    @Unique private int savedTopPos = -1;
 
     public EffectRenderingInventoryScreenMixin(T abstractContainerMenu, Inventory inventory, Component component) {
         super(abstractContainerMenu, inventory, component);
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"))
-    private void renderDietRows(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
-        rd$savedTopPos = -1;
+    private void renderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+        savedTopPos = -1;
         Player player = Minecraft.getInstance().player;
 
         if (player instanceof DietHolder holder) {
@@ -95,16 +95,16 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                 }
                 k += rowHeight;
             }
-            rd$savedTopPos = topPos;
+            savedTopPos = topPos;
             topPos += rowHeight * slots.size();
         }
     }
 
     @Inject(method = "renderEffects", at = @At("RETURN"))
-    private void restoreTopPos(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
-        if (rd$savedTopPos != -1) {
-            topPos = rd$savedTopPos;
-            rd$savedTopPos = -1;
+    private void renderEffectsReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+        if (savedTopPos != -1) {
+            topPos = savedTopPos;
+            savedTopPos = -1;
         }
     }
 }

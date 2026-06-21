@@ -216,6 +216,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             for (int y = 0; y < height; y++) {
                 int pixel = input.getPixelRGBA(x, y);
                 int a = (pixel >> 24) & 0xFF;
+
                 if (a != 0) {
                     float brightness = brightness(pixel);
                     minBrightness = Math.min(minBrightness, brightness);
@@ -271,6 +272,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             for (int y = 0; y < height; y++) {
                 int pixel = carrotImage.getPixelRGBA(x, y);
                 int a = (pixel >> 24) & 0xFF;
+                
                 if (a != 0) {
                     opaquePixels.add(pixel);
                 }

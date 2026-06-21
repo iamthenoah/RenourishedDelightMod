@@ -28,11 +28,6 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     protected PlayerMixin(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);
     }
-    
-    @Unique
-    private Player self() {
-        return (Player) (Object) this;
-    }
 
     @Override
     public Diet getDiet() {
@@ -51,8 +46,8 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo callback) {
-        if (self() instanceof ServerPlayer player) {
-            AttributeInstance attribute = self().getAttribute(Attributes.MAX_HEALTH);
+        if ((Object) this instanceof ServerPlayer player) {
+            AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
             int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
             AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
             
