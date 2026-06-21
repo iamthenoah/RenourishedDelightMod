@@ -28,14 +28,13 @@ public class ConsumableFood {
     }
 
     public ConsumableFoodInstance create(Item item) {
-        Configuration.Common.ItemConfig itemConfig = Configuration.getItemConfig(item);
+        Configuration.Common common = Configuration.Common.getInstance();
+        Configuration.Common.FoodItemConfiguration itemConfig = common.getItemConfig(item);
+
         int hearts = itemConfig != null ? itemConfig.hearts : ONE_HEART;
         int duration = itemConfig != null ? itemConfig.duration : THIRTY_SECONDS;
-
-        double heartsMult = Configuration.Common.getInstance().foodHeartsMultiplier;
-        double durationMult = Configuration.Common.getInstance().foodDurationMultiplier;
-        hearts = Math.max(1, Math.round(hearts * (float) heartsMult));
-        duration = Math.round(duration * (float) durationMult);
+        hearts = Math.max(1, Math.round(hearts * (float) common.foodHeartsMultiplier));
+        duration = Math.round(duration * (float) common.foodDurationMultiplier);
 
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         AttributeModifier modifier = new AttributeModifier(id, hearts, AttributeModifier.Operation.ADD_VALUE);
