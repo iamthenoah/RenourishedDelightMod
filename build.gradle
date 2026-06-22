@@ -66,6 +66,14 @@ subprojects {
         it.options.release = 21
     }
 
+    afterEvaluate {
+        if (tasks.findByName('processResources') && project.name != 'common') {
+            tasks.named('processResources') {
+                from(project(':common').file('src/main/resources/renourisheddelight.png'))
+            }
+        }
+    }
+    
     modrinth {
         token = System.getenv('MODRINTH_TOKEN')
         gameVersions = [minecraftVersion]
