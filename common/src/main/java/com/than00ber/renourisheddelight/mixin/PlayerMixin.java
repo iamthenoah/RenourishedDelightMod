@@ -44,6 +44,11 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
         builder.define(DIET_ACCESSOR, new Diet());
     }
 
+    @Inject(method = "actuallyHurt", at = @At("HEAD"))
+    private void actuallyHurt(CallbackInfo callback) {
+        getDiet().onDamaged();
+    }
+    
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {

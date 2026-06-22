@@ -43,12 +43,17 @@ public class Diet {
     };
 
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
+    private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
     }
 
+    public void onDamaged() {
+        ticksSinceDamage = 0;
+    }
+    
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
         boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
@@ -101,7 +106,10 @@ public class Diet {
             GameRules rules = player.level().getGameRules();
             Set<Item> ticked = new HashSet<>();
             boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
-            boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
+
+            ticksSinceDamage++;
+            boolean pastDamageDelay = ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+            boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt() && pastDamageDelay;
             if (needsRegen) regen++;
 
             if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
