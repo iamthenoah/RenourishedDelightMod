@@ -102,15 +102,21 @@ public class Diet {
         boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
         if (needsRegen) regen++;
 
+        if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
+            player.heal(1.0F);
+            regen = 0;
+            changed = true;
+
+            if (!slots.isEmpty()) {
+                ConsumableFoodInstance instance = slots.stream()
+                        .max(Comparator.comparingInt(x -> x.duration - x.time))
+                        .orElse(null);
+                instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
+            }
+        }
         for (int i = slots.size() - 1; i >= 0; i--) {
             ConsumableFoodInstance instance = slots.get(i);
 
-            if (needsRegen && regen >= (nourished ? 5 : rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL))) {
-                player.heal(1.0F);
-                instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
-                regen = 0;
-                changed = true;
-            }
             if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                 ticked.add(instance.item);
                 boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
@@ -122,6 +128,18 @@ public class Diet {
             }
         }
         return changed;
+    }
+
+    private int computeRegenInterval(GameRules rules, boolean nourished) {
+        if (nourished) return 5;
+        int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
+        if (slots.isEmpty()) return base;
+        double avgSaturation = slots.stream()
+                .mapToDouble(slot -> Objects.requireNonNull(slot.item.components().get(DataComponents.FOOD)).saturation())
+                .average()
+                .orElse(0.0);
+        double scale = 1.0 / (1.0 + avgSaturation * 0.15);
+        return Math.max(5, (int) Math.round(base * scale));
     }
 
     public static CompoundTag save(Diet diet) {
