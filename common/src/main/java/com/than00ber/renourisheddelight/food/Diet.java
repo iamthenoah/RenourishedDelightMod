@@ -108,7 +108,7 @@ public class Diet {
             boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
 
             ticksSinceDamage++;
-            boolean pastDamageDelay = ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+            boolean pastDamageDelay = nourished || ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
             boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt() && pastDamageDelay;
             if (needsRegen) regen++;
 
