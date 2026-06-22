@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -78,9 +79,11 @@ public enum EatingOutcome {
             }
         }
         if (nourishable) {
-            int maxSlots = player.level().getGameRules().getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+            GameRules gamerules = player.level().getGameRules();
+            int maxSlots = gamerules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+            boolean applyNourishment = gamerules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
 
-            if (diet.getSlots().size() >= maxSlots) {
+            if (applyNourishment && diet.getSlots().size() >= maxSlots) {
                 int smallest = diet.getSlots().stream().mapToInt(slot -> slot.duration).min().orElse(0);
                 double percent = Configuration.Common.getInstance().nourishmentDurationPercent;
                 int duration = Math.toIntExact(Math.round(smallest * percent));
