@@ -47,23 +47,25 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
-            AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
-            int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
-            AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-            
-            if (maxHealth != null) {
-                maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
+            if (player.gameMode.isSurvival()) {
+                AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
+                int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
+                AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
 
-                if (attribute != null) {
-                    Diet diet = getDiet();
+                if (maxHealth != null) {
+                    maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
 
-                    if (isDeadOrDying()) {
-                        for (ConsumableFoodInstance instance : diet.getSlots()) {
-                            attribute.removeModifier(instance.hearts);
+                    if (attribute != null) {
+                        Diet diet = getDiet();
+
+                        if (isDeadOrDying()) {
+                            for (ConsumableFoodInstance instance : diet.getSlots()) {
+                                attribute.removeModifier(instance.hearts);
+                            }
+                            updateDiet();
+                        } else if (diet.tick(player)) {
+                            updateDiet();
                         }
-                        updateDiet();
-                    } else if (diet.tick(player)) {
-                        updateDiet();
                     }
                 }
             }

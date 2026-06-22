@@ -96,39 +96,42 @@ public class Diet {
     }
 
     public boolean tick(ServerPlayer player) {
-        boolean changed = false;
-        GameRules rules = player.level().getGameRules();
-        Set<Item> ticked = new HashSet<>();
-        boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
-        boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
-        if (needsRegen) regen++;
+        if (!player.gameMode.isSurvival()) {
+            boolean changed = false;
+            GameRules rules = player.level().getGameRules();
+            Set<Item> ticked = new HashSet<>();
+            boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+            boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt();
+            if (needsRegen) regen++;
 
-        if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
-            player.heal(1.0F);
-            regen = 0;
-            changed = true;
-
-            if (!slots.isEmpty()) {
-                ConsumableFoodInstance instance = slots.stream()
-                        .max(Comparator.comparingInt(x -> x.duration - x.time))
-                        .orElse(null);
-                instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
-            }
-        }
-        for (int i = slots.size() - 1; i >= 0; i--) {
-            ConsumableFoodInstance instance = slots.get(i);
-
-            if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
-                ticked.add(instance.item);
-                boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
-                instance.time += hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+            if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
+                player.heal(1.0F);
+                regen = 0;
                 changed = true;
+
+                if (!slots.isEmpty()) {
+                    ConsumableFoodInstance instance = slots.stream()
+                            .max(Comparator.comparingInt(x -> x.duration - x.time))
+                            .orElse(null);
+                    instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
+                }
             }
-            if (instance.time >= instance.duration) {
-                removeFromSlot(player, instance);
+            for (int i = slots.size() - 1; i >= 0; i--) {
+                ConsumableFoodInstance instance = slots.get(i);
+
+                if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
+                    ticked.add(instance.item);
+                    boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
+                    instance.time += hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                    changed = true;
+                }
+                if (instance.time >= instance.duration) {
+                    removeFromSlot(player, instance);
+                }
             }
+            return changed;
         }
-        return changed;
+        return false;
     }
 
     private int computeRegenInterval(GameRules rules, boolean nourished) {
