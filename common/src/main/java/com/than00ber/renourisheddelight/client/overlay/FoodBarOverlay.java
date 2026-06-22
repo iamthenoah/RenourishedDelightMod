@@ -88,7 +88,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     
             // existing silhouette pass
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
                 textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
             }
             // existing filled pass
@@ -96,7 +96,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
     
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
                 textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
             }
             graphics.disableScissor();
@@ -105,7 +105,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             // existing outline pass
             for (int i = 0; i < size; i++) {
                 int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
-                int offset = pos.y + computeWobbleOffset(instance, i, tick);
+                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
                 textures[3].render(graphics, pos.x + i * 8, offset, color);
             }
         }
@@ -162,11 +162,11 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return result;
     }
 
-    private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick) {
+    private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger) {
         int timeLeft = food.duration - food.time;
         float minute = 60 * 20;
-        if (timeLeft > minute) return 0;
-        float lowFactor = Mth.clamp(timeLeft / minute, 0.0F, 1.0F);
+        if (timeLeft > minute && !hunger) return 0;
+        float lowFactor = hunger ? 1.0F : Mth.clamp(timeLeft / minute, 0.0F, 1.0F);
         int wobble = Mth.clamp(Math.round(lowFactor * 20), 1, 20);
         return tick % (wobble * 3 + 1) == 0 ? ((tick + index) % 2 == 0) ? 1 : -1 : 0;
     }
