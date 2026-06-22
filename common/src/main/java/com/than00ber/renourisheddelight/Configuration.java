@@ -57,7 +57,7 @@ public final class Configuration {
                     float saturation = properties != null ? properties.saturation() : 0.0F;
     
                     existing = new FoodItemConfiguration();
-                    existing.hearts = ConsumableFood.toHearts(nutrition);
+                    existing.hearts = ConsumableFood.toHearts(nutrition, saturation);
                     existing.duration = ConsumableFood.toDuration(nutrition, saturation);
     
                     common.foodItemConfigurations.put(id, existing);

@@ -12,7 +12,7 @@ import java.util.UUID;
 public class ConsumableFood {
 
     private static final int ONE_HEART = 1;
-    private static final int THIRTY_SECONDS = 20 * 30;
+    private static final int SIXTY_SECONDS = 20 * 60;
 
     public final int duration;
     public final int hearts;
@@ -23,7 +23,7 @@ public class ConsumableFood {
 
     public ConsumableFood(int nutrition, float saturation) {
         duration = toDuration(nutrition, saturation);
-        hearts = toHearts(nutrition);
+        hearts = toHearts(nutrition, saturation);
     }
 
     public ConsumableFoodInstance create(Item item) {
@@ -31,7 +31,7 @@ public class ConsumableFood {
         Configuration.Common.FoodItemConfiguration itemConfig = common.getItemConfig(item);
 
         int hearts = itemConfig != null ? itemConfig.hearts : ONE_HEART;
-        int duration = itemConfig != null ? itemConfig.duration : THIRTY_SECONDS;
+        int duration = itemConfig != null ? itemConfig.duration : SIXTY_SECONDS;
         hearts = Math.max(1, Math.round(hearts * (float) common.foodHeartsMultiplier));
         duration = Math.round(duration * (float) common.foodDurationMultiplier);
 
@@ -41,12 +41,13 @@ public class ConsumableFood {
         return new ConsumableFoodInstance(item, modifier, duration, 0);
     }
 
-    public static int toHearts(int nutrition) {
-        return Math.max(nutrition / 2 - ONE_HEART, 0);
+    public static int toHearts(int nutrition, float saturation) {
+        float score = (nutrition - 4) * 0.4F + saturation * 0.6F;
+        return (int) Math.max(0, Math.floor(score / 2));
     }
 
     public static int toDuration(int nutrition, float saturation) {
-        int base = THIRTY_SECONDS + (int) (THIRTY_SECONDS * (nutrition * saturation));
-        return Math.round(base / (float) THIRTY_SECONDS) * THIRTY_SECONDS;
+        int base = SIXTY_SECONDS + (int) (SIXTY_SECONDS * (nutrition * saturation));
+        return Math.round(((float) base / 2) / (float) SIXTY_SECONDS) * SIXTY_SECONDS;
     }
 }
