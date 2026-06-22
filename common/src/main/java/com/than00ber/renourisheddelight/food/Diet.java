@@ -96,7 +96,7 @@ public class Diet {
     }
 
     public boolean tick(ServerPlayer player) {
-        if (!player.gameMode.isSurvival()) {
+        if (player.gameMode.isSurvival()) {
             boolean changed = false;
             GameRules rules = player.level().getGameRules();
             Set<Item> ticked = new HashSet<>();

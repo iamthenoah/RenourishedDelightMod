@@ -62,50 +62,52 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     private void renderFoodBar(GuiGraphics graphics, TextureAtlas atlas, Point pos, Player player, List<ConsumableFoodInstance> slots) {
-        int tick = Minecraft.getInstance().gui.getGuiTicks();      
+        int tick = Minecraft.getInstance().gui.getGuiTicks();
         int count = slots.size();
-        
+
         if (count < previousFoodCount) {
-            foodBlinkEndTick = tick + 20;     
+            foodBlinkEndTick = tick + 20;
         }
         previousFoodCount = count;
         boolean blink = foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
         boolean hunger = player.hasEffect(MobEffects.HUNGER);
         boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
-        
+        int globalIndex = 0;
+
         for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
-            renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished);
+            renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished, globalIndex);
             pos.x += 8 * entry.getValue();
+            globalIndex += entry.getValue();
         }
     }
 
-    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished) {
+    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
         Texture[] textures = atlas.getTextures(instance.item);
-        
+
         if (textures != null) {
             float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
             int width = Math.round(size * 8 * fillRatio);
-    
+
             // existing silhouette pass
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
+                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
             }
             // existing filled pass
             graphics.pose().pushPose();
             graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
-    
+
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
+                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
             }
             graphics.disableScissor();
             graphics.pose().popPose();
-    
+
             // existing outline pass
             for (int i = 0; i < size; i++) {
                 int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
-                int offset = pos.y + computeWobbleOffset(instance, i, tick, hunger);
+                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[3].render(graphics, pos.x + i * 8, offset, color);
             }
         }
@@ -162,12 +164,18 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return result;
     }
 
-    private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger) {
+    private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger, boolean nourished) {
+        if (nourished) return computeNourishmentWobble(index, tick);
         int timeLeft = food.duration - food.time;
         float threeMinutes = 60 * 20 * 3;
         if (timeLeft > threeMinutes && !hunger) return 0;
         float lowFactor = hunger ? 1.0F : Mth.clamp(timeLeft / threeMinutes, 0.0F, 1.0F);
         int wobble = Mth.clamp(Math.round(lowFactor * 20), 1, 20);
         return tick % (wobble * 3 + 1) == 0 ? ((tick + index) % 2 == 0) ? 1 : -1 : 0;
+    }
+
+    private int computeNourishmentWobble(int index, int tick) {
+        int positionInCycle = tick % (25 + 20);
+        return positionInCycle >= 25 ? 0 : index == positionInCycle ? -2 : 0;
     }
 }
