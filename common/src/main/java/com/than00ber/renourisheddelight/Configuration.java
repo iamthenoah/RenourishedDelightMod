@@ -79,6 +79,10 @@ public final class Configuration {
         @ConfigEntry.Gui.Tooltip
         @Comment("Percentage of the smallest active food's duration granted as Nourishment when eating while full (default: 0.1 = 10%)")
         public double nourishmentDurationPercent = 0.1;
+
+        @ConfigEntry.Gui.Tooltip
+        @Comment("Multiplier applied to the natural regen tick interval computed from food quality (default: 1.0)")
+        public double regenIntervalMultiplier = 1.0;
         
         @ConfigEntry.Gui.Tooltip(count = 3)
         @Comment("""

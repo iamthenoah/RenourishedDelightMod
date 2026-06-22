@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.component.DataComponents;
@@ -138,8 +139,9 @@ public class Diet {
                 .mapToDouble(slot -> Objects.requireNonNull(slot.item.components().get(DataComponents.FOOD)).saturation())
                 .average()
                 .orElse(0.0);
-        double scale = 1.0 / (1.0 + avgSaturation * 0.15);
-        return Math.max(5, (int) Math.round(base * scale));
+        double scale = 1.0 / (1.0 + avgSaturation * 0.08);
+        double multiplier = Configuration.Common.getInstance().regenIntervalMultiplier;
+        return Math.max(5, (int) Math.round(base * scale * multiplier));
     }
 
     public static CompoundTag save(Diet diet) {
