@@ -135,8 +135,10 @@ public class Diet {
         if (nourished) return 5;
         int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
         if (slots.isEmpty()) return base;
-        double avgSaturation = slots.stream()
-                .mapToDouble(slot -> Objects.requireNonNull(slot.item.components().get(DataComponents.FOOD)).saturation())
+        double avgSaturation = slots.stream().mapToDouble(x -> Optional
+                        .ofNullable(x.item.components().get(DataComponents.FOOD))
+                        .map(FoodProperties::saturation)
+                        .orElse(0.0F))
                 .average()
                 .orElse(0.0);
         double scale = 1.0 / (1.0 + avgSaturation * 0.08);
