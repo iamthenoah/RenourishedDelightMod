@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import com.than00ber.renourisheddelight.Configuration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -60,7 +62,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
                 TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
                 TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
-                int[] colorPalette = getColorPalette(Items.GOLDEN_CARROT);
+                int[] colorPalette = getColorPalette(getGoldenPaletteItem());
 
                 for (Item item : items) {
                     NativeImage baseMini = itemToNativeImage(item, 9);
@@ -287,6 +289,16 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         return palette;
     }
 
+    private Item getGoldenPaletteItem() {
+        try {
+            String name = Configuration.Client.getInstance().goldenPaletteItem;
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
+            return item != Items.AIR ? item : Items.GOLDEN_CARROT;
+        } catch (Exception e) {
+            return Items.GOLDEN_CARROT;
+        }
+    }
+    
     private static int luminance(int pixel) {
         return (((pixel >> 16) & 0xFF) * 299 + ((pixel >> 8) & 0xFF) * 587 + (pixel & 0xFF) * 114) / 1000;
     }

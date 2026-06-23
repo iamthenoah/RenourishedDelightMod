@@ -36,6 +36,10 @@ public final class Configuration {
         @ConfigEntry.Gui.Tooltip
         @Comment("Vertical pixel offset for the food display UI (default: 0)")
         public int foodBarOffsetY = 0;
+
+        @ConfigEntry.Gui.Tooltip
+        @Comment("Item ID to sample for the golden-effect color palette (default: minecraft:golden_carrot)")
+        public String goldenPaletteItem = "minecraft:golden_carrot";
     }
 
     @Config(name = RenourishedDelightMod.MOD_ID + "/common")
