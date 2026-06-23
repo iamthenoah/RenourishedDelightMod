@@ -60,7 +60,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
                 TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
                 TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
-                int[] goldenPalette = getGoldenPalette();
+                int[] colorPalette = getColorPalette(Items.GOLDEN_CARROT);
 
                 for (Item item : items) {
                     NativeImage baseMini = itemToNativeImage(item, 9);
@@ -71,14 +71,14 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                                 .appendTexture(1, item, makeHunger(baseMini))
                                 .appendTexture(2, item, makeSilhouette(baseMini))
                                 .appendTexture(3, item, makeOutlined(baseMini))
-                                .appendTexture(4, item, makeGolden(baseMini, goldenPalette));
+                                .appendTexture(4, item, makeGolden(baseMini, colorPalette));
                     }
                     if (baseLarge != null) {
                         largeBuilder.appendTexture(0, item, baseLarge)
                                 .appendTexture(1, item, makeHunger(baseLarge))
                                 .appendTexture(2, item, makeSilhouette(baseLarge))
                                 .appendTexture(3, item, makeOutlined(baseLarge))
-                                .appendTexture(4, item, makeGolden(baseLarge, goldenPalette));
+                                .appendTexture(4, item, makeGolden(baseLarge, colorPalette));
                     }
                 }
                 miniAtlas = miniBuilder.done();
@@ -259,8 +259,8 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         return output;
     }
     
-    private int[] getGoldenPalette() {
-        NativeImage carrotImage = itemToNativeImage(Items.GOLDEN_CARROT, 16);
+    private int[] getColorPalette(Item item) {
+        NativeImage carrotImage = itemToNativeImage(item, 16);
         if (carrotImage == null) return null;
 
         int width = carrotImage.getWidth();
