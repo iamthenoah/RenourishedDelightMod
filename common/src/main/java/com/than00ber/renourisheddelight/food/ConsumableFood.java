@@ -46,8 +46,21 @@ public class ConsumableFood {
         return (int) Math.max(0, Math.floor(score / 2));
     }
 
+    // Tuned so that low-nutrition*saturation foods (e.g. a Sweet Berry Cookie, product ~0.8) land
+    // around 2 minutes, and the highest-tier feast foods (e.g. Shepherd's Pie, product ~294) land
+    // around 45 minutes. A sub-linear power curve is used instead of a linear one because the
+    // nutrition*saturation product spans a much wider range (~0.2 to ~294) than we want the
+    // resulting duration to (a couple minutes to under an hour) - a linear mapping made cheap foods
+    // last only ~1 minute while the best foods stretched out past 2 hours. The result is always
+    // rounded to a whole minute, with a 1-minute floor.
+    private static final double DURATION_SCALE_SECONDS = 135.0D;
+    private static final double DURATION_EXPONENT = 0.527D;
+    private static final int ONE_MINUTE = 20 * 60;
+
     public static int toDuration(int nutrition, float saturation) {
-        int base = SIXTY_SECONDS + (int) (SIXTY_SECONDS * (nutrition * saturation));
-        return Math.round(((float) base / 2) / (float) SIXTY_SECONDS) * SIXTY_SECONDS;
+        double product = Math.max(0.0D, nutrition * (double) saturation);
+        double seconds = product > 0 ? DURATION_SCALE_SECONDS * Math.pow(product, DURATION_EXPONENT) : 0.0D;
+        long minutes = Math.round(seconds / 60.0D);
+        return (int) Math.max(ONE_MINUTE, minutes * ONE_MINUTE);
     }
 }
