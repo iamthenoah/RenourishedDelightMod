@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.client.atlas.Texture;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
@@ -45,6 +46,8 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     @Inject(method = "renderEffects", at = @At("HEAD"))
     private void renderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
         savedTopPos = -1;
+        if (!Configuration.Client.getInstance().showFoodDisplayInInventory) return;
+
         Player player = Minecraft.getInstance().player;
 
         if (player instanceof DietHolder holder) {
@@ -88,7 +91,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                     Component name = item.getDescription();
                     
                     if (font.width(name) > 90) {
-                        String truncated = font.plainSubstrByWidth(name.getString(), 90 - font.width("…"));
+                        String truncated = font.plainSubstrByWidth(name.getString(), 90 - font.width("…")).stripTrailing();
                         name = Component.literal(truncated + "…").setStyle(name.getStyle());
                     }
                     int remainingTicks = slot.duration - slot.time;
