@@ -162,12 +162,16 @@ public class Diet {
         ListTag list = new ListTag();
         diet.slots.forEach(x -> list.add(ConsumableFoodInstance.save(x)));
         compoundTag.put("Slots", list);
+        compoundTag.putInt("TicksSinceDamage", diet.ticksSinceDamage);
+        compoundTag.putInt("Regen", diet.regen);
         return compoundTag;
     }
 
     public static Diet load(CompoundTag compoundTag) {
         Diet diet = new Diet();
         ListTag list = compoundTag.getList("Slots", Tag.TAG_COMPOUND);
+        diet.ticksSinceDamage = compoundTag.getInt("TicksSinceDamage");
+        diet.regen = compoundTag.getInt("Regen");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
         return diet;
     }
