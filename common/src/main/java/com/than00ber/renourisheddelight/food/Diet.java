@@ -148,10 +148,8 @@ public class Diet {
         if (slots.isEmpty()) return base;
         double avgSaturation = slots.stream().mapToDouble(x -> Optional
                         .ofNullable(x.item.components().get(DataComponents.FOOD))
-                        .map(FoodProperties::saturation)
-                        .orElse(0.0F))
-                .average()
-                .orElse(0.0);
+                        .map(FoodProperties::saturation).orElse(0.0F))
+                .average().orElse(0.0);
         double scale = 1.0 / (1.0 + avgSaturation * 0.08);
         double multiplier = Configuration.Common.getInstance().regenIntervalMultiplier;
         return Math.max(5, (int) Math.round(base * scale * multiplier));
