@@ -102,6 +102,22 @@ public class Diet {
         Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
     }
 
+    public boolean drain(ServerPlayer player, int ticks) {
+        if (ticks <= 0 || slots.isEmpty()) return false;
+        boolean changed = false;
+
+        for (int i = slots.size() - 1; i >= 0; i--) {
+            ConsumableFoodInstance instance = slots.get(i);
+            instance.time += ticks;
+
+            if (instance.time >= instance.duration) {
+                removeFromSlot(player, instance);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     public boolean tick(ServerPlayer player) {
         if (player.gameMode.isSurvival()) {
             boolean changed = false;
@@ -132,7 +148,12 @@ public class Diet {
                 if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                     ticked.add(instance.item);
                     boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
-                    instance.time += hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                    int drain = hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+
+                    if (player.isSprinting()) {
+                        drain += rules.getInt(GameRuleRegistry.SPRINT_FOOD_DRAIN);
+                    }
+                    instance.time += drain;
                     changed = true;
                 }
                 if (instance.time >= instance.duration) {

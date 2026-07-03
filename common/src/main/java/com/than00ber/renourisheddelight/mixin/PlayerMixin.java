@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -20,8 +21,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
@@ -96,32 +95,44 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
-            if (sleepStartDayTime == -1L) return;
-            long elapsed = player.level().getDayTime() - sleepStartDayTime;
-            sleepStartDayTime = -1L;
-
-            if (elapsed > 0) {
-                double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
-                int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
-                int drain = (int) Math.round(sleepFoodDrain * fraction);
-                Diet diet = getDiet();
-                List<ConsumableFoodInstance> slots = diet.getSlots();
-
-                if (drain > 0) {
-                    boolean changed = false;
-                  
-                    for (int i = slots.size() - 1; i >= 0; i--) {
-                        ConsumableFoodInstance instance = slots.get(i);
-                        instance.time += drain;
-                        changed = true;
-
-                        if (instance.time >= instance.duration) {
-                            diet.removeFromSlot(player, instance);
-                        }
-                    }
-                    if (changed) {
+            if (player.gameMode.isSurvival() && sleepStartDayTime != -1L) {
+                long elapsed = player.level().getDayTime() - sleepStartDayTime;
+                sleepStartDayTime = -1L;
+    
+                if (elapsed > 0) {
+                    double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
+                    int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
+                    int drain = (int) Math.round(sleepFoodDrain * fraction);
+    
+                    if (getDiet().drain(player, drain)) {
                         updateDiet();
                     }
+                }
+            }
+        }
+    }
+
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void attack(Entity target, CallbackInfo callback) {
+        if ((Object) this instanceof ServerPlayer player) {
+            if (player.gameMode.isSurvival()) {
+                int drain = player.level().getGameRules().getInt(GameRuleRegistry.ATTACK_FOOD_DRAIN);
+
+                if (getDiet().drain(player, drain)) {
+                    updateDiet();
+                }
+            }
+        }
+    }
+
+    @Inject(method = "jumpFromGround", at = @At("HEAD"))
+    private void jumpFromGround(CallbackInfo callback) {
+        if ((Object) this instanceof ServerPlayer player) {
+            if (player.gameMode.isSurvival()) {
+                int drain = player.level().getGameRules().getInt(GameRuleRegistry.JUMP_FOOD_DRAIN);
+
+                if (getDiet().drain(player, drain)) {
+                    updateDiet();
                 }
             }
         }
