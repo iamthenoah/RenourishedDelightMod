@@ -142,6 +142,37 @@ public class Diet {
         return false;
     }
 
+    /**
+     * Applies a flat hunger drain (in ticks) to every active food slot at once, as if that many
+     * ticks of normal drain had passed instantly. Used when a player wakes from sleeping: the
+     * caller works out how many ticks to apply based on how much of the night was actually slept
+     * through (a full night drains {@code sleepFoodDrain} ticks, half a night drains half that).
+     * Removes any slot whose remaining duration is exhausted as a result.
+     *
+     * @return true if a slot was drained or removed, so the caller knows to sync the Diet.
+     */
+    public boolean applySleepDrain(ServerPlayer player, int ticks) {
+        if (ticks <= 0 || slots.isEmpty()) return false;
+        boolean changed = false;
+
+        for (int i = slots.size() - 1; i >= 0; i--) {
+            ConsumableFoodInstance instance = slots.get(i);
+            instance.time += ticks;
+            changed = true;
+
+            if (instance.time >= instance.duration) {
+                removeFromSlot(player, instance);
+            }
+        }
+        return changed;
+    }
+
+    // The fastest natural regen is allowed to get from food saturation alone, regardless of how
+    // high the average saturation climbs. Without this floor, the highest-tier foods (saturation
+    // ~16-21) pushed the scale down toward ~0.37-0.44, making regen close to 3x faster than base -
+    // far too strong for sustained use. Capping the scale at 0.5 limits the bonus to a 2x speed-up.
+    private static final double MIN_REGEN_SCALE = 0.5;
+
     private int computeRegenInterval(GameRules rules, boolean nourished) {
         if (nourished) return 5;
         int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
@@ -150,7 +181,7 @@ public class Diet {
                         .ofNullable(x.item.components().get(DataComponents.FOOD))
                         .map(FoodProperties::saturation).orElse(0.0F))
                 .average().orElse(0.0);
-        double scale = 1.0 / (1.0 + avgSaturation * 0.08);
+        double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
         double multiplier = Configuration.Common.getInstance().regenIntervalMultiplier;
         return Math.max(5, (int) Math.round(base * scale * multiplier));
     }

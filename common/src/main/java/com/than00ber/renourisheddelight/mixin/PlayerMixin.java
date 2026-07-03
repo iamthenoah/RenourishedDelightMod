@@ -21,8 +21,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
-
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
@@ -87,42 +85,25 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Override
     public void startSleeping(BlockPos pos) {
         super.startSleeping(pos);
-        
+
         if ((Object) this instanceof ServerPlayer player) {
             sleepStartDayTime = player.level().getDayTime();
         }
     }
 
-    @Inject(method = "stopSleeping", at = @At("HEAD"))
-    private void stopSleeping(CallbackInfo callback) {
-        if ((Object) this instanceof ServerPlayer player) {
-            if (sleepStartDayTime >= 0) {
-                sleepStartDayTime = -1L;
-                long elapsed = player.level().getDayTime() - sleepStartDayTime;
+    @Inject(method = "stopSleepInBed", at = @At("HEAD"))
+    private void stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
+        if ((Object) this instanceof ServerPlayer player && sleepStartDayTime >= 0) {
+            long elapsed = player.level().getDayTime() - sleepStartDayTime;
+            sleepStartDayTime = -1L;
 
-                if (elapsed > 0) {
-                    double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
-                    int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
-                    int drain = (int) Math.round(sleepFoodDrain * fraction);
-                    Diet diet = getDiet();
-                    List<ConsumableFoodInstance> slots = diet.getSlots();
+            if (elapsed > 0) {
+                double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
+                int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
+                int drain = (int) Math.round(sleepFoodDrain * fraction);
 
-                    if (drain > 0) {
-                        boolean changed = false;
-
-                        for (int i = slots.size() - 1; i >= 0; i--) {
-                            ConsumableFoodInstance instance = slots.get(i);
-                            instance.time += drain;
-
-                            if (instance.time >= instance.duration) {
-                                diet.removeFromSlot(player, instance);
-                                changed = true;
-                            }
-                        }
-                        if (changed) {
-                            updateDiet();
-                        }
-                    }
+                if (drain > 0 && getDiet().applySleepDrain(player, drain)) {
+                    updateDiet();
                 }
             }
         }
