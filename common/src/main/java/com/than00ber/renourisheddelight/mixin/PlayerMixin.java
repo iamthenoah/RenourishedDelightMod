@@ -21,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.List;
+
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
@@ -102,9 +104,24 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
                 double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
                 int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
                 int drain = (int) Math.round(sleepFoodDrain * fraction);
+                Diet diet = getDiet();
+                List<ConsumableFoodInstance> slots = diet.getSlots();
 
-                if (drain > 0 && getDiet().applySleepDrain(player, drain)) {
-                    updateDiet();
+                if (drain > 0) {
+                    boolean changed = false;
+                  
+                    for (int i = slots.size() - 1; i >= 0; i--) {
+                        ConsumableFoodInstance instance = slots.get(i);
+                        instance.time += drain;
+                        changed = true;
+
+                        if (instance.time >= instance.duration) {
+                            diet.removeFromSlot(player, instance);
+                        }
+                    }
+                    if (changed) {
+                        updateDiet();
+                    }
                 }
             }
         }
