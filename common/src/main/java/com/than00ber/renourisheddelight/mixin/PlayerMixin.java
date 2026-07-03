@@ -93,7 +93,8 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
-        if ((Object) this instanceof ServerPlayer player && sleepStartDayTime >= 0) {
+        if ((Object) this instanceof ServerPlayer player) {
+            if (sleepStartDayTime == -1L) return;
             long elapsed = player.level().getDayTime() - sleepStartDayTime;
             sleepStartDayTime = -1L;
 
