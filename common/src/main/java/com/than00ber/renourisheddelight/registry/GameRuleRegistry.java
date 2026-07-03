@@ -20,6 +20,7 @@ public final class GameRuleRegistry {
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_HEALTH_FOOD_DRAIN = register("regenHealthFoodDrain", GameRules.IntegerValue.create(3));
     public static final GameRules.Key<GameRules.BooleanValue> APPLY_NOURISHMENT_WHEN_FULL = register("applyNourishmentWhenFull", GameRules.BooleanValue.create(true));
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_DELAY_AFTER_DAMAGE = register("regenDelayAfterDamage", GameRules.IntegerValue.create(60));
+    public static final GameRules.Key<GameRules.IntegerValue> SLEEP_FOOD_DRAIN = register("sleepFoodDrain", GameRules.IntegerValue.create(12000));
 
     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String id, GameRules.Type<T> value) {
         return GameRules.register(RenourishedDelightMod.MOD_ID + ":" + id, GameRules.Category.PLAYER, value);
