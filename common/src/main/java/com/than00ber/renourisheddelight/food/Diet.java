@@ -42,6 +42,8 @@ public class Diet {
         }
     };
 
+    private static final double MIN_REGEN_SCALE = 0.5;
+
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
     private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
@@ -100,6 +102,22 @@ public class Diet {
         Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
     }
 
+    public boolean drain(ServerPlayer player, int ticks) {
+        if (ticks <= 0 || slots.isEmpty()) return false;
+        boolean changed = false;
+
+        for (int i = slots.size() - 1; i >= 0; i--) {
+            ConsumableFoodInstance instance = slots.get(i);
+            instance.time += ticks;
+
+            if (instance.time >= instance.duration) {
+                removeFromSlot(player, instance);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     public boolean tick(ServerPlayer player) {
         if (player.gameMode.isSurvival()) {
             boolean changed = false;
@@ -130,7 +148,12 @@ public class Diet {
                 if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
                     ticked.add(instance.item);
                     boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
-                    instance.time += hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+                    int drain = hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
+
+                    if (player.isSprinting()) {
+                        drain += rules.getInt(GameRuleRegistry.SPRINT_FOOD_DRAIN);
+                    }
+                    instance.time += drain;
                     changed = true;
                 }
                 if (instance.time >= instance.duration) {
@@ -148,11 +171,9 @@ public class Diet {
         if (slots.isEmpty()) return base;
         double avgSaturation = slots.stream().mapToDouble(x -> Optional
                         .ofNullable(x.item.components().get(DataComponents.FOOD))
-                        .map(FoodProperties::saturation)
-                        .orElse(0.0F))
-                .average()
-                .orElse(0.0);
-        double scale = 1.0 / (1.0 + avgSaturation * 0.08);
+                        .map(FoodProperties::saturation).orElse(0.0F))
+                .average().orElse(0.0);
+        double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
         double multiplier = Configuration.Common.getInstance().regenIntervalMultiplier;
         return Math.max(5, (int) Math.round(base * scale * multiplier));
     }
