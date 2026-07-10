@@ -24,6 +24,7 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
 
         protected final ResourceLocation name;
         protected final DynamicTexture texture;
+        protected final AtlasHandle handle;
         protected final Map<Item, Texture[]> textures = new HashMap<>();
 
         protected int uOffset;
@@ -36,6 +37,11 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
             int height = MAX_ROWS * dimensions;
             this.texture = new DynamicTexture(new NativeImage(width, height, true));
             this.name = Minecraft.getInstance().getTextureManager().register(name, texture);
+            this.handle = new AtlasHandle(this.name, this.texture);
+        }
+
+        public AtlasHandle handle() {
+            return handle;
         }
 
         public Builder appendTexture(int index, Item item, NativeImage input) {
@@ -51,7 +57,7 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
                 }
             }
             textures.putIfAbsent(item, new Texture[ICONS_PER_ROW]);
-            textures.get(item)[index] = new Texture(this, u, v, dimensions);
+            textures.get(item)[index] = new Texture(handle, u, v, dimensions);
 
             if (index == ICONS_PER_ROW - 1) {
                 vOffset += input.getHeight();
