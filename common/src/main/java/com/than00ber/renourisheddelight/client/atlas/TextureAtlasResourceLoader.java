@@ -8,7 +8,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.Configuration;
-import com.than00ber.renourisheddelight.client.atlas.caching.AtlasCache;
+import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -65,13 +65,16 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                         .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-
                 boolean cacheEnabled = Configuration.Client.getInstance().enableAtlasCache;
                 Path cacheDir = null;
 
                 if (cacheEnabled) {
                     String cacheKey = AtlasCache.computeCacheKey(manager, items);
-                    cacheDir = AtlasCache.cacheDir(cacheKey);
+                    cacheDir = Minecraft.getInstance().gameDirectory.toPath()
+                            .resolve("config")
+                            .resolve(RenourishedDelightMod.MOD_ID)
+                            .resolve("cache")
+                            .resolve(cacheKey);
                     TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9);
                     TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18);
 
@@ -113,7 +116,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                     AtlasCache.save(cacheDir, "mini", miniBuilder);
                     AtlasCache.save(cacheDir, "large", largeBuilder);
                 }
-            } catch (Exception e) {
+            } catch (Exception exception) {
                 // silent fail
             } finally {
                 long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
@@ -161,7 +164,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             minecraft.getMainRenderTarget().bindWrite(false);
             target.destroyBuffers();
             return image;
-        } catch (Exception e) {
+        } catch (Exception exception) {
             poseStack.popPose();
             Lighting.setupFor3DItems();
             RenderSystem.restoreProjectionMatrix();
@@ -326,7 +329,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             String name = Configuration.Client.getInstance().goldenPaletteItem;
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
-        } catch (Exception e) {
+        } catch (Exception exception) {
             return Items.GOLDEN_CARROT;
         }
     }
