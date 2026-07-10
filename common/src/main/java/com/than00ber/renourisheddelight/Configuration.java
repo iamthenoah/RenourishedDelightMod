@@ -9,10 +9,14 @@ import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class Configuration {
@@ -57,32 +61,35 @@ public final class Configuration {
             return AutoConfig.getConfigHolder(Common.class).getConfig();
         }
 
-        public FoodItemConfiguration getItemConfig(Item item) {
+        public List<AttributeBonus> getAttributes(Item item) {
             if (item.components().has(DataComponents.FOOD)) {
                 String id = BuiltInRegistries.ITEM.getKey(item).toString();
                 Common common = Common.getInstance();
-                FoodItemConfiguration existing = common.foodItemConfigurations.get(id);
+                List<AttributeBonus> existing = common.foodItemConfigurations.getOrDefault(id, new ArrayList<>());
     
-                if (existing == null) {
+                if (existing.isEmpty()) {
                     FoodProperties properties = item.components().get(DataComponents.FOOD);
                     int nutrition = properties != null ? properties.nutrition() : 2;
                     float saturation = properties != null ? properties.saturation() : 0.0F;
-    
-                    existing = new FoodItemConfiguration();
-                    existing.hearts = ConsumableFood.toHearts(nutrition, saturation);
-                    existing.duration = ConsumableFood.toDuration(nutrition, saturation);
-    
+
+                    AttributeBonus maxHealth = new AttributeBonus(
+                            Attributes.MAX_HEALTH.getRegisteredName(), 
+                            AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
+                            Math.max(1, ConsumableFood.toHearts(nutrition, saturation)),
+                            ConsumableFood.toDuration(nutrition, saturation));
+                    existing.add(maxHealth);
+
                     common.foodItemConfigurations.put(id, existing);
                     AutoConfig.getConfigHolder(Common.class).save();
                 }
                 return existing;
             }
-            return null;
+            return new ArrayList<>();
         }
 
         @ConfigEntry.Gui.Tooltip
-        @Comment("Multiplier applied to the bonus hearts granted by food (default: 1.0)")
-        public double foodHeartsMultiplier = 1.0;
+        @Comment("Multiplier applied to every attribute bonus amount granted by food (default: 1.0)")
+        public double foodAttributeBonusMultiplier = 1.0;
 
         @ConfigEntry.Gui.Tooltip
         @Comment("Multiplier applied to how long food effects last (default: 1.0)")
@@ -98,15 +105,40 @@ public final class Configuration {
         
         @ConfigEntry.Gui.Tooltip(count = 3)
         @Comment("""
-            Per-item food data overrides:
-            - hearts: flat number of bonus hearts granted by this item
-            - duration: flat number of ticks this item's effect lasts
-        """)
-        public Map<String, FoodItemConfiguration> foodItemConfigurations = new LinkedHashMap<>();
+            Per-item food data overrides. Key = item registry id, e.g. "minecraft:cooked_beef".
+            Each entry holds a list of attribute bonuses granted while that item's effect is active.
 
-        public static final class FoodItemConfiguration implements ConfigData {
-            public int hearts;
-            public int duration;
+            Each attribute bonus has:
+              attribute: registry id of the attribute to modify, e.g. "minecraft:generic.max_health",
+                         "minecraft:generic.movement_speed", "minecraft:generic.attack_damage"
+                         (modded attributes work too - most vanilla ones live under "generic.")
+              operation: "add_value", "add_multiplied_base", or "add_multiplied_total"
+                         (same semantics as vanilla attribute modifiers)
+              amount:    how much to add, in the units that attribute normally uses
+                         (max_health uses half-hearts, movement_speed is a fraction of the base speed, etc.)
+              duration:  ticks (20 per second) this bonus lasts once the item is eaten -
+                         each bonus on the same item can have its own duration
+
+            Example - an apple that grants +2 hearts for 10 minutes and +10% movement speed for 2 minutes:
+              "minecraft:apple": [
+                {
+                  "attribute": "minecraft:generic.max_health",
+                  "operation": "add_value",
+                  "amount": 4.0,
+                  "duration": 12000
+                },
+                {
+                  "attribute": "minecraft:generic.movement_speed",
+                  "operation": "add_multiplied_base",
+                  "amount": 0.1,
+                  "duration": 2400
+                }
+              ]
+        """)
+        public Map<String, List<AttributeBonus>> foodItemConfigurations = new LinkedHashMap<>();
+
+        public record AttributeBonus(String attribute, String operation, double amount, int duration) implements ConfigData {
+            // do nothing
         }
     }
 }
