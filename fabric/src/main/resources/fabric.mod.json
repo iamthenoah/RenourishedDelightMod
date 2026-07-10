@@ -18,6 +18,9 @@
     ],
     "client": [
       "${modGroup}.fabric.client.RenourishedDelightModFabricClient"
+    ],
+    "modmenu": [
+      "${modGroup}.fabric.compat.client.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -30,5 +33,8 @@
     "fabricloader": ">=${fabricLoaderVersion}",
     "architectury": ">=${architecturyApiVersion}",
     "minecraft": "~${minecraftVersion}"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }
