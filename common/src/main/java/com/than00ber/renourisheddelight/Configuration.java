@@ -44,6 +44,10 @@ public final class Configuration {
         @ConfigEntry.Gui.Tooltip
         @Comment("Whether to render the active food items panel next to the inventory screen (default: true)")
         public boolean showFoodDisplayInInventory = true;
+
+        @ConfigEntry.Gui.Tooltip
+        @Comment("Cache generated item icon atlases to disk, so resource reloads skip re-rendering every icon when nothing changed (default: true)")
+        public boolean enableAtlasCache = true;
     }
 
     @Config(name = RenourishedDelightMod.MOD_ID + "/common")

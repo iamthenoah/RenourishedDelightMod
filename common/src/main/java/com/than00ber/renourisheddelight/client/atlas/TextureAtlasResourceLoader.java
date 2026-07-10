@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.awt.*;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -55,11 +56,30 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         Minecraft.getInstance().executeBlocking(() -> {
+            long startNanos = System.nanoTime();
+            boolean cacheHit = false;
+
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                         .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+                boolean cacheEnabled = Configuration.Client.getInstance().enableAtlasCache;
+                Path cacheDir = null;
+
+                if (cacheEnabled) {
+                    cacheDir = AtlasCache.cacheDir(manager.listPacks(), items);
+                    TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9);
+                    TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18);
+
+                    if (cachedMini != null && cachedLarge != null) {
+                        miniAtlas = cachedMini;
+                        largeAtlas = cachedLarge;
+                        cacheHit = true;
+                        return;
+                    }
+                }
+
                 TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
                 TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
                 int[] colorPalette = getColorPalette(getGoldenPaletteItem());
@@ -85,8 +105,17 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 }
                 miniAtlas = miniBuilder.done();
                 largeAtlas = largeBuilder.done();
-            } catch (Exception e) {
+
+                if (cacheEnabled) {
+                    AtlasCache.save(cacheDir, "mini", miniBuilder);
+                    AtlasCache.save(cacheDir, "large", largeBuilder);
+                }
+            } catch (Exception exception) {
                 // silent fail
+            } finally {
+                long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+                System.out.printf("[RenourishedDelight] Item icon atlas %s in %d ms%n",
+                        cacheHit ? "loaded from cache" : "generated", elapsedMs);
             }
         });
     }
@@ -129,7 +158,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             minecraft.getMainRenderTarget().bindWrite(false);
             target.destroyBuffers();
             return image;
-        } catch (Exception e) {
+        } catch (Exception exception) {
             poseStack.popPose();
             Lighting.setupFor3DItems();
             RenderSystem.restoreProjectionMatrix();
@@ -294,7 +323,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             String name = Configuration.Client.getInstance().goldenPaletteItem;
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
-        } catch (Exception e) {
+        } catch (Exception exception) {
             return Items.GOLDEN_CARROT;
         }
     }
