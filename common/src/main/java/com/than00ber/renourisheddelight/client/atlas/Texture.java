@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.client.atlas;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.than00ber.renourisheddelight.client.atlas.caching.AtlasHandle;
 import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.Objects;

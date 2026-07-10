@@ -1,9 +1,11 @@
-package com.than00ber.renourisheddelight.client.atlas;
+package com.than00ber.renourisheddelight.client.atlas.caching;
 
 import com.google.gson.Gson;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.client.atlas.Texture;
+import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.registries.BuiltInRegistries;

@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.client.atlas;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.than00ber.renourisheddelight.client.atlas.caching.AtlasHandle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
