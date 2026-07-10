@@ -8,7 +8,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.Configuration;
-import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -69,12 +68,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 Path cacheDir = null;
 
                 if (cacheEnabled) {
-                    String cacheKey = AtlasCache.computeCacheKey(manager, items);
-                    cacheDir = Minecraft.getInstance().gameDirectory.toPath()
-                            .resolve("config")
-                            .resolve(RenourishedDelightMod.MOD_ID)
-                            .resolve("cache")
-                            .resolve(cacheKey);
+                    cacheDir = AtlasCache.cacheDir(manager.listPacks(), items);
                     TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9);
                     TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18);
 

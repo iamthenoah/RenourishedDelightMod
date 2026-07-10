@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.PackResources;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -29,25 +29,22 @@ public final class AtlasCache {
     private static final int MAX_CACHED_ENTRIES = 5;
     private static final Gson GSON = new Gson();
 
-    public static Path cacheDir() {
-        return Minecraft.getInstance().gameDirectory.toPath()
-                .resolve("config")
-                .resolve(RenourishedDelightMod.MOD_ID)
-                .resolve("cache");
-    }
-
-    public static String computeCacheKey(ResourceManager manager, List<Item> items) {
+    public static Path cacheDir(Stream<PackResources> packs, List<Item> items) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             update(digest, "format:" + CACHE_FORMAT_VERSION);
-            manager.listPacks().forEachOrdered(pack -> update(digest, "pack:" + pack.packId()));
+            packs.forEachOrdered(x -> update(digest, "pack:" + x.packId()));
 
             for (Item item : items) {
                 ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
                 update(digest, "item:" + key);
             }
             update(digest, "palette:" + Configuration.Client.getInstance().goldenPaletteItem);
-            return HexFormat.of().formatHex(digest.digest());
+            return Minecraft.getInstance().gameDirectory.toPath()
+                    .resolve("config")
+                    .resolve(RenourishedDelightMod.MOD_ID)
+                    .resolve("cache")
+                    .resolve(HexFormat.of().formatHex(digest.digest()));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 not available", exception);
         }
@@ -62,29 +59,30 @@ public final class AtlasCache {
                 NativeImage image = NativeImage.read(in);
                 AtlasMeta meta = GSON.fromJson(Files.readString(metaPath), AtlasMeta.class);
 
-                if (meta == null || meta.formatVersion != CACHE_FORMAT_VERSION || meta.dimensions != dimensions || meta.items == null) {
-                    image.close();
-                    return null;
-                }
-                DynamicTexture texture = new DynamicTexture(image);
-                ResourceLocation location = Minecraft.getInstance().getTextureManager().register(name, texture);
-                AtlasHandle handle = new AtlasHandle(location, texture);
-                Map<Item, Texture[]> textures = new HashMap<>();
+                if (meta != null && meta.formatVersion == CACHE_FORMAT_VERSION && meta.dimensions == dimensions && meta.items != null) {
+                    DynamicTexture texture = new DynamicTexture(image);
+                    ResourceLocation location = Minecraft.getInstance().getTextureManager().register(name, texture);
+                    AtlasHandle handle = new AtlasHandle(location, texture);
+                    Map<Item, Texture[]> textures = new HashMap<>();
 
-                for (Map.Entry<String, int[][]> entry : meta.items.entrySet()) {
-                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.getKey()));
-                    if (item == Items.AIR) continue; // item no longer exists (mod/resource change slipped past the hash) - skip it
-                    int[][] coords = entry.getValue();
-                    Texture[] slots = new Texture[coords.length];
+                    for (Map.Entry<String, int[][]> entry : meta.items.entrySet()) {
+                        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.getKey()));
+                        if (item == Items.AIR)
+                            continue; // item no longer exists (mod/resource change slipped past the hash) - skip it
+                        int[][] coords = entry.getValue();
+                        Texture[] slots = new Texture[coords.length];
 
-                    for (int i = 0; i < coords.length; i++) {
-                        if (coords[i] != null) {
-                            slots[i] = new Texture(handle, coords[i][0], coords[i][1], dimensions);
+                        for (int i = 0; i < coords.length; i++) {
+                            if (coords[i] != null) {
+                                slots[i] = new Texture(handle, coords[i][0], coords[i][1], dimensions);
+                            }
                         }
+                        textures.put(item, slots);
                     }
-                    textures.put(item, slots);
+                    return new TextureAtlas(textures);
+                } else {
+                    image.close();
                 }
-                return new TextureAtlas(textures);
             } catch (Exception exception) {
                 // do nothing
             }
