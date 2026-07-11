@@ -98,22 +98,6 @@ public final class Configuration {
             return attributes;
         }
 
-        @ConfigEntry.Gui.Tooltip
-        @Comment("Multiplier applied to every attribute bonus amount granted by food (default: 1.0)")
-        public double foodAttributeBonusMultiplier = 1.0;
-
-        @ConfigEntry.Gui.Tooltip
-        @Comment("Multiplier applied to how long food effects last (default: 1.0)")
-        public double foodDurationMultiplier = 1.0;
-
-        @ConfigEntry.Gui.Tooltip
-        @Comment("Percentage of the smallest active food's duration granted as Nourishment when eating while full (default: 0.1 = 10%)")
-        public double nourishmentDurationPercent = 0.1;
-
-        @ConfigEntry.Gui.Tooltip
-        @Comment("Multiplier applied to the natural regen tick interval computed from food quality (default: 1.0)")
-        public double regenIntervalMultiplier = 1.0;
-
         @ConfigEntry.Gui.Excluded
         @Comment("""
                 Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
@@ -151,10 +135,6 @@ public final class Configuration {
         public String operation;
         public double amount;
         public int duration;
-
-        public AttributeBonus() {
-            // do nothing
-        }
 
         public AttributeBonus(String attribute, String operation, double amount, int duration) {
             this.attribute = attribute;

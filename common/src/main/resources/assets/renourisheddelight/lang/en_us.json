@@ -23,6 +23,8 @@
   "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs.",
   "gamerule.renourisheddelight:applyNourishmentWhenFull": "Apply Nourishment When Full",
   "gamerule.renourisheddelight:applyNourishmentWhenFull.description": "Whether to apply the Nourishment effect when the hunger bar is full.",
+  "gamerule.renourisheddelight:nourishmentDurationPercent": "Nourishment Duration Percent",
+  "gamerule.renourisheddelight:nourishmentDurationPercent.description": "Percentage of the smallest active food's duration granted as Nourishment when eating while full.",
   "gamerule.renourisheddelight:regenDelayAfterDamage": "Regen Delay After Damage",
   "gamerule.renourisheddelight:regenDelayAfterDamage.description": "Number of ticks to wait after taking damage before natural health regeneration can resume.",
   "gamerule.renourisheddelight:sleepFoodDrain": "Sleep Food Drain",

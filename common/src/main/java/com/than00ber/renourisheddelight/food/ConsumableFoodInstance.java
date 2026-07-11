@@ -53,7 +53,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> att
         List<AttributeBonusInstance> attributes = new ArrayList<>();
 
         for (Configuration.AttributeBonus bonus : common.getAttributes(item)) {
-            AttributeBonusInstance instance = resolveBonus(bonus, common.foodAttributeBonusMultiplier, common.foodDurationMultiplier);
+            AttributeBonusInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }
         if (attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
@@ -62,19 +62,19 @@ public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> att
                     AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
                     Math.max(1, toHearts(nutrition, saturation)),
                     toDuration(nutrition, saturation));
-            AttributeBonusInstance health = resolveBonus(maxHealth, common.foodAttributeBonusMultiplier, common.foodDurationMultiplier);
+            AttributeBonusInstance health = resolveBonus(maxHealth);
             if (health != null) attributes.addFirst(health);
         }
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeBonusInstance resolveBonus(Configuration.AttributeBonus bonus, double amountMultiplier, double durationMultiplier) {
+    private static @Nullable AttributeBonusInstance resolveBonus(Configuration.AttributeBonus bonus) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute());
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation());
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        int duration = Math.max(1, Math.round(bonus.duration() * (float) durationMultiplier));
-        AttributeModifier modifier = new AttributeModifier(id, bonus.amount() * amountMultiplier, operation);
+        int duration = Math.max(1, bonus.duration());
+        AttributeModifier modifier = new AttributeModifier(id, bonus.amount(), operation);
         return new AttributeBonusInstance(attribute, modifier, duration, 0);
     }
 
