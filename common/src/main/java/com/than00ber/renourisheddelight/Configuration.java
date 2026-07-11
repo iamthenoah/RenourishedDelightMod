@@ -61,10 +61,7 @@ public final class Configuration {
 
         public boolean hasConfiguredEntry(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
-            for (FoodItemEntry entry : foodItemConfigurations) {
-                if (id.equals(entry.item)) return true;
-            }
-            return false;
+            return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
         }
 
         public List<AttributeBonus> getAttributes(Item item) {

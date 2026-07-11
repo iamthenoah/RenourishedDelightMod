@@ -390,11 +390,11 @@ public final class FoodItemBonusScreen extends Screen {
         int headerBottom = 54;
         int footerTop = height - 62;
 
-        graphics.fill(0, headerBottom, width, headerBottom + 1, 0x80FFFFFF);
+        graphics.fill(0, headerBottom, width, headerBottom + 1, 0x20FFFFFF);
         graphics.fill(0, headerBottom + 1, width, headerBottom + 2, 0x80000000);
 
         graphics.fill(0, footerTop, width, footerTop + 1, 0x80000000);
-        graphics.fill(0, footerTop + 1, width, footerTop + 2, 0x80FFFFFF);
+        graphics.fill(0, footerTop + 1, width, footerTop + 2, 0x20FFFFFF);
     }
 
     private record BonusRow(Configuration.AttributeBonus bonus, EditBox attribute, EditBox operation, EditBox amount, EditBox duration, Button remove) {
