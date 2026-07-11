@@ -13,6 +13,7 @@ import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.GameRules;
@@ -97,7 +98,15 @@ public class Diet {
 
         for (AttributeBonusInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
-            if (attribute != null) attribute.addPermanentModifier(bonus.modifier());
+            if (attribute == null) continue;
+
+            double before = attribute.getValue();
+            attribute.addPermanentModifier(bonus.modifier());
+
+            if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
+                double delta = attribute.getValue() - before;
+                if (delta > 0) player.heal((float) delta);
+            }
         }
     }
 

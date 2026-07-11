@@ -26,7 +26,7 @@ public final class FoodItemConfigScreen extends Screen {
     private static final int SCROLLBAR_WIDTH = 6;
     private static final int SUGGESTION_ROW_HEIGHT = 14;
     private static final int MAX_SUGGESTIONS = 40;
-    private static final int VISIBLE_SUGGESTIONS = 8;
+    private static final int VISIBLE_SUGGESTIONS = 10;
     private static final float SUGGESTION_Z = 400.0F;
     private static final int TITLE_Y = 8;
     private static final int SIDE_MARGIN = 140;
@@ -142,7 +142,7 @@ public final class FoodItemConfigScreen extends Screen {
         int removeX = centerX + 125;
         scrollTrackX = centerX + 150;
         scrollTrackTop = listTop;
-        scrollTrackBottom = listTop + visibleRows * ROW_HEIGHT - rowGap;
+        scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
             Configuration.FoodItemEntry entry = filtered.get(i + scrollOffset);
@@ -187,9 +187,8 @@ public final class FoodItemConfigScreen extends Screen {
             if (item == Items.AIR) return;
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
             String name = item.getDescription().getString();
-            String label = id + " (" + name + ")";
             String searchText = (id + " " + name).toLowerCase(Locale.ROOT);
-            options.add(new SuggestOption(id, label, searchText));
+            options.add(new SuggestOption(id, name, searchText));
         });
         options.sort(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER));
         return options;
@@ -373,7 +372,14 @@ public final class FoodItemConfigScreen extends Screen {
     private record IconEntry(ItemStack stack, int x, int y) {
     }
 
-    private record SuggestOption(String value, String label, String searchText) {
+    private record SuggestOption(String value, String name, String searchText) {
+        private boolean hasDistinctName() {
+            return !name.equals(value);
+        }
+
+        private String plainText() {
+            return hasDistinctName() ? name + " (" + value + ")" : name;
+        }
     }
 
     private final class SuggestField {
@@ -416,8 +422,9 @@ public final class FoodItemConfigScreen extends Screen {
             int widest = box.getWidth();
             int end = Math.min(matches.size(), scrollOffset + visibleCount());
             for (int i = scrollOffset; i < end; i++) {
-                widest = Math.max(widest, font.width(matches.get(i).label()) + 4);
+                widest = Math.max(widest, font.width(matches.get(i).plainText()) + 4);
             }
+            if (matches.size() > visibleCount()) widest += 6;
             return widest;
         }
 
@@ -448,16 +455,40 @@ public final class FoodItemConfigScreen extends Screen {
             int y = listTop();
             int listWidth = contentWidth();
             int visible = visibleCount();
+            int totalHeight = visible * SUGGESTION_ROW_HEIGHT;
+            boolean scrollable = matches.size() > visible;
+            int barWidth = 2;
+            int textX = scrollable ? x + barWidth + 4 : x + 2;
 
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, SUGGESTION_Z);
-            graphics.fill(x, y, x + listWidth, y + visible * SUGGESTION_ROW_HEIGHT, 0xE0000000);
+            graphics.fill(x, y, x + listWidth, y + totalHeight, 0xE0000000);
             for (int i = 0; i < visible; i++) {
                 SuggestOption option = matches.get(scrollOffset + i);
                 int rowY = y + i * SUGGESTION_ROW_HEIGHT;
                 boolean hovered = mouseX >= x && mouseX <= x + listWidth && mouseY >= rowY && mouseY <= rowY + SUGGESTION_ROW_HEIGHT;
-                int color = hovered ? 0xFFFF00 : 0xAAAAAA;
-                graphics.drawString(font, option.label(), x + 2, rowY + 3, color, false);
+
+                if (hovered) {
+                    graphics.drawString(font, option.plainText(), textX, rowY + 3, 0xFFFF00, false);
+                } else if (option.hasDistinctName()) {
+                    Component styled = Component.literal(option.name()).withStyle(ChatFormatting.WHITE)
+                            .append(Component.literal(" (" + option.value() + ")").withStyle(ChatFormatting.GRAY));
+                    graphics.drawString(font, styled, textX, rowY + 3, 0xFFFFFF, false);
+                } else {
+                    graphics.drawString(font, option.name(), textX, rowY + 3, 0xFFFFFF, false);
+                }
+            }
+
+            if (scrollable) {
+                int barX = x;
+                graphics.fill(barX, y, barX + barWidth, y + totalHeight, 0x40FFFFFF);
+
+                double fraction = visible / (double) matches.size();
+                int thumbHeight = Math.max(6, (int) Math.round(totalHeight * fraction));
+                int thumbTravel = totalHeight - thumbHeight;
+                double scrollFraction = scrollOffset / (double) Math.max(1, matches.size() - visible);
+                int thumbY = y + (int) Math.round(thumbTravel * scrollFraction);
+                graphics.fill(barX, thumbY, barX + barWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
             graphics.pose().popPose();
         }

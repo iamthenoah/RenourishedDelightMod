@@ -27,7 +27,7 @@ public final class FoodItemBonusScreen extends Screen {
     private static final int ROW_HEIGHT = 24;
     private static final int SUGGESTION_ROW_HEIGHT = 14;
     private static final int MAX_SUGGESTIONS = 40;
-    private static final int VISIBLE_SUGGESTIONS = 8;
+    private static final int VISIBLE_SUGGESTIONS = 10;
     private static final int SCROLLBAR_WIDTH = 6;
     private static final int LIST_TOP = 80;
     private static final int HEADER_LABEL_Y = 64;
@@ -83,26 +83,26 @@ public final class FoodItemBonusScreen extends Screen {
         int centerX = width / 2;
         int newRowY = height - 56;
 
-        newAttributeField = new EditBox(font, centerX - 240, newRowY, 180, 20, Component.literal("attribute"));
+        newAttributeField = new EditBox(font, centerX - 240, newRowY, 180, 20, Component.translatable("config.renourisheddelight.food_items.attribute"));
         newAttributeField.setMaxLength(256);
-        newAttributeField.setHint(Component.literal("Attribute").withStyle(ChatFormatting.DARK_GRAY));
+        newAttributeField.setHint(Component.translatable("config.renourisheddelight.food_items.attribute").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newAttributeField);
         suggestFields.add(new SuggestField(newAttributeField, attributeOptions, true));
 
-        newOperationField = new EditBox(font, centerX - 54, newRowY, 140, 20, Component.literal("operation"));
+        newOperationField = new EditBox(font, centerX - 54, newRowY, 140, 20, Component.translatable("config.renourisheddelight.food_items.modifier"));
         newOperationField.setMaxLength(64);
-        newOperationField.setHint(Component.literal("Modifier").withStyle(ChatFormatting.DARK_GRAY));
+        newOperationField.setHint(Component.translatable("config.renourisheddelight.food_items.modifier").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newOperationField);
         suggestFields.add(new SuggestField(newOperationField, OPERATIONS, true));
 
-        newAmountField = new EditBox(font, centerX + 92, newRowY, 60, 20, Component.literal("amount"));
+        newAmountField = new EditBox(font, centerX + 92, newRowY, 60, 20, Component.translatable("config.renourisheddelight.food_items.amount"));
         newAmountField.setMaxLength(32);
-        newAmountField.setValue("0.0");
+        newAmountField.setHint(Component.translatable("config.renourisheddelight.food_items.amount").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newAmountField);
 
-        newDurationField = new EditBox(font, centerX + 158, newRowY, 60, 20, Component.literal("duration"));
+        newDurationField = new EditBox(font, centerX + 158, newRowY, 60, 20, Component.translatable("config.renourisheddelight.food_items.duration"));
         newDurationField.setMaxLength(32);
-        newDurationField.setValue("0");
+        newDurationField.setHint(Component.translatable("config.renourisheddelight.food_items.duration").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newDurationField);
 
         addRenderableWidget(Button.builder(Component.literal("+"), button -> addBonus())
@@ -136,34 +136,36 @@ public final class FoodItemBonusScreen extends Screen {
 
         scrollTrackX = centerX + 250;
         scrollTrackTop = LIST_TOP;
-        scrollTrackBottom = LIST_TOP + visibleRows * ROW_HEIGHT - rowGap;
+        scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < entry.attributes.size(); i++) {
             Configuration.AttributeBonus bonus = entry.attributes.get(i + scrollOffset);
             int y = LIST_TOP + i * ROW_HEIGHT;
 
-            EditBox attributeField = new EditBox(font, centerX - 240, y, 180, 20, Component.literal("attribute"));
+            EditBox attributeField = new EditBox(font, centerX - 240, y, 180, 20, Component.translatable("config.renourisheddelight.food_items.attribute"));
             attributeField.setMaxLength(256);
             attributeField.setValue(bonus.attribute);
-            attributeField.setHint(Component.literal("Attribute").withStyle(ChatFormatting.DARK_GRAY));
+            attributeField.setHint(Component.translatable("config.renourisheddelight.food_items.attribute").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(attributeField);
             suggestFields.add(new SuggestField(attributeField, attributeOptions));
 
-            EditBox operationField = new EditBox(font, centerX - 54, y, 140, 20, Component.literal("operation"));
+            EditBox operationField = new EditBox(font, centerX - 54, y, 140, 20, Component.translatable("config.renourisheddelight.food_items.modifier"));
             operationField.setMaxLength(64);
             operationField.setValue(bonus.operation);
-            operationField.setHint(Component.literal("Modifier").withStyle(ChatFormatting.DARK_GRAY));
+            operationField.setHint(Component.translatable("config.renourisheddelight.food_items.modifier").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(operationField);
             suggestFields.add(new SuggestField(operationField, OPERATIONS));
 
-            EditBox amountField = new EditBox(font, centerX + 92, y, 60, 20, Component.literal("amount"));
+            EditBox amountField = new EditBox(font, centerX + 92, y, 60, 20, Component.translatable("config.renourisheddelight.food_items.amount"));
             amountField.setMaxLength(32);
             amountField.setValue(String.valueOf(bonus.amount));
+            amountField.setHint(Component.translatable("config.renourisheddelight.food_items.amount").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(amountField);
 
-            EditBox durationField = new EditBox(font, centerX + 158, y, 60, 20, Component.literal("duration"));
+            EditBox durationField = new EditBox(font, centerX + 158, y, 60, 20, Component.translatable("config.renourisheddelight.food_items.duration"));
             durationField.setMaxLength(32);
             durationField.setValue(String.valueOf(bonus.duration));
+            durationField.setHint(Component.translatable("config.renourisheddelight.food_items.duration").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(durationField);
 
             Button removeButton = Button.builder(Component.literal("x"), button -> removeBonus(bonus))
@@ -180,9 +182,8 @@ public final class FoodItemBonusScreen extends Screen {
         BuiltInRegistries.ATTRIBUTE.forEach(attribute -> {
             String id = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
             String name = Component.translatable(attribute.getDescriptionId()).getString();
-            String label = id + " (" + name + ")";
             String searchText = (id + " " + name).toLowerCase(Locale.ROOT);
-            options.add(new SuggestOption(id, label, searchText));
+            options.add(new SuggestOption(id, name, searchText));
         });
         options.sort(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER));
         return options;
@@ -200,8 +201,8 @@ public final class FoodItemBonusScreen extends Screen {
 
         newAttributeField.setValue("");
         newOperationField.setValue("");
-        newAmountField.setValue("0.0");
-        newDurationField.setValue("0");
+        newAmountField.setValue("");
+        newDurationField.setValue("");
 
         rebuildRows();
     }
@@ -337,19 +338,20 @@ public final class FoodItemBonusScreen extends Screen {
         int subtitleTextY = subtitleY + 4;
         if (icon != null) {
             graphics.renderItem(new ItemStack(icon), centerX - 240, subtitleY);
-            graphics.drawString(font, entry.item, centerX - 220, subtitleTextY, 0xAAAAAA);
+            graphics.drawString(font, entry.item, centerX - 220, subtitleTextY, 0xFFFFFFFF);
         } else {
-            graphics.drawString(font, entry.item, centerX - 240, subtitleTextY, 0xAAAAAA);
+            graphics.drawString(font, entry.item, centerX - 240, subtitleTextY, 0xFFFFFFFF);
         }
 
+        applyRows();
         int maxDuration = entry.attributes.stream().mapToInt(bonus -> bonus.duration).max().orElse(0);
-        String durationText = "Duration: " + StringUtil.formatTickDuration(maxDuration, 20);
+        String durationText = Component.translatable("config.renourisheddelight.food_items.duration_summary", StringUtil.formatTickDuration(maxDuration, 20)).getString();
         graphics.drawString(font, durationText, centerX + 244 - font.width(durationText), subtitleTextY, 0xAAAAAA);
 
-        graphics.drawString(font, "Attribute", centerX - 240, HEADER_LABEL_Y, 0xFFFFFF);
-        graphics.drawString(font, "Modifier", centerX - 54, HEADER_LABEL_Y, 0xFFFFFF);
-        graphics.drawString(font, "Amount", centerX + 92, HEADER_LABEL_Y, 0xFFFFFF);
-        graphics.drawString(font, "Duration", centerX + 158, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.food_items.attribute"), centerX - 240, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.food_items.modifier"), centerX - 54, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.food_items.amount"), centerX + 92, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.food_items.duration"), centerX + 158, HEADER_LABEL_Y, 0xFFFFFF);
 
         if (entry.attributes.isEmpty()) {
             graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.no_bonuses"), width / 2, height / 2, 0xAAAAAA);
@@ -398,7 +400,14 @@ public final class FoodItemBonusScreen extends Screen {
     private record BonusRow(Configuration.AttributeBonus bonus, EditBox attribute, EditBox operation, EditBox amount, EditBox duration, Button remove) {
     }
 
-    private record SuggestOption(String value, String label, String searchText) {
+    private record SuggestOption(String value, String name, String searchText) {
+        private boolean hasDistinctName() {
+            return !name.equals(value);
+        }
+
+        private String plainText() {
+            return hasDistinctName() ? name + " (" + value + ")" : name;
+        }
     }
 
     private final class SuggestField {
@@ -426,7 +435,7 @@ public final class FoodItemBonusScreen extends Screen {
                     .filter(option -> query.isEmpty() || option.searchText().contains(query))
                     .sorted(Comparator
                             .<SuggestOption>comparingInt(option -> option.value().toLowerCase(Locale.ROOT).startsWith(query) ? 0 : 1)
-                            .thenComparing(option -> option.value(), String.CASE_INSENSITIVE_ORDER))
+                            .thenComparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER))
                     .limit(MAX_SUGGESTIONS)
                     .toList();
             scrollOffset = 0;
@@ -445,8 +454,9 @@ public final class FoodItemBonusScreen extends Screen {
             int widest = box.getWidth();
             int end = Math.min(matches.size(), scrollOffset + visibleCount());
             for (int i = scrollOffset; i < end; i++) {
-                widest = Math.max(widest, font.width(matches.get(i).label()) + 4);
+                widest = Math.max(widest, font.width(matches.get(i).plainText()) + 4);
             }
+            if (matches.size() > visibleCount()) widest += 6;
             return widest;
         }
 
@@ -477,16 +487,40 @@ public final class FoodItemBonusScreen extends Screen {
             int y = listTop();
             int listWidth = contentWidth();
             int visible = visibleCount();
+            int totalHeight = visible * SUGGESTION_ROW_HEIGHT;
+            boolean scrollable = matches.size() > visible;
+            int barWidth = 2;
+            int textX = scrollable ? x + barWidth + 4 : x + 2;
 
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, SUGGESTION_Z);
-            graphics.fill(x, y, x + listWidth, y + visible * SUGGESTION_ROW_HEIGHT, 0xE0000000);
+            graphics.fill(x, y, x + listWidth, y + totalHeight, 0xE0000000);
             for (int i = 0; i < visible; i++) {
                 SuggestOption option = matches.get(scrollOffset + i);
                 int rowY = y + i * SUGGESTION_ROW_HEIGHT;
                 boolean hovered = mouseX >= x && mouseX <= x + listWidth && mouseY >= rowY && mouseY <= rowY + SUGGESTION_ROW_HEIGHT;
-                int color = hovered ? 0xFFFF00 : 0xAAAAAA;
-                graphics.drawString(font, option.label(), x + 2, rowY + 3, color, false);
+
+                if (hovered) {
+                    graphics.drawString(font, option.plainText(), textX, rowY + 3, 0xFFFF00, false);
+                } else if (option.hasDistinctName()) {
+                    Component styled = Component.literal(option.name()).withStyle(ChatFormatting.WHITE)
+                            .append(Component.literal(" (" + option.value() + ")").withStyle(ChatFormatting.GRAY));
+                    graphics.drawString(font, styled, textX, rowY + 3, 0xFFFFFF, false);
+                } else {
+                    graphics.drawString(font, option.name(), textX, rowY + 3, 0xFFFFFF, false);
+                }
+            }
+
+            if (scrollable) {
+                int barX = x;
+                graphics.fill(barX, y, barX + barWidth, y + totalHeight, 0x40FFFFFF);
+
+                double fraction = visible / (double) matches.size();
+                int thumbHeight = Math.max(6, (int) Math.round(totalHeight * fraction));
+                int thumbTravel = totalHeight - thumbHeight;
+                double scrollFraction = scrollOffset / (double) Math.max(1, matches.size() - visible);
+                int thumbY = y + (int) Math.round(thumbTravel * scrollFraction);
+                graphics.fill(barX, thumbY, barX + barWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
             graphics.pose().popPose();
         }

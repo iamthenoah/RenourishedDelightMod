@@ -59,6 +59,14 @@ public final class Configuration {
             return AutoConfig.getConfigHolder(Common.class).getConfig();
         }
 
+        public boolean hasConfiguredEntry(Item item) {
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            for (FoodItemEntry entry : foodItemConfigurations) {
+                if (id.equals(entry.item)) return true;
+            }
+            return false;
+        }
+
         public List<AttributeBonus> getAttributes(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
             FoodItemEntry match = null;
