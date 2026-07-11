@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
+import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.food.AttributeBonusInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
@@ -32,9 +33,11 @@ public abstract class ItemStackMixin {
             ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties);
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
 
-            String fed = StringUtil.formatTickDuration(instance.duration(), 20);
-            tooltip.add(Component.translatable("tooltip.fed", fed).withStyle(ChatFormatting.BLUE));
-            tooltip.add(Component.empty());
+            if (Configuration.Client.getInstance().showFoodDisplayInInventory) {
+                String fed = StringUtil.formatTickDuration(instance.duration(), 20);
+                tooltip.add(Component.translatable("tooltip.fed", fed).withStyle(ChatFormatting.BLUE));
+                tooltip.add(Component.empty());
+            }
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
             for (AttributeBonusInstance bonus : instance.attributes()) {
