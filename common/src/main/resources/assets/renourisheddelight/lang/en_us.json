@@ -41,6 +41,7 @@
   "config.renourisheddelight.client": "Client Settings",
   "config.renourisheddelight.common": "Common Settings",
   "config.renourisheddelight.food_items": "Food Item Settings",
+  "config.renourisheddelight.food_items.bonus_title": "Item Bonus Settings",
   "config.renourisheddelight.food_items.new_item": "Item ID",
   "config.renourisheddelight.food_items.filter": "Mod",
   "config.renourisheddelight.food_items.all_mods": "All Mods",

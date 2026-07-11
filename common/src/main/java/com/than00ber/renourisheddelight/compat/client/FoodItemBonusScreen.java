@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -24,8 +25,14 @@ import java.util.Locale;
 public final class FoodItemBonusScreen extends Screen {
 
     private static final int ROW_HEIGHT = 24;
-    private static final int SUGGESTION_ROW_HEIGHT = 12;
-    private static final int MAX_SUGGESTIONS = 15;
+    private static final int SUGGESTION_ROW_HEIGHT = 14;
+    private static final int MAX_SUGGESTIONS = 40;
+    private static final int VISIBLE_SUGGESTIONS = 8;
+    private static final int SCROLLBAR_WIDTH = 6;
+    private static final int LIST_TOP = 80;
+    private static final int HEADER_LABEL_Y = 64;
+    private static final int TITLE_Y = 8;
+    private static final float SUGGESTION_Z = 400.0F;
 
     private static final List<SuggestOption> OPERATIONS = List.of(
             new SuggestOption(AttributeModifier.Operation.ADD_VALUE.getSerializedName(), AttributeModifier.Operation.ADD_VALUE.getSerializedName(), AttributeModifier.Operation.ADD_VALUE.getSerializedName()),
@@ -45,8 +52,17 @@ public final class FoodItemBonusScreen extends Screen {
     private EditBox newAmountField;
     private EditBox newDurationField;
 
+    private int scrollOffset = 0;
+    private int scrollTrackX;
+    private int scrollTrackTop;
+    private int scrollTrackBottom;
+    private int scrollMaxOffset;
+    private int scrollVisibleRows;
+    private int scrollTotalRows;
+    private boolean draggingScrollbar;
+
     public FoodItemBonusScreen(Screen parent, Configuration.FoodItemEntry entry) {
-        super(Component.literal(entry.item));
+        super(Component.translatable("config.renourisheddelight.food_items.bonus_title"));
         this.parent = parent;
         this.entry = entry;
         this.icon = resolveItem(entry.item);
@@ -110,11 +126,21 @@ public final class FoodItemBonusScreen extends Screen {
         suggestFields.removeIf(field -> field.box != newAttributeField && field.box != newOperationField);
 
         int centerX = width / 2;
-        int top = 52;
+        int listBottom = height - 68;
+        int rowGap = ROW_HEIGHT - 20;
+        int visibleRows = Math.max(1, (listBottom - LIST_TOP + rowGap) / ROW_HEIGHT);
+        scrollMaxOffset = Math.max(0, entry.attributes.size() - visibleRows);
+        scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
+        scrollVisibleRows = visibleRows;
+        scrollTotalRows = Math.max(1, entry.attributes.size());
 
-        for (int i = 0; i < entry.attributes.size(); i++) {
-            Configuration.AttributeBonus bonus = entry.attributes.get(i);
-            int y = top + i * ROW_HEIGHT;
+        scrollTrackX = centerX + 250;
+        scrollTrackTop = LIST_TOP;
+        scrollTrackBottom = LIST_TOP + visibleRows * ROW_HEIGHT - rowGap;
+
+        for (int i = 0; i < visibleRows && i + scrollOffset < entry.attributes.size(); i++) {
+            Configuration.AttributeBonus bonus = entry.attributes.get(i + scrollOffset);
+            int y = LIST_TOP + i * ROW_HEIGHT;
 
             EditBox attributeField = new EditBox(font, centerX - 240, y, 180, 20, Component.literal("attribute"));
             attributeField.setMaxLength(256);
@@ -170,6 +196,7 @@ public final class FoodItemBonusScreen extends Screen {
         bonus.amount = parseDouble(newAmountField.getValue(), 0.0);
         bonus.duration = parseInt(newDurationField.getValue(), 0);
         entry.attributes.add(bonus);
+        scrollOffset = Integer.MAX_VALUE;
 
         newAttributeField.setValue("");
         newOperationField.setValue("");
@@ -216,6 +243,30 @@ public final class FoodItemBonusScreen extends Screen {
         minecraft.setScreen(parent);
     }
 
+    private boolean isInsideScrollbar(double mouseX, double mouseY) {
+        return scrollMaxOffset > 0
+                && mouseX >= scrollTrackX && mouseX <= scrollTrackX + SCROLLBAR_WIDTH
+                && mouseY >= scrollTrackTop && mouseY <= scrollTrackBottom;
+    }
+
+    private void scrollToMouse(double mouseY) {
+        double ratio = (mouseY - scrollTrackTop) / Math.max(1, scrollTrackBottom - scrollTrackTop);
+        scrollOffset = (int) Math.round(ratio * scrollMaxOffset);
+        if (scrollOffset < 0) scrollOffset = 0;
+        if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
+        applyRows();
+        rebuildRows();
+    }
+
+    private @Nullable SuggestField openSuggestFieldAt(double mouseX, double mouseY) {
+        for (SuggestField field : suggestFields) {
+            if (field.box.isFocused() && !field.matches.isEmpty() && field.isMouseOver(mouseX, mouseY)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (SuggestField field : suggestFields) {
@@ -228,28 +279,92 @@ public final class FoodItemBonusScreen extends Screen {
                 }
             }
         }
+        if (button == 0 && isInsideScrollbar(mouseX, mouseY)) {
+            draggingScrollbar = true;
+            scrollToMouse(mouseY);
+            return true;
+        }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (draggingScrollbar) {
+            scrollToMouse(mouseY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        draggingScrollbar = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        SuggestField hovered = openSuggestFieldAt(mouseX, mouseY);
+        if (hovered != null) {
+            hovered.scroll(-(int) Math.signum(scrollY));
+            return true;
+        }
+        if (scrollMaxOffset > 0) {
+            applyRows();
+            scrollOffset -= (int) Math.signum(scrollY);
+            if (scrollOffset < 0) scrollOffset = 0;
+            if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
+            rebuildRows();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
+        super.renderBackground(guiGraphics, i, j, f);
+        guiGraphics.fill(0, 54 + 1, width, height - 60, 0x40000000);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-
+        renderPanelChrome(graphics);
         int centerX = width / 2;
-        int titleWidth = font.width(title);
-        if (icon != null) {
-            graphics.renderItem(new ItemStack(icon), centerX - titleWidth / 2 - 20, 8);
-        }
-        graphics.drawCenteredString(font, title, centerX, 12, 0xFFFFFF);
+        graphics.drawCenteredString(font, title, centerX, TITLE_Y, 0xFFFFFF);
 
-        int headerY = 40;
-        graphics.drawString(font, "Attribute", centerX - 240, headerY, 0xFFFFFF);
-        graphics.drawString(font, "Modifier", centerX - 54, headerY, 0xFFFFFF);
-        graphics.drawString(font, "Amount", centerX + 92, headerY, 0xFFFFFF);
-        graphics.drawString(font, "Duration", centerX + 158, headerY, 0xFFFFFF);
+        int subtitleY = 22;
+        int subtitleTextY = subtitleY + 4;
+        if (icon != null) {
+            graphics.renderItem(new ItemStack(icon), centerX - 240, subtitleY);
+            graphics.drawString(font, entry.item, centerX - 220, subtitleTextY, 0xAAAAAA);
+        } else {
+            graphics.drawString(font, entry.item, centerX - 240, subtitleTextY, 0xAAAAAA);
+        }
+
+        int maxDuration = entry.attributes.stream().mapToInt(bonus -> bonus.duration).max().orElse(0);
+        String durationText = "Duration: " + StringUtil.formatTickDuration(maxDuration, 20);
+        graphics.drawString(font, durationText, centerX + 244 - font.width(durationText), subtitleTextY, 0xAAAAAA);
+
+        graphics.drawString(font, "Attribute", centerX - 240, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, "Modifier", centerX - 54, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, "Amount", centerX + 92, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, "Duration", centerX + 158, HEADER_LABEL_Y, 0xFFFFFF);
 
         if (entry.attributes.isEmpty()) {
             graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.no_bonuses"), width / 2, height / 2, 0xAAAAAA);
+        }
+
+        if (scrollMaxOffset > 0) {
+            int trackHeight = scrollTrackBottom - scrollTrackTop;
+            double visibleFraction = Math.min(1.0, scrollVisibleRows / (double) scrollTotalRows);
+            int thumbHeight = Math.max(12, (int) Math.round(trackHeight * visibleFraction));
+            int thumbTravel = trackHeight - thumbHeight;
+            double scrollFraction = scrollOffset / (double) scrollMaxOffset;
+            int thumbY = scrollTrackTop + (int) Math.round(thumbTravel * scrollFraction);
+
+            graphics.fill(scrollTrackX, scrollTrackTop, scrollTrackX + SCROLLBAR_WIDTH, scrollTrackBottom, 0x40000000);
+            graphics.fill(scrollTrackX, thumbY, scrollTrackX + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0xFFAAAAAA);
         }
 
         for (SuggestField field : suggestFields) {
@@ -264,6 +379,22 @@ public final class FoodItemBonusScreen extends Screen {
         onDone();
     }
 
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    private void renderPanelChrome(GuiGraphics graphics) {
+        int headerBottom = 54;
+        int footerTop = height - 62;
+
+        graphics.fill(0, headerBottom, width, headerBottom + 1, 0x80FFFFFF);
+        graphics.fill(0, headerBottom + 1, width, headerBottom + 2, 0x80000000);
+
+        graphics.fill(0, footerTop, width, footerTop + 1, 0x80000000);
+        graphics.fill(0, footerTop + 1, width, footerTop + 2, 0x80FFFFFF);
+    }
+
     private record BonusRow(Configuration.AttributeBonus bonus, EditBox attribute, EditBox operation, EditBox amount, EditBox duration, Button remove) {
     }
 
@@ -275,6 +406,7 @@ public final class FoodItemBonusScreen extends Screen {
         private final List<SuggestOption> pool;
         private final boolean dropUp;
         private List<SuggestOption> matches = List.of();
+        private int scrollOffset = 0;
 
         private SuggestField(EditBox box, List<SuggestOption> pool) {
             this(box, pool, false);
@@ -297,34 +429,66 @@ public final class FoodItemBonusScreen extends Screen {
                             .thenComparing(option -> option.value(), String.CASE_INSENSITIVE_ORDER))
                     .limit(MAX_SUGGESTIONS)
                     .toList();
+            scrollOffset = 0;
+        }
+
+        private int visibleCount() {
+            return Math.min(VISIBLE_SUGGESTIONS, matches.size());
+        }
+
+        private void scroll(int direction) {
+            int maxOffset = Math.max(0, matches.size() - visibleCount());
+            scrollOffset = Math.max(0, Math.min(scrollOffset + direction, maxOffset));
+        }
+
+        private int contentWidth() {
+            int widest = box.getWidth();
+            int end = Math.min(matches.size(), scrollOffset + visibleCount());
+            for (int i = scrollOffset; i < end; i++) {
+                widest = Math.max(widest, font.width(matches.get(i).label()) + 4);
+            }
+            return widest;
         }
 
         private int listTop() {
             return dropUp
-                    ? box.getY() - matches.size() * SUGGESTION_ROW_HEIGHT
+                    ? box.getY() - visibleCount() * SUGGESTION_ROW_HEIGHT
                     : box.getY() + box.getHeight();
         }
 
-        private int indexAt(double mouseX, double mouseY) {
+        private boolean isMouseOver(double mouseX, double mouseY) {
             int x = box.getX();
             int y = listTop();
-            int listWidth = box.getWidth();
-            if (mouseX < x || mouseX > x + listWidth) return -1;
-            if (mouseY < y || mouseY > y + matches.size() * SUGGESTION_ROW_HEIGHT) return -1;
-            return (int) ((mouseY - y) / SUGGESTION_ROW_HEIGHT);
+            int listWidth = contentWidth();
+            return mouseX >= x && mouseX <= x + listWidth
+                    && mouseY >= y && mouseY <= y + visibleCount() * SUGGESTION_ROW_HEIGHT;
+        }
+
+        private int indexAt(double mouseX, double mouseY) {
+            if (!isMouseOver(mouseX, mouseY)) return -1;
+            int y = listTop();
+            int localIndex = (int) ((mouseY - y) / SUGGESTION_ROW_HEIGHT);
+            int globalIndex = scrollOffset + localIndex;
+            return globalIndex < matches.size() ? globalIndex : -1;
         }
 
         private void render(GuiGraphics graphics, int mouseX, int mouseY) {
             int x = box.getX();
             int y = listTop();
-            int listWidth = box.getWidth();
-            graphics.fill(x, y, x + listWidth, y + matches.size() * SUGGESTION_ROW_HEIGHT, 0xE0000000);
-            for (int i = 0; i < matches.size(); i++) {
+            int listWidth = contentWidth();
+            int visible = visibleCount();
+
+            graphics.pose().pushPose();
+            graphics.pose().translate(0.0F, 0.0F, SUGGESTION_Z);
+            graphics.fill(x, y, x + listWidth, y + visible * SUGGESTION_ROW_HEIGHT, 0xE0000000);
+            for (int i = 0; i < visible; i++) {
+                SuggestOption option = matches.get(scrollOffset + i);
                 int rowY = y + i * SUGGESTION_ROW_HEIGHT;
                 boolean hovered = mouseX >= x && mouseX <= x + listWidth && mouseY >= rowY && mouseY <= rowY + SUGGESTION_ROW_HEIGHT;
                 int color = hovered ? 0xFFFF00 : 0xAAAAAA;
-                graphics.drawString(font, matches.get(i).label(), x + 2, rowY + 2, color, false);
+                graphics.drawString(font, option.label(), x + 2, rowY + 3, color, false);
             }
+            graphics.pose().popPose();
         }
     }
 }
