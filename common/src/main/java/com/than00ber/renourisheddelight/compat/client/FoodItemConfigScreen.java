@@ -37,6 +37,7 @@ public final class FoodItemConfigScreen extends Screen {
     private int scrollOffset = 0;
     private String modFilter = ALL_MODS;
     private String searchQuery = "";
+    private boolean noItemsConfigured;
 
     private int scrollTrackX;
     private int scrollTrackTop;
@@ -93,6 +94,7 @@ public final class FoodItemConfigScreen extends Screen {
 
         int centerX = width / 2;
         List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
+        noItemsConfigured = entries.isEmpty();
         List<String> namespaces = new ArrayList<>();
         namespaces.add(ALL_MODS);
         namespaces.addAll(new TreeSet<>(entries.stream().map(this::namespaceOf).toList()));
@@ -272,6 +274,9 @@ public final class FoodItemConfigScreen extends Screen {
 
         for (IconEntry icon : icons) {
             graphics.renderItem(icon.stack(), icon.x(), icon.y());
+        }
+        if (noItemsConfigured) {
+            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.empty"), width / 2, height / 2, 0xAAAAAA);
         }
         if (scrollMaxOffset > 0) {
             int trackHeight = scrollTrackBottom - scrollTrackTop;
