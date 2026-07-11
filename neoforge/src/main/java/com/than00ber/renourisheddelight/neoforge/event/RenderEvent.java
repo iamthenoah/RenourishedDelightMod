@@ -3,12 +3,13 @@ package com.than00ber.renourisheddelight.neoforge.event;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
-@EventBusSubscriber
+@EventBusSubscriber(value = Dist.CLIENT)
 public final class RenderEvent {
 
     @SubscribeEvent
