@@ -136,6 +136,11 @@ public final class Configuration {
         public double amount;
         public int duration;
 
+        @SuppressWarnings("unused")
+        public AttributeBonus() {
+            // needed for persisted config
+        }
+
         public AttributeBonus(String attribute, String operation, double amount, int duration) {
             this.attribute = attribute;
             this.operation = operation;
