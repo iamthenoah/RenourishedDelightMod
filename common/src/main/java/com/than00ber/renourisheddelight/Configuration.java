@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight;
 
-import com.than00ber.renourisheddelight.food.ConsumableFood;
+import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
@@ -15,9 +15,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public final class Configuration {
 
@@ -62,29 +60,38 @@ public final class Configuration {
         }
 
         public List<AttributeBonus> getAttributes(Item item) {
-            if (item.components().has(DataComponents.FOOD)) {
-                String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                Common common = Common.getInstance();
-                List<AttributeBonus> existing = common.foodItemConfigurations.getOrDefault(id, new ArrayList<>());
-    
-                if (existing.isEmpty()) {
-                    FoodProperties properties = item.components().get(DataComponents.FOOD);
-                    int nutrition = properties != null ? properties.nutrition() : 2;
-                    float saturation = properties != null ? properties.saturation() : 0.0F;
+            if (!item.components().has(DataComponents.FOOD)) return List.of();
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            FoodItemEntry match = null;
 
-                    AttributeBonus maxHealth = new AttributeBonus(
-                            Attributes.MAX_HEALTH.getRegisteredName(), 
-                            AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                            Math.max(1, ConsumableFood.toHearts(nutrition, saturation)),
-                            ConsumableFood.toDuration(nutrition, saturation));
-                    existing.add(maxHealth);
-
-                    common.foodItemConfigurations.put(id, existing);
-                    AutoConfig.getConfigHolder(Common.class).save();
+            for (FoodItemEntry entry : foodItemConfigurations) {
+                if (id.equals(entry.item)) {
+                    match = entry;
+                    break;
                 }
-                return existing;
             }
-            return new ArrayList<>();
+            if (match != null && !match.attributes.isEmpty()) return match.attributes;
+            FoodProperties properties = item.components().get(DataComponents.FOOD);
+            int nutrition = properties != null ? properties.nutrition() : 2;
+            float saturation = properties != null ? properties.saturation() : 0.0F;
+
+            AttributeBonus maxHealth = new AttributeBonus(
+                    Attributes.MAX_HEALTH.getRegisteredName(),
+                    AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
+                    Math.max(1, ConsumableFoodInstance.toHearts(nutrition, saturation)),
+                    ConsumableFoodInstance.toDuration(nutrition, saturation));
+            List<AttributeBonus> attributes = new ArrayList<>(List.of(maxHealth));
+
+            if (match != null) {
+                match.attributes = attributes;
+            } else {
+                FoodItemEntry entry = new FoodItemEntry();
+                entry.item = id;
+                entry.attributes = attributes;
+                foodItemConfigurations.add(entry);
+            }
+            AutoConfig.getConfigHolder(Common.class).save();
+            return attributes;
         }
 
         @ConfigEntry.Gui.Tooltip
@@ -102,43 +109,66 @@ public final class Configuration {
         @ConfigEntry.Gui.Tooltip
         @Comment("Multiplier applied to the natural regen tick interval computed from food quality (default: 1.0)")
         public double regenIntervalMultiplier = 1.0;
-        
-        @ConfigEntry.Gui.Tooltip(count = 3)
+
+        @ConfigEntry.Gui.Excluded
         @Comment("""
-            Per-item food data overrides. Key = item registry id, e.g. "minecraft:cooked_beef".
-            Each entry holds a list of attribute bonuses granted while that item's effect is active.
+                Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
+                [
+                  {
+                    item: "minecraft:golden_apple",
+                    attributes: [
+                      {
+                        attribute: "minecraft:generic.max_health",
+                        operation: "add_value",
+                        amount: 4.0,
+                        duration: 6000,
+                      },
+                      {
+                        attribute: "minecraft:generic.movement_speed",
+                        operation: "add_multiplied_base",
+                        amount: 0.2,
+                        duration: 2400,
+                      }
+                    ]
+                  }
+                ]
+                operation can be: add_value, add_multiplied_base, add_multiplied_total""")
+        public List<FoodItemEntry> foodItemConfigurations = new ArrayList<>();
+    }
 
-            Each attribute bonus has:
-              attribute: registry id of the attribute to modify, e.g. "minecraft:generic.max_health",
-                         "minecraft:generic.movement_speed", "minecraft:generic.attack_damage"
-                         (modded attributes work too - most vanilla ones live under "generic.")
-              operation: "add_value", "add_multiplied_base", or "add_multiplied_total"
-                         (same semantics as vanilla attribute modifiers)
-              amount:    how much to add, in the units that attribute normally uses
-                         (max_health uses half-hearts, movement_speed is a fraction of the base speed, etc.)
-              duration:  ticks (20 per second) this bonus lasts once the item is eaten -
-                         each bonus on the same item can have its own duration
+    public static final class FoodItemEntry {
+        public String item = "";
+        public List<AttributeBonus> attributes = new ArrayList<>();
+    }
 
-            Example - an apple that grants +2 hearts for 10 minutes and +10% movement speed for 2 minutes:
-              "minecraft:apple": [
-                {
-                  "attribute": "minecraft:generic.max_health",
-                  "operation": "add_value",
-                  "amount": 4.0,
-                  "duration": 12000
-                },
-                {
-                  "attribute": "minecraft:generic.movement_speed",
-                  "operation": "add_multiplied_base",
-                  "amount": 0.1,
-                  "duration": 2400
-                }
-              ]
-        """)
-        public Map<String, List<AttributeBonus>> foodItemConfigurations = new LinkedHashMap<>();
+    public static final class AttributeBonus {
 
-        public record AttributeBonus(String attribute, String operation, double amount, int duration) implements ConfigData {
-            // do nothing
+        public String attribute;
+        public String operation;
+        public double amount;
+        public int duration;
+
+        public AttributeBonus(String attribute, String operation, double amount, int duration) {
+            this.attribute = attribute;
+            this.operation = operation;
+            this.amount = amount;
+            this.duration = duration;
+        }
+
+        public String attribute() {
+            return attribute;
+        }
+
+        public String operation() {
+            return operation;
+        }
+
+        public double amount() {
+            return amount;
+        }
+
+        public int duration() {
+            return duration;
         }
     }
 }

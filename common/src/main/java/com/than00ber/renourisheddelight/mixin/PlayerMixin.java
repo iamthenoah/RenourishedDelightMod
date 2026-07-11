@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
+import com.than00ber.renourisheddelight.food.AttributeBonusInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
@@ -59,25 +60,21 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     public void tick(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
-                AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
                 int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
                 AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
+                if (maxHealth != null) maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
+                Diet diet = getDiet();
 
-                if (maxHealth != null) {
-                    maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
-
-                    if (attribute != null) {
-                        Diet diet = getDiet();
-
-                        if (isDeadOrDying()) {
-                            for (ConsumableFoodInstance instance : diet.getSlots()) {
-                                attribute.removeModifier(instance.hearts);
-                            }
-                            updateDiet();
-                        } else if (diet.tick(player)) {
-                            updateDiet();
+                if (isDeadOrDying()) {
+                    for (ConsumableFoodInstance instance : diet.getSlots()) {
+                        for (AttributeBonusInstance bonus : instance.attributes()) {
+                            AttributeInstance attribute = player.getAttribute(bonus.attribute());
+                            if (attribute != null) attribute.removeModifier(bonus.modifier());
                         }
                     }
+                    updateDiet();
+                } else if (diet.tick(player)) {
+                    updateDiet();
                 }
             }
         }
