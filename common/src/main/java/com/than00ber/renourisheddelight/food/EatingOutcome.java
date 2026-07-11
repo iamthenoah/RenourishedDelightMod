@@ -46,10 +46,7 @@ public enum EatingOutcome {
         FoodProperties properties = item.components().get(DataComponents.FOOD);
 
         switch (this) {
-            case CONSUME -> {
-                ConsumableFood food = new ConsumableFood(properties);
-                diet.addToSlot(player, food.create(item));
-            }
+            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties));
             case EFFECTS_ONLY -> {
                 if (properties != null) {
                     properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
@@ -57,24 +54,23 @@ public enum EatingOutcome {
             }
             case REPLENISH -> {
                 ConsumableFoodInstance instance = diet.getSlots().stream()
-                        .filter(x -> x.item == item)
+                        .filter(x -> x.item() == item)
                         .findFirst()
                         .orElse(null);
 
                 if (instance != null) {
-                    ConsumableFood food = new ConsumableFood(properties);
-                    instance.time -= Math.max(0, food.create(item).duration);
+                    int refresh = ConsumableFoodInstance.create(item, properties).duration();
+                    instance.attributes().forEach(bonus -> bonus.tick(-refresh));
                 }
             }
             case REPLACE_LOW -> {
                 ConsumableFoodInstance instance = diet.getSlots().stream()
-                        .min(Comparator.comparingInt(x -> x.duration - x.time))
+                        .min(Comparator.comparingInt(x -> x.duration() - x.time()))
                         .orElse(null);
 
                 if (instance != null) {
                     diet.removeFromSlot(player, instance);
-                    ConsumableFood food = new ConsumableFood(properties);
-                    diet.addToSlot(player, food.create(item));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties));
                 }
             }
         }
@@ -84,7 +80,7 @@ public enum EatingOutcome {
             boolean applyNourishment = gamerules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
 
             if (applyNourishment && diet.getSlots().size() >= maxSlots) {
-                int smallest = diet.getSlots().stream().mapToInt(slot -> slot.duration).min().orElse(0);
+                int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
                 double percent = Configuration.Common.getInstance().nourishmentDurationPercent;
                 int duration = Math.toIntExact(Math.round(smallest * percent));
 

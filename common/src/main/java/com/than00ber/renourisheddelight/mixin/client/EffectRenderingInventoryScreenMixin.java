@@ -52,7 +52,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
 
         if (player instanceof DietHolder holder) {
             List<ConsumableFoodInstance> slots = holder.getDiet().getSlots().stream()
-                    .sorted(Comparator.comparingInt((ConsumableFoodInstance x) -> x.duration - x.time).reversed())
+                    .sorted(Comparator.comparingInt((ConsumableFoodInstance x) -> x.duration() - x.time()).reversed())
                     .toList();
             if (slots.isEmpty()) return;
 
@@ -73,7 +73,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                     guiGraphics.blitSprite(EFFECT_BACKGROUND_SMALL_SPRITE, x, k, 32, 32);
                 }
                 if (atlas != null) {
-                    Texture[] textures = atlas.getTextures(slot.item);
+                    Texture[] textures = atlas.getTextures(slot.item());
 
                     if (textures != null && textures.length > 0) {
                         boolean hunger = player.hasEffect(MobEffects.HUNGER);
@@ -87,14 +87,14 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                     }
                 }
                 if (large) {
-                    Item item = slot.item;
+                    Item item = slot.item();
                     Component name = item.getDescription();
                     
                     if (font.width(name) > 90) {
                         String truncated = font.plainSubstrByWidth(name.getString(), 90 - font.width("…")).stripTrailing();
                         name = Component.literal(truncated + "…").setStyle(name.getStyle());
                     }
-                    int remainingTicks = slot.duration - slot.time;
+                    int remainingTicks = slot.duration() - slot.time();
                     String time = StringUtil.formatTickDuration(remainingTicks, 20);
                     guiGraphics.drawString(font, name, x + 10 + 18, k + 6, 0xFFFFFF);
                     guiGraphics.drawString(font, time, x + 10 + 18, k + 6 + 10, 0xA0A0A0);

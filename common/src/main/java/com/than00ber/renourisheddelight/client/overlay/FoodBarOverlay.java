@@ -82,10 +82,10 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
-        Texture[] textures = atlas.getTextures(instance.item);
+        Texture[] textures = atlas.getTextures(instance.item());
 
         if (textures != null) {
-            float fillRatio = 1.0f - ((float) instance.time / (float) instance.duration);
+            float fillRatio = 1.0f - ((float) instance.time() / (float) instance.duration());
             int width = Math.round(size * 8 * fillRatio);
 
             // existing silhouette pass
@@ -117,19 +117,19 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         Map<Item, ConsumableFoodInstance> merged = new LinkedHashMap<>();
 
         for (ConsumableFoodInstance instance : slots) {
-            if (!merged.containsKey(instance.item)) {
-                merged.put(instance.item, instance.copy());
+            ConsumableFoodInstance existing = merged.get(instance.item());
+
+            if (existing == null) {
+                merged.put(instance.item(), instance.copy());
             } else {
-                ConsumableFoodInstance existing = merged.get(instance.item);
-                existing.duration += instance.duration;
-                existing.time += instance.time;
+                existing.attributes().addAll(instance.attributes());
             }
         }
         return new ArrayList<>(merged.values());
     }
 
     private Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> merged) {
-        int totalDuration = merged.stream().mapToInt(x -> x.duration).sum();
+        int totalDuration = merged.stream().mapToInt(ConsumableFoodInstance::duration).sum();
         Map<ConsumableFoodInstance, Integer> result = new LinkedHashMap<>();
         int remainingSlots = 10;
 
@@ -146,7 +146,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         for (ConsumableFoodInstance instance : merged) {
             if (remainingSlots == 0) break;
 
-            float ratio = (float) instance.duration / (float) totalDuration;
+            float ratio = (float) instance.duration() / (float) totalDuration;
             int extra = Math.round(ratio * 10) - 1;
 
             if (extra > remainingSlots) {
@@ -166,7 +166,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger, boolean nourished) {
         if (nourished) return computeNourishmentWobble(index, tick);
-        int timeLeft = food.duration - food.time;
+        int timeLeft = food.duration() - food.time();
         float threeMinutes = 60 * 20 * 3;
         if (timeLeft > threeMinutes && !hunger) return 0;
         float lowFactor = hunger ? 1.0F : Mth.clamp(timeLeft / threeMinutes, 0.0F, 1.0F);

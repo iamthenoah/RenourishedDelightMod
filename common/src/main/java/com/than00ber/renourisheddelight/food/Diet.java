@@ -12,7 +12,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.GameRules;
@@ -47,6 +47,7 @@ public class Diet {
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
     private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
+    private int drainCheck;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -67,10 +68,10 @@ public class Diet {
         boolean hasEffect = properties != null && !properties.effects().isEmpty();
 
         ConsumableFoodInstance existing = slots.stream()
-                .filter(x -> x.item == item)
+                .filter(x -> x.item() == item)
                 .findFirst()
                 .orElse(null);
-        boolean replenishable = existing != null && existing.time * 100 / existing.duration > replenishThreshold;
+        boolean replenishable = existing != null && existing.duration() > 0 && existing.time() * 100 / existing.duration() > replenishThreshold;
 
         return replenishable
                 ? EatingOutcome.REPLENISH
@@ -93,13 +94,33 @@ public class Diet {
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
-        Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.addPermanentModifier(instance.hearts));
-        player.heal((float) (instance.hearts.amount() / 2.0F));
+
+        for (AttributeBonusInstance bonus : instance.attributes()) {
+            AttributeInstance attribute = player.getAttribute(bonus.attribute());
+            if (attribute != null) attribute.addPermanentModifier(bonus.modifier());
+        }
     }
 
     public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.remove(instance);
-        Optional.ofNullable(player.getAttribute(Attributes.MAX_HEALTH)).ifPresent(x -> x.removeModifier(instance.hearts));
+
+        for (AttributeBonusInstance bonus : instance.attributes()) {
+            AttributeInstance attribute = player.getAttribute(bonus.attribute());
+            if (attribute != null) attribute.removeModifier(bonus.modifier());
+        }
+    }
+
+    private void expireBonuses(ServerPlayer player, ConsumableFoodInstance instance) {
+        for (int i = 0; i < instance.attributes().size(); i++) {
+            AttributeBonusInstance bonus = instance.attributes().get(i);
+
+            if (bonus.isExpired()) {
+                AttributeInstance attribute = player.getAttribute(bonus.attribute());
+                if (attribute != null) attribute.removeModifier(bonus.modifier());
+                instance.attributes().remove(i);
+                i--;
+            }
+        }
     }
 
     public boolean drain(ServerPlayer player, int ticks) {
@@ -108,10 +129,11 @@ public class Diet {
 
         for (int i = slots.size() - 1; i >= 0; i--) {
             ConsumableFoodInstance instance = slots.get(i);
-            instance.time += ticks;
+            instance.tick(ticks);
+            expireBonuses(player, instance);
 
-            if (instance.time >= instance.duration) {
-                removeFromSlot(player, instance);
+            if (instance.isExpired()) {
+                slots.remove(i);
                 changed = true;
             }
         }
@@ -137,27 +159,36 @@ public class Diet {
 
                 if (!slots.isEmpty()) {
                     ConsumableFoodInstance instance = slots.stream()
-                            .max(Comparator.comparingInt(x -> x.duration - x.time))
+                            .max(Comparator.comparingInt(x -> x.duration() - x.time()))
                             .orElse(null);
-                    instance.time += rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN);
+                    instance.tick(rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN));
                 }
+            }
+            boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
+            int extraDrain = 0;
+            drainCheck++;
+
+            if (drainCheck >= 20) {
+                if (hunger) {
+                    extraDrain += rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN);
+                }
+                if (player.isSprinting()) {
+                    extraDrain += rules.getInt(GameRuleRegistry.SPRINT_FOOD_DRAIN);
+                }
+                drainCheck = 0;
             }
             for (int i = slots.size() - 1; i >= 0; i--) {
                 ConsumableFoodInstance instance = slots.get(i);
 
-                if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item)) {
-                    ticked.add(instance.item);
-                    boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
-                    int drain = hunger ? rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN) : 1;
-
-                    if (player.isSprinting()) {
-                        drain += rules.getInt(GameRuleRegistry.SPRINT_FOOD_DRAIN);
-                    }
-                    instance.time += drain;
+                if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item())) {
+                    ticked.add(instance.item());
+                    instance.tick(1 + extraDrain);
                     changed = true;
                 }
-                if (instance.time >= instance.duration) {
-                    removeFromSlot(player, instance);
+                expireBonuses(player, instance);
+
+                if (instance.isExpired()) {
+                    slots.remove(i);
                 }
             }
             return changed;
@@ -169,10 +200,12 @@ public class Diet {
         if (nourished) return 5;
         int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
         if (slots.isEmpty()) return base;
-        double avgSaturation = slots.stream().mapToDouble(x -> Optional
-                        .ofNullable(x.item.components().get(DataComponents.FOOD))
-                        .map(FoodProperties::saturation).orElse(0.0F))
-                .average().orElse(0.0);
+        double avgSaturation = slots.stream()
+                .mapToDouble(x -> Optional.ofNullable(x.item().components().get(DataComponents.FOOD))
+                        .map(FoodProperties::saturation)
+                        .orElse(0.0F))
+                .average()
+                .orElse(0.0F);
         double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
         double multiplier = Configuration.Common.getInstance().regenIntervalMultiplier;
         return Math.max(5, (int) Math.round(base * scale * multiplier));
@@ -185,6 +218,7 @@ public class Diet {
         compoundTag.put("Slots", list);
         compoundTag.putInt("TicksSinceDamage", diet.ticksSinceDamage);
         compoundTag.putInt("Regen", diet.regen);
+        compoundTag.putInt("DrainCheck", diet.drainCheck);
         return compoundTag;
     }
 
@@ -193,6 +227,7 @@ public class Diet {
         ListTag list = compoundTag.getList("Slots", Tag.TAG_COMPOUND);
         diet.ticksSinceDamage = compoundTag.getInt("TicksSinceDamage");
         diet.regen = compoundTag.getInt("Regen");
+        diet.drainCheck = compoundTag.getInt("DrainCheck");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
         return diet;
     }
