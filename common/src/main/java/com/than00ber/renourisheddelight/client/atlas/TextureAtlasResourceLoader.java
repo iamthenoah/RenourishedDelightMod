@@ -85,7 +85,6 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                         return;
                     }
                 }
-
                 TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
                 TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
                 int[] colorPalette = getColorPalette(getGoldenPaletteItem());

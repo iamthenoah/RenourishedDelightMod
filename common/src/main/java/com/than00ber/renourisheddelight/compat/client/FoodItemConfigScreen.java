@@ -2,7 +2,9 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.Configuration;
 import me.shedaniel.autoconfig.AutoConfig;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
@@ -17,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.TreeSet;
 
 public final class FoodItemConfigScreen extends Screen {
@@ -27,10 +30,13 @@ public final class FoodItemConfigScreen extends Screen {
 
     private final @Nullable Screen parent;
     private final List<IconEntry> icons = new ArrayList<>();
+    private final List<AbstractWidget> rowWidgets = new ArrayList<>();
 
     private EditBox newItemField;
+    private @Nullable CycleButton<String> modFilterButton;
     private int scrollOffset = 0;
     private String modFilter = ALL_MODS;
+    private String searchQuery = "";
 
     private int scrollTrackX;
     private int scrollTrackTop;
@@ -47,23 +53,45 @@ public final class FoodItemConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        rebuild();
-    }
-
-    private void rebuild() {
-        clearWidgets();
-        icons.clear();
         int centerX = width / 2;
+        int left = centerX - 150;
 
-        newItemField = new EditBox(font, centerX - 150, 30, 220, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
+        EditBox searchField = new EditBox(font, left, 30, 170, 20, Component.translatable("config.renourisheddelight.food_items.search"));
+        searchField.setMaxLength(256);
+        searchField.setHint(Component.translatable("config.renourisheddelight.food_items.search_hint").withStyle(ChatFormatting.DARK_GRAY));
+        searchField.setResponder(value -> {
+            searchQuery = value.toLowerCase(Locale.ROOT).trim();
+            scrollOffset = 0;
+            rebuildRows();
+        });
+        addRenderableWidget(searchField);
+
+        newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
         newItemField.setMaxLength(256);
-        newItemField.setHint(Component.literal("minecraft:bread"));
+        newItemField.setHint(Component.literal("minecraft:bread").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newItemField);
 
-        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.food_items.add"), button -> addItem())
-                .bounds(centerX + 75, 30, 75, 20)
+        addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
+                .bounds(centerX + 116, height - 56, 20, 20)
                 .build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
+                .bounds(centerX - 100, height - 28, 200, 20)
+                .build());
+        rebuildRows();
+    }
 
+    private void rebuildRows() {
+        for (AbstractWidget widget : rowWidgets) {
+            removeWidget(widget);
+        }
+        rowWidgets.clear();
+        icons.clear();
+
+        if (modFilterButton != null) {
+            removeWidget(modFilterButton);
+        }
+
+        int centerX = width / 2;
         List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
         List<String> namespaces = new ArrayList<>();
         namespaces.add(ALL_MODS);
@@ -72,23 +100,26 @@ public final class FoodItemConfigScreen extends Screen {
         if (!namespaces.contains(modFilter)) {
             modFilter = ALL_MODS;
         }
-        addRenderableWidget(CycleButton.builder((String value) -> value.equals(ALL_MODS)
+        modFilterButton = CycleButton.builder((String value) -> value.equals(ALL_MODS)
                         ? Component.translatable("config.renourisheddelight.food_items.all_mods")
                         : Component.literal(value))
                 .withValues(namespaces)
                 .withInitialValue(modFilter)
-                .create(centerX - 100, 54, 200, 20, Component.translatable("config.renourisheddelight.food_items.filter"), (button, value) -> {
+                .create(centerX + 26, 30, 110, 20, Component.translatable("config.renourisheddelight.food_items.filter"), (button, value) -> {
                     modFilter = value;
                     scrollOffset = 0;
-                    rebuild();
-                }));
+                    rebuildRows();
+                });
+        addRenderableWidget(modFilterButton);
+        rowWidgets.add(modFilterButton);
 
-        List<Configuration.FoodItemEntry> filtered = modFilter.equals(ALL_MODS)
-                ? entries
-                : entries.stream().filter(entry -> namespaceOf(entry).equals(modFilter)).toList();
+        List<Configuration.FoodItemEntry> filtered = entries.stream()
+                .filter(entry -> modFilter.equals(ALL_MODS) || namespaceOf(entry).equals(modFilter))
+                .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
+                .toList();
 
-        int listTop = 82;
-        int listBottom = height - 36;
+        int listTop = 58;
+        int listBottom = height - 62;
         int rowGap = ROW_HEIGHT - 20;
         int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
         scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
@@ -98,8 +129,8 @@ public final class FoodItemConfigScreen extends Screen {
 
         int iconX = centerX - 150;
         int nameX = iconX + 20;
-        int nameWidth = 210;
-        int removeX = centerX + 90;
+        int nameWidth = 230;
+        int removeX = centerX + 105;
         scrollTrackX = centerX + 130;
         scrollTrackTop = listTop;
         scrollTrackBottom = listTop + visibleRows * ROW_HEIGHT - rowGap;
@@ -113,18 +144,18 @@ public final class FoodItemConfigScreen extends Screen {
                 icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
             }
 
-            addRenderableWidget(Button.builder(Component.literal(entry.item), button -> openBonuses(entry))
+            Button nameButton = Button.builder(Component.literal(entry.item), button -> openBonuses(entry))
                     .bounds(nameX, y, nameWidth, 20)
-                    .build());
+                    .build();
+            addRenderableWidget(nameButton);
+            rowWidgets.add(nameButton);
 
-            addRenderableWidget(Button.builder(Component.literal("X"), button -> removeItem(entry))
-                    .bounds(removeX, y, 35, 20)
-                    .build());
+            Button removeButton = Button.builder(Component.literal("x"), button -> removeItem(entry))
+                    .bounds(removeX, y, 20, 20)
+                    .build();
+            addRenderableWidget(removeButton);
+            rowWidgets.add(removeButton);
         }
-
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
-                .bounds(centerX - 100, height - 28, 200, 20)
-                .build());
     }
 
     private String namespaceOf(Configuration.FoodItemEntry entry) {
@@ -168,13 +199,13 @@ public final class FoodItemConfigScreen extends Screen {
         entries.add(entry);
         newItemField.setValue("");
         AutoConfig.getConfigHolder(Configuration.Common.class).save();
-        rebuild();
+        rebuildRows();
     }
 
     private void removeItem(Configuration.FoodItemEntry entry) {
         Configuration.Common.getInstance().foodItemConfigurations.remove(entry);
         AutoConfig.getConfigHolder(Configuration.Common.class).save();
-        rebuild();
+        rebuildRows();
     }
 
     private void openBonuses(Configuration.FoodItemEntry entry) {
@@ -197,7 +228,7 @@ public final class FoodItemConfigScreen extends Screen {
         scrollOffset = (int) Math.round(ratio * scrollMaxOffset);
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
-        rebuild();
+        rebuildRows();
     }
 
     @Override
@@ -230,7 +261,7 @@ public final class FoodItemConfigScreen extends Screen {
         scrollOffset -= (int) Math.signum(scrollY);
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
-        rebuild();
+        rebuildRows();
         return true;
     }
 
@@ -244,9 +275,11 @@ public final class FoodItemConfigScreen extends Screen {
         }
         if (scrollMaxOffset > 0) {
             int trackHeight = scrollTrackBottom - scrollTrackTop;
-            int thumbHeight = Math.max(12, trackHeight * scrollVisibleRows / scrollTotalRows);
+            double visibleFraction = Math.min(1.0, scrollVisibleRows / (double) scrollTotalRows);
+            int thumbHeight = Math.max(12, (int) Math.round(trackHeight * visibleFraction));
             int thumbTravel = trackHeight - thumbHeight;
-            int thumbY = scrollTrackTop + thumbTravel * scrollOffset / scrollMaxOffset;
+            double scrollFraction = scrollOffset / (double) scrollMaxOffset;
+            int thumbY = scrollTrackTop + (int) Math.round(thumbTravel * scrollFraction);
 
             graphics.fill(scrollTrackX, scrollTrackTop, scrollTrackX + SCROLLBAR_WIDTH, scrollTrackBottom, 0x40000000);
             graphics.fill(scrollTrackX, thumbY, scrollTrackX + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0xFFAAAAAA);

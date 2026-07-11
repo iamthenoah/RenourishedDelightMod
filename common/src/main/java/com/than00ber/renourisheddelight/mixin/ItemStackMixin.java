@@ -5,6 +5,7 @@ import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -42,7 +43,9 @@ public abstract class ItemStackMixin {
                 Component description = Component.translatable(bonus.attribute().value().getDescriptionId());
                 String key = "attribute.modifier." + (rawAmount >= 0 ? "plus" : "take") + "." + bonus.modifier().operation().id();
                 ChatFormatting color = rawAmount >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED;
-                tooltip.add(Component.translatable(key, amount, description).withStyle(color));
+                String time = StringUtil.formatTickDuration(bonus.duration(), 20);
+                MutableComponent duration = Component.literal(" (" + time + ")");
+                tooltip.add(Component.translatable(key, amount, description).append(duration).withStyle(color));
             }
 
             callback.setReturnValue(tooltip);

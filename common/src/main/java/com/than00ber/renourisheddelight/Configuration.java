@@ -60,7 +60,6 @@ public final class Configuration {
         }
 
         public List<AttributeBonus> getAttributes(Item item) {
-            if (!item.components().has(DataComponents.FOOD)) return List.of();
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
             FoodItemEntry match = null;
 
