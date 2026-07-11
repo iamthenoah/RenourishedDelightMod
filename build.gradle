@@ -80,5 +80,10 @@ subprojects {
         projectId = project.archivesBaseName
         versionType = version?.split('-')[1] ?: 'alpha'
         uploadFile = remapJar
+
+        dependencies {
+            required.project 'architectury-api'
+            required.project 'cloth-config'
+        }
     }
 }

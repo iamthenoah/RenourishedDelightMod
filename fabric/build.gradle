@@ -33,3 +33,9 @@ processResources {
         expand(properties)
     }
 }
+
+modrinth {
+    dependencies {
+        optional.project 'modmenu'
+    }
+}
