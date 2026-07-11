@@ -16,6 +16,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -66,11 +67,16 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
                 boolean cacheEnabled = Configuration.Client.getInstance().enableAtlasCache;
                 Path cacheDir = null;
+                List<String> packIds = null;
 
                 if (cacheEnabled) {
-                    cacheDir = AtlasCache.cacheDir(manager.listPacks(), items);
-                    TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9);
-                    TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18);
+                    packIds = Minecraft.getInstance().getResourcePackRepository().getSelectedPacks().stream()
+                            .map(Pack::getId)
+                            .sorted()
+                            .toList();
+                    cacheDir = AtlasCache.cacheDir();
+                    TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9, packIds, items.size());
+                    TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18, packIds, items.size());
 
                     if (cachedMini != null && cachedLarge != null) {
                         miniAtlas = cachedMini;
@@ -107,8 +113,8 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 largeAtlas = largeBuilder.done();
 
                 if (cacheEnabled) {
-                    AtlasCache.save(cacheDir, "mini", miniBuilder);
-                    AtlasCache.save(cacheDir, "large", largeBuilder);
+                    AtlasCache.save(cacheDir, "mini", miniBuilder, packIds, items.size());
+                    AtlasCache.save(cacheDir, "large", largeBuilder, packIds, items.size());
                 }
             } catch (Exception exception) {
                 // silent fail
