@@ -20,7 +20,7 @@ public final class ConfigMenuScreen extends Screen {
     @Override
     protected void init() {
         int centerX = width / 2;
-        int top = height / 2 - 30;
+        int top = height / 2 - 42;
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client"),
                         button -> minecraft.setScreen(AutoConfig.getConfigScreen(Configuration.Client.class, this).get()))
@@ -30,9 +30,13 @@ public final class ConfigMenuScreen extends Screen {
                         button -> minecraft.setScreen(AutoConfig.getConfigScreen(Configuration.Common.class, this).get()))
                 .bounds(centerX - 100, top + 24, 200, 20)
                 .build());
+        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.food_items"),
+                        button -> minecraft.setScreen(new FoodItemConfigScreen(this)))
+                .bounds(centerX - 100, top + 48, 200, 20)
+                .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),
                         button -> minecraft.setScreen(parent))
-                .bounds(centerX - 100, top + 54, 200, 20)
+                .bounds(centerX - 100, top + 78, 200, 20)
                 .build());
     }
 

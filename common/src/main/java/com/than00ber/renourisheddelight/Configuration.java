@@ -148,6 +148,10 @@ public final class Configuration {
         public double amount;
         public int duration;
 
+        public AttributeBonus() {
+            // do nothing
+        }
+
         public AttributeBonus(String attribute, String operation, double amount, int duration) {
             this.attribute = attribute;
             this.operation = operation;
