@@ -44,6 +44,8 @@
   "config.renourisheddelight.food_items.new_item": "Item ID",
   "config.renourisheddelight.food_items.add": "Add",
   "config.renourisheddelight.food_items.add_bonus": "Add Bonus",
+  "config.renourisheddelight.food_items.filter": "Mod",
+  "config.renourisheddelight.food_items.all_mods": "All Mods",
   "text.autoconfig.renourisheddelight/client.title": "Client Settings",
   "text.autoconfig.renourisheddelight/client.option.foodBarOffsetX": "Food Bar Offset X",
   "text.autoconfig.renourisheddelight/client.option.foodBarOffsetX.@Tooltip": "Horizontal pixel offset for the food display UI.",
