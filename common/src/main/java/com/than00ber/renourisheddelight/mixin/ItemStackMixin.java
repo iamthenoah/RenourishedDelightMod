@@ -48,7 +48,7 @@ public abstract class ItemStackMixin {
                 ChatFormatting color = rawAmount >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED;
                 String time = StringUtil.formatTickDuration(bonus.duration(), 20);
                 MutableComponent duration = Component.literal(" (" + time + ")");
-                tooltip.add(Component.translatable(key, amount, description).append(duration).withStyle(color));
+                tooltip.add(Component.literal(" ").append(Component.translatable(key, amount, description)).append(duration).withStyle(color));
             }
             callback.setReturnValue(tooltip);
         }

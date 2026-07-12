@@ -70,10 +70,7 @@ public final class Configuration {
         }
 
         private @Nullable FoodItemEntry findEntry(String id) {
-            for (FoodItemEntry entry : foodItemConfigurations) {
-                if (id.equals(entry.item)) return entry;
-            }
-            return null;
+            return foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
         }
 
         private AttributeBonus computeGenericDefault(Item item) {
@@ -126,13 +123,20 @@ public final class Configuration {
 
         public List<AttributeBonus> getAttributes(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
-
             FoodItemEntry preset = FoodPresetRegistry.get(id);
-            if (preset != null && !preset.attributes.isEmpty()) return preset.attributes;
-
             FoodItemEntry match = findEntry(id);
-            if (match != null && !match.attributes.isEmpty()) return match.attributes;
 
+            if (preset != null && preset.override && !preset.attributes.isEmpty()) {
+                return preset.attributes;
+            }
+            if (preset != null && !preset.attributes.isEmpty()) {
+                List<AttributeBonus> merged = new ArrayList<>(preset.attributes);
+                if (match != null) merged.addAll(match.attributes);
+                return merged;
+            }
+            if (match != null && !match.attributes.isEmpty()) {
+                return match.attributes;
+            }
             List<AttributeBonus> attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
 
             if (match != null) {
@@ -145,6 +149,46 @@ public final class Configuration {
             }
             AutoConfig.getConfigHolder(Common.class).save();
             return attributes;
+        }
+
+        public void syncPresetEntries() {
+            for (FoodItemEntry preset : FoodPresetRegistry.all()) {
+                if (preset.item.isEmpty()) continue;
+                FoodItemEntry match = findEntry(preset.item);
+
+                if (preset.override) {
+                    if (match == null) {
+                        match = new FoodItemEntry();
+                        match.item = preset.item;
+                        foodItemConfigurations.add(match);
+                    }
+                    match.attributes = copyOf(preset.attributes);
+                } else if (match == null) {
+                    FoodItemEntry entry = new FoodItemEntry();
+                    entry.item = preset.item;
+                    entry.attributes = copyOf(preset.attributes);
+                    foodItemConfigurations.add(entry);
+                } else {
+                    for (AttributeBonus bonus : preset.attributes) {
+                        boolean present = match.attributes.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
+                        if (!present) {
+                            match.attributes.add(copyOf(bonus));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static List<AttributeBonus> copyOf(List<AttributeBonus> source) {
+            List<AttributeBonus> copy = new ArrayList<>();
+            for (AttributeBonus bonus : source) {
+                copy.add(copyOf(bonus));
+            }
+            return copy;
+        }
+
+        private static AttributeBonus copyOf(AttributeBonus bonus) {
+            return new AttributeBonus(bonus.attribute, bonus.operation, bonus.amount, bonus.duration);
         }
 
         @ConfigEntry.Gui.Excluded
@@ -176,6 +220,7 @@ public final class Configuration {
     public static final class FoodItemEntry {
 
         public String item = "";
+        public boolean override = false;
         public List<AttributeBonus> attributes = new ArrayList<>();
     }
 
