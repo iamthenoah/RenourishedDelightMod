@@ -25,4 +25,8 @@ public final class FoodPresetRegistry {
     public static @Nullable Configuration.FoodItemEntry get(String id) {
         return presets.get(id);
     }
+
+    public static List<Configuration.FoodItemEntry> all() {
+        return List.copyOf(presets.values());
+    }
 }

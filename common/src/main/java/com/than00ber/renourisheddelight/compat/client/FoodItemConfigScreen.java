@@ -84,6 +84,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
 
         int centerX = width / 2;
+        Configuration.Common.getInstance().syncPresetEntries();
         List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
         noItemsConfigured = entries.isEmpty();
         List<String> namespaces = new ArrayList<>();
