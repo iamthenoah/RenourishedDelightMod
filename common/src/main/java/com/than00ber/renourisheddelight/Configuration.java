@@ -130,8 +130,13 @@ public final class Configuration {
                 return preset.attributes;
             }
             if (preset != null && !preset.attributes.isEmpty()) {
-                List<AttributeBonus> merged = new ArrayList<>(preset.attributes);
+                List<AttributeBonus> merged = new ArrayList<>();
                 if (match != null) merged.addAll(match.attributes);
+
+                for (AttributeBonus bonus : preset.attributes) {
+                    boolean present = merged.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
+                    if (!present) merged.add(bonus);
+                }
                 return merged;
             }
             if (match != null && !match.attributes.isEmpty()) {

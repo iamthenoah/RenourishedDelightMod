@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.Configuration;
+import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -96,9 +98,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         modFilterButton = CycleButton.builder((String value) -> value.equals(ALL_MODS)
                         ? Component.translatable("config.renourisheddelight.food_items.all_mods")
-                        : Component.literal(value))
+                        : Component.literal(value).withStyle(isModInstalled(value) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
                 .withValues(namespaces)
                 .withInitialValue(modFilter)
+                .withTooltip(value -> value.equals(ALL_MODS) || isModInstalled(value)
+                        ? null
+                        : Tooltip.create(Component.translatable("config.renourisheddelight.food_items.mod_not_installed").withStyle(ChatFormatting.RED)))
                 .create(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.food_items.filter"), (button, value) -> {
                     modFilter = value;
                     scrollOffset = 0;
@@ -155,6 +160,10 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String namespaceOf(Configuration.FoodItemEntry entry) {
         int colon = entry.item.indexOf(':');
         return colon >= 0 ? entry.item.substring(0, colon) : "minecraft";
+    }
+
+    private boolean isModInstalled(String namespace) {
+        return namespace.equals("minecraft") || Platform.isModLoaded(namespace);
     }
 
     private @Nullable Item resolveItem(String id) {
