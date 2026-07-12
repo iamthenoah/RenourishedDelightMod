@@ -50,6 +50,8 @@
   "config.renourisheddelight.food_items.search": "Search",
   "config.renourisheddelight.food_items.search_hint": "Search by item id",
   "config.renourisheddelight.food_items.empty": "No food items configured. Restart the game to load defaults",
+  "config.renourisheddelight.food_items.scope_global": "Editing the global config (applies to new worlds or worlds missing the config)",
+  "config.renourisheddelight.food_items.scope_world": "Editing this world's config only",
   "config.renourisheddelight.food_items.no_bonuses": "No attribute bonuses configured for this item",
   "config.renourisheddelight.food_items.attribute": "Attribute",
   "config.renourisheddelight.food_items.modifier": "Modifier",

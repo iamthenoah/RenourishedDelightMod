@@ -131,7 +131,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
                 .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
                 .toList();
 
-        int listTop = 64;
+        int listTop = 76;
         int listBottom = height - 68;
         int rowGap = ROW_HEIGHT - 20;
         int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
@@ -243,6 +243,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     protected void onDone() {
         saveWorkingEntries();
         minecraft.setScreen(parent);
+    }
+
+    @Override
+    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        Component hint = Component.translatable(levelConfigFile != null
+                ? "config.renourisheddelight.food_items.scope_world"
+                : "config.renourisheddelight.food_items.scope_global").withStyle(ChatFormatting.GRAY);
+        graphics.drawCenteredString(font, hint, width / 2, 60, 0xAAAAAA);
     }
 
     @Override
