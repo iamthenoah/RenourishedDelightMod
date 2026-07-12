@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight;
 
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
+import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
@@ -22,6 +23,7 @@ public final class Configuration {
     public static void init() {
         AutoConfig.register(Client.class, JanksonConfigSerializer::new);
         AutoConfig.register(Common.class, JanksonConfigSerializer::new);
+        LifecycleEvent.SETUP.register(() -> Configuration.Common.getInstance().populateDefaults());
     }
 
     @Config(name = RenourishedDelightMod.MOD_ID + "/client")
@@ -62,6 +64,29 @@ public final class Configuration {
         public boolean hasConfiguredEntry(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
             return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+        }
+
+        private void populateDefaults() {
+            boolean changed = false;
+
+            for (Item item : BuiltInRegistries.ITEM) {
+                FoodProperties properties = item.components().get(DataComponents.FOOD);
+                if (properties == null || hasConfiguredEntry(item)) continue;
+                AttributeBonus maxHealth = new AttributeBonus(
+                        Attributes.MAX_HEALTH.getRegisteredName(),
+                        AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
+                        Math.max(1, ConsumableFoodInstance.toHearts(properties.nutrition(), properties.saturation())),
+                        ConsumableFoodInstance.toDuration(properties.nutrition(), properties.saturation()));
+
+                FoodItemEntry entry = new FoodItemEntry();
+                entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
+                entry.attributes = new ArrayList<>(List.of(maxHealth));
+                foodItemConfigurations.add(entry);
+                changed = true;
+            }
+            if (changed) {
+                AutoConfig.getConfigHolder(Common.class).save();
+            }
         }
 
         public List<AttributeBonus> getAttributes(Item item) {

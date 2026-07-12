@@ -48,7 +48,7 @@
   "config.renourisheddelight.food_items.all_mods": "All Mods",
   "config.renourisheddelight.food_items.search": "Search",
   "config.renourisheddelight.food_items.search_hint": "Search by item id",
-  "config.renourisheddelight.food_items.empty": "Eat a food item in-game to have it appear here",
+  "config.renourisheddelight.food_items.empty": "No food items configured. Restart the game to load defaults",
   "config.renourisheddelight.food_items.no_bonuses": "No attribute bonuses configured for this item",
   "config.renourisheddelight.food_items.attribute": "Attribute",
   "config.renourisheddelight.food_items.modifier": "Modifier",
