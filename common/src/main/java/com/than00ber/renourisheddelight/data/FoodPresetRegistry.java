@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.data;
 
-import com.than00ber.renourisheddelight.Configuration;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -9,12 +8,12 @@ import java.util.Map;
 
 public final class FoodPresetRegistry {
 
-    private static Map<String, Configuration.FoodItemEntry> presets = Map.of();
+    private static Map<String, FoodItemEntry> presets = Map.of();
 
-    public static void set(List<Configuration.FoodItemEntry> entries) {
-        Map<String, Configuration.FoodItemEntry> map = new HashMap<>();
+    public static void set(List<FoodItemEntry> entries) {
+        Map<String, FoodItemEntry> map = new HashMap<>();
 
-        for (Configuration.FoodItemEntry entry : entries) {
+        for (FoodItemEntry entry : entries) {
             if (!entry.item.isEmpty()) {
                 map.put(entry.item, entry);
             }
@@ -22,11 +21,11 @@ public final class FoodPresetRegistry {
         presets = map;
     }
 
-    public static @Nullable Configuration.FoodItemEntry get(String id) {
+    public static @Nullable FoodItemEntry get(String id) {
         return presets.get(id);
     }
 
-    public static List<Configuration.FoodItemEntry> all() {
+    public static List<FoodItemEntry> all() {
         return List.copyOf(presets.values());
     }
 }

@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.food.AttributeBonus;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -33,7 +34,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     );
 
     private final Screen parent;
-    private final Configuration.FoodItemEntry entry;
+    private final FoodItemEntry entry;
     private final Runnable saveAction;
     private final List<BonusRow> rows = new ArrayList<>();
     private final @Nullable Item icon;
@@ -44,7 +45,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private EditBox newAmountField;
     private EditBox newDurationField;
 
-    public FoodItemBonusScreen(Screen parent, Configuration.FoodItemEntry entry, Runnable saveAction) {
+    public FoodItemBonusScreen(Screen parent, FoodItemEntry entry, Runnable saveAction) {
         super(Component.translatable("config.renourisheddelight.food_items.bonus_title"));
         this.parent = parent;
         this.entry = entry;
@@ -126,7 +127,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < entry.attributes.size(); i++) {
-            Configuration.AttributeBonus bonus = entry.attributes.get(i + scrollOffset);
+            AttributeBonus bonus = entry.attributes.get(i + scrollOffset);
             int y = LIST_TOP + i * ROW_HEIGHT;
 
             EditBox attributeField = new EditBox(font, centerX - 240, y, 180, 20, Component.translatable("config.renourisheddelight.food_items.attribute"));
@@ -177,7 +178,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     private void addBonus() {
-        Configuration.AttributeBonus bonus = new Configuration.AttributeBonus(
+        AttributeBonus bonus = new AttributeBonus(
                 newAttributeField.getValue().trim(),
                 newOperationField.getValue().trim(),
                 parseDouble(newAmountField.getValue(), 0.0),
@@ -193,7 +194,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         rebuildContent();
     }
 
-    private void removeBonus(Configuration.AttributeBonus bonus) {
+    private void removeBonus(AttributeBonus bonus) {
         entry.attributes.remove(bonus);
         rebuildContent();
     }
@@ -267,6 +268,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         }
     }
 
-    private record BonusRow(Configuration.AttributeBonus bonus, EditBox attribute, EditBox operation, EditBox amount, EditBox duration, Button remove) {
+    private record BonusRow(AttributeBonus bonus, EditBox attribute, EditBox operation, EditBox amount, EditBox duration, Button remove) {
+        // do nothing
     }
 }

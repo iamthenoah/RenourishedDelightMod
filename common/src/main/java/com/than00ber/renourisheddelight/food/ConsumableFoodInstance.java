@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -54,15 +54,15 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, @Nullable MinecraftServer server) {
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
-        Configuration.Common common = Configuration.Common.getInstance();
+        CommonConfiguration common = CommonConfiguration.getInstance();
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (Configuration.AttributeBonus bonus : common.getAttributes(item, server)) {
+        for (AttributeBonus bonus : common.getAttributes(item, server)) {
             AttributeModifierInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }
         if (attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
-            Configuration.AttributeBonus maxHealth = new Configuration.AttributeBonus(
+            AttributeBonus maxHealth = new AttributeBonus(
                     Attributes.MAX_HEALTH.getRegisteredName(),
                     AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
                     Math.max(1, toHearts(nutrition, saturation)),
@@ -73,7 +73,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeModifierInstance resolveBonus(Configuration.AttributeBonus bonus) {
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation);

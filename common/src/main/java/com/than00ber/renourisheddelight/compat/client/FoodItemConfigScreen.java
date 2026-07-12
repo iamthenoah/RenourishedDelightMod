@@ -1,6 +1,8 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.ConfigUtil;
+import com.than00ber.renourisheddelight.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
@@ -27,7 +29,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private final @Nullable Screen parent;
     private final List<IconEntry> icons = new ArrayList<>();
     private final List<AbstractWidget> rowWidgets = new ArrayList<>();
-    private List<SuggestOption> itemOptions = List.of();
 
     private EditBox newItemField;
     private @Nullable CycleButton<String> modFilterButton;
@@ -36,7 +37,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private boolean noItemsConfigured;
 
     private final @Nullable Path levelConfigFile;
-    private final List<Configuration.FoodItemEntry> workingEntries;
+    private final List<FoodItemEntry> workingEntries;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
@@ -44,20 +45,20 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         this.levelConfigFile = LevelFoodConfig.resolveFile(net.minecraft.client.Minecraft.getInstance().getSingleplayerServer());
         this.workingEntries = levelConfigFile != null
                 ? LevelFoodConfig.resolveEntries(levelConfigFile)
-                : Configuration.Common.getInstance().foodItemConfigurations;
+                : CommonConfiguration.getInstance().foodItemConfigurations;
     }
 
     private void saveWorkingEntries() {
         if (levelConfigFile != null) {
             LevelFoodConfig.save(levelConfigFile, workingEntries);
         } else {
-            AutoConfig.getConfigHolder(Configuration.Common.class).save();
+            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         }
     }
 
     @Override
     protected void init() {
-        itemOptions = buildItemOptions();
+        List<SuggestOption> itemOptions = buildItemOptions();
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
 
@@ -99,7 +100,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
 
         int centerX = width / 2;
-        List<Configuration.FoodItemEntry> entries = workingEntries;
+        List<FoodItemEntry> entries = workingEntries;
         noItemsConfigured = entries.isEmpty();
         List<String> namespaces = new ArrayList<>();
         namespaces.add(ALL_MODS);
@@ -124,7 +125,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addRenderableWidget(modFilterButton);
         rowWidgets.add(modFilterButton);
 
-        List<Configuration.FoodItemEntry> filtered = entries.stream()
+        List<FoodItemEntry> filtered = entries.stream()
                 .filter(entry -> modFilter.equals(ALL_MODS) || namespaceOf(entry).equals(modFilter))
                 .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
                 .toList();
@@ -147,7 +148,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
-            Configuration.FoodItemEntry entry = filtered.get(i + scrollOffset);
+            FoodItemEntry entry = filtered.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
 
             Item item = resolveItem(entry.item);
@@ -169,7 +170,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
     }
 
-    private String namespaceOf(Configuration.FoodItemEntry entry) {
+    private String namespaceOf(FoodItemEntry entry) {
         int colon = entry.item.indexOf(':');
         return colon >= 0 ? entry.item.substring(0, colon) : "minecraft";
     }
@@ -212,28 +213,28 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         Item item = BuiltInRegistries.ITEM.get(id);
         if (item == Items.AIR) return;
-        Configuration.FoodItemEntry entry = createEntry(item);
+        FoodItemEntry entry = createEntry(item);
         newItemField.setValue("");
         openBonuses(entry);
     }
 
-    private Configuration.FoodItemEntry createEntry(Item item) {
+    private FoodItemEntry createEntry(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        Configuration.FoodItemEntry existing = Configuration.findEntry(workingEntries, id);
+        FoodItemEntry existing = ConfigUtil.findEntry(workingEntries, id);
         if (existing != null) return existing;
 
-        Configuration.FoodItemEntry entry = Configuration.seedEntry(workingEntries, item);
+        FoodItemEntry entry = ConfigUtil.seedEntry(workingEntries, item);
         saveWorkingEntries();
         return entry;
     }
 
-    private void removeItem(Configuration.FoodItemEntry entry) {
+    private void removeItem(FoodItemEntry entry) {
         workingEntries.remove(entry);
         saveWorkingEntries();
         rebuildContent();
     }
 
-    private void openBonuses(Configuration.FoodItemEntry entry) {
+    private void openBonuses(FoodItemEntry entry) {
         minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::saveWorkingEntries));
     }
 
@@ -254,5 +255,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private record IconEntry(ItemStack stack, int x, int y) {
+        // do nothing
     }
 }

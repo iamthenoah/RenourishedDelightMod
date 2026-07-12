@@ -7,7 +7,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -65,7 +65,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                         .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-                boolean cacheEnabled = Configuration.Client.getInstance().enableAtlasCache;
+                boolean cacheEnabled = ClientConfiguration.getInstance().enableAtlasCache;
                 Path cacheDir = null;
                 List<String> packIds = null;
 
@@ -325,7 +325,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     private Item getGoldenPaletteItem() {
         try {
-            String name = Configuration.Client.getInstance().goldenPaletteItem;
+            String name = ClientConfiguration.getInstance().goldenPaletteItem;
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
         } catch (Exception exception) {

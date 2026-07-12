@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -23,7 +23,7 @@ public final class ConfigMenuScreen extends Screen {
         int top = height / 2 - 37;
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client"),
-                        button -> minecraft.setScreen(AutoConfig.getConfigScreen(Configuration.Client.class, this).get()))
+                        button -> minecraft.setScreen(AutoConfig.getConfigScreen(ClientConfiguration.class, this).get()))
                 .bounds(centerX - 100, top, 200, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.food_items"),
