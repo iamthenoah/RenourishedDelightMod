@@ -1,6 +1,8 @@
 package com.than00ber.renourisheddelight;
 
+import com.than00ber.renourisheddelight.config.ConfigUtil;
 import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
@@ -10,12 +12,14 @@ import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,19 +74,7 @@ public final class Configuration {
         }
 
         private @Nullable FoodItemEntry findEntry(String id) {
-            return foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
-        }
-
-        private AttributeBonus computeGenericDefault(Item item) {
-            FoodProperties properties = item.components().get(DataComponents.FOOD);
-            int nutrition = properties != null ? properties.nutrition() : 2;
-            float saturation = properties != null ? properties.saturation() : 0.0F;
-
-            return new AttributeBonus(
-                    Attributes.MAX_HEALTH.getRegisteredName(),
-                    AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                    Math.max(1, ConsumableFoodInstance.toHearts(nutrition, saturation)),
-                    ConsumableFoodInstance.toDuration(nutrition, saturation));
+            return ConfigUtil.findEntry(foodItemConfigurations, id);
         }
 
         public void populateDefaults() {
@@ -93,7 +85,7 @@ public final class Configuration {
                 if (properties != null && !hasConfiguredEntry(item)) {
                     FoodItemEntry entry = new FoodItemEntry();
                     entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
-                    entry.attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
+                    entry.attributes = new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)));
                     foodItemConfigurations.add(entry);
                     changed = true;
                 }
@@ -103,22 +95,23 @@ public final class Configuration {
             }
         }
 
-        public FoodItemEntry createEntry(Item item) {
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
-            FoodItemEntry existing = findEntry(id);
-            if (existing != null) return existing;
+        public List<AttributeBonus> getAttributes(Item item, @Nullable MinecraftServer server) {
+            Path levelFile = LevelFoodConfig.resolveFile(server);
 
-            FoodItemEntry preset = FoodPresetRegistry.get(id);
-            List<AttributeBonus> seed = preset != null && !preset.attributes.isEmpty()
-                    ? new ArrayList<>(preset.attributes)
-                    : new ArrayList<>(List.of(computeGenericDefault(item)));
+            if (levelFile != null) {
+                List<FoodItemEntry> entries = LevelFoodConfig.resolveEntries(levelFile);
+                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+                FoodItemEntry match = ConfigUtil.findEntry(entries, id);
 
-            FoodItemEntry entry = new FoodItemEntry();
-            entry.item = id;
-            entry.attributes = seed;
-            foodItemConfigurations.add(entry);
-            AutoConfig.getConfigHolder(Common.class).save();
-            return entry;
+                if (match == null) {
+                    match = ConfigUtil.seedEntry(entries, item);
+                    LevelFoodConfig.save(levelFile, entries);
+                }
+                if (!match.attributes.isEmpty()) {
+                    return match.attributes;
+                }
+            }
+            return getAttributes(item);
         }
 
         public List<AttributeBonus> getAttributes(Item item) {
@@ -142,7 +135,7 @@ public final class Configuration {
             if (match != null && !match.attributes.isEmpty()) {
                 return match.attributes;
             }
-            List<AttributeBonus> attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
+            List<AttributeBonus> attributes = new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)));
 
             if (match != null) {
                 match.attributes = attributes;
@@ -154,46 +147,6 @@ public final class Configuration {
             }
             AutoConfig.getConfigHolder(Common.class).save();
             return attributes;
-        }
-
-        public void syncPresetEntries() {
-            for (FoodItemEntry preset : FoodPresetRegistry.all()) {
-                if (preset.item.isEmpty()) continue;
-                FoodItemEntry match = findEntry(preset.item);
-
-                if (preset.override) {
-                    if (match == null) {
-                        match = new FoodItemEntry();
-                        match.item = preset.item;
-                        foodItemConfigurations.add(match);
-                    }
-                    match.attributes = copyOf(preset.attributes);
-                } else if (match == null) {
-                    FoodItemEntry entry = new FoodItemEntry();
-                    entry.item = preset.item;
-                    entry.attributes = copyOf(preset.attributes);
-                    foodItemConfigurations.add(entry);
-                } else {
-                    for (AttributeBonus bonus : preset.attributes) {
-                        boolean present = match.attributes.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
-                        if (!present) {
-                            match.attributes.add(copyOf(bonus));
-                        }
-                    }
-                }
-            }
-        }
-
-        private static List<AttributeBonus> copyOf(List<AttributeBonus> source) {
-            List<AttributeBonus> copy = new ArrayList<>();
-            for (AttributeBonus bonus : source) {
-                copy.add(copyOf(bonus));
-            }
-            return copy;
-        }
-
-        private static AttributeBonus copyOf(AttributeBonus bonus) {
-            return new AttributeBonus(bonus.attribute, bonus.operation, bonus.amount, bonus.duration);
         }
 
         @ConfigEntry.Gui.Excluded
@@ -246,22 +199,6 @@ public final class Configuration {
             this.operation = operation;
             this.amount = amount;
             this.duration = duration;
-        }
-
-        public String attribute() {
-            return attribute;
-        }
-
-        public String operation() {
-            return operation;
-        }
-
-        public double amount() {
-            return amount;
-        }
-
-        public int duration() {
-            return duration;
         }
     }
 }

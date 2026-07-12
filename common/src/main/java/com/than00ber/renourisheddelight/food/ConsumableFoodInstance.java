@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -47,12 +48,16 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties) {
+        return create(item, properties, null);
+    }
+
+    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, @Nullable MinecraftServer server) {
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
         Configuration.Common common = Configuration.Common.getInstance();
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (Configuration.AttributeBonus bonus : common.getAttributes(item)) {
+        for (Configuration.AttributeBonus bonus : common.getAttributes(item, server)) {
             AttributeModifierInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }
@@ -69,12 +74,12 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     private static @Nullable AttributeModifierInstance resolveBonus(Configuration.AttributeBonus bonus) {
-        Holder<Attribute> attribute = resolveAttribute(bonus.attribute());
+        Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
         if (attribute == null) return null;
-        AttributeModifier.Operation operation = parseOperation(bonus.operation());
+        AttributeModifier.Operation operation = parseOperation(bonus.operation);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        int duration = Math.max(1, bonus.duration());
-        AttributeModifier modifier = new AttributeModifier(id, bonus.amount(), operation);
+        int duration = Math.max(1, bonus.duration);
+        AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
         return new AttributeModifierInstance(attribute, modifier, duration, 0);
     }
 

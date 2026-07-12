@@ -1,7 +1,6 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.Configuration;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -35,6 +34,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
 
     private final Screen parent;
     private final Configuration.FoodItemEntry entry;
+    private final Runnable saveAction;
     private final List<BonusRow> rows = new ArrayList<>();
     private final @Nullable Item icon;
     private List<SuggestOption> attributeOptions = List.of();
@@ -44,10 +44,11 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private EditBox newAmountField;
     private EditBox newDurationField;
 
-    public FoodItemBonusScreen(Screen parent, Configuration.FoodItemEntry entry) {
+    public FoodItemBonusScreen(Screen parent, Configuration.FoodItemEntry entry, Runnable saveAction) {
         super(Component.translatable("config.renourisheddelight.food_items.bonus_title"));
         this.parent = parent;
         this.entry = entry;
+        this.saveAction = saveAction;
         this.icon = resolveItem(entry.item);
     }
 
@@ -225,7 +226,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
+        saveAction.run();
         minecraft.setScreen(parent);
     }
 

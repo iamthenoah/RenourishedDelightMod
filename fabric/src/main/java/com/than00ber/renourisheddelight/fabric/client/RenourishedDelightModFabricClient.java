@@ -2,7 +2,6 @@ package com.than00ber.renourisheddelight.fabric.client;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
-import com.than00ber.renourisheddelight.data.FoodConfigDataLoader;
 import dev.architectury.registry.ReloadListenerRegistry;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.server.packs.PackType;
@@ -12,7 +11,6 @@ public final class RenourishedDelightModFabricClient implements ClientModInitial
     @Override
     public void onInitializeClient() {
         ReloadListenerRegistry.register(PackType.CLIENT_RESOURCES, TextureAtlasResourceLoader.getInstance());
-        ReloadListenerRegistry.register(PackType.CLIENT_RESOURCES, FoodConfigDataLoader.getInstance());
         RenourishedDelightMod.initClient();
     }
 }

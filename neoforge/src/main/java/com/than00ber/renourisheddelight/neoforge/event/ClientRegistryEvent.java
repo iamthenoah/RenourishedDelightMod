@@ -2,7 +2,6 @@ package com.than00ber.renourisheddelight.neoforge.event;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
-import com.than00ber.renourisheddelight.data.FoodConfigDataLoader;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +19,5 @@ public final class ClientRegistryEvent {
     @SubscribeEvent
     public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(TextureAtlasResourceLoader.getInstance());
-        event.registerReloadListener(FoodConfigDataLoader.getInstance());
     }
 }

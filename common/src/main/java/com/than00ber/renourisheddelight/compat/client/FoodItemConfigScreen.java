@@ -1,15 +1,12 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -19,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.*;
 
 public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
@@ -37,9 +35,24 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
+    private final @Nullable Path levelConfigFile;
+    private final List<Configuration.FoodItemEntry> workingEntries;
+
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
+        this.levelConfigFile = LevelFoodConfig.resolveFile(net.minecraft.client.Minecraft.getInstance().getSingleplayerServer());
+        this.workingEntries = levelConfigFile != null
+                ? LevelFoodConfig.resolveEntries(levelConfigFile)
+                : Configuration.Common.getInstance().foodItemConfigurations;
+    }
+
+    private void saveWorkingEntries() {
+        if (levelConfigFile != null) {
+            LevelFoodConfig.save(levelConfigFile, workingEntries);
+        } else {
+            AutoConfig.getConfigHolder(Configuration.Common.class).save();
+        }
     }
 
     @Override
@@ -86,8 +99,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
 
         int centerX = width / 2;
-        Configuration.Common.getInstance().syncPresetEntries();
-        List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
+        List<Configuration.FoodItemEntry> entries = workingEntries;
         noItemsConfigured = entries.isEmpty();
         List<String> namespaces = new ArrayList<>();
         namespaces.add(ALL_MODS);
@@ -200,24 +212,34 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         Item item = BuiltInRegistries.ITEM.get(id);
         if (item == Items.AIR) return;
-        Configuration.FoodItemEntry entry = Configuration.Common.getInstance().createEntry(item);
+        Configuration.FoodItemEntry entry = createEntry(item);
         newItemField.setValue("");
         openBonuses(entry);
     }
 
+    private Configuration.FoodItemEntry createEntry(Item item) {
+        String id = BuiltInRegistries.ITEM.getKey(item).toString();
+        Configuration.FoodItemEntry existing = Configuration.findEntry(workingEntries, id);
+        if (existing != null) return existing;
+
+        Configuration.FoodItemEntry entry = Configuration.seedEntry(workingEntries, item);
+        saveWorkingEntries();
+        return entry;
+    }
+
     private void removeItem(Configuration.FoodItemEntry entry) {
-        Configuration.Common.getInstance().foodItemConfigurations.remove(entry);
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
+        workingEntries.remove(entry);
+        saveWorkingEntries();
         rebuildContent();
     }
 
     private void openBonuses(Configuration.FoodItemEntry entry) {
-        minecraft.setScreen(new FoodItemBonusScreen(this, entry));
+        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::saveWorkingEntries));
     }
 
     @Override
     protected void onDone() {
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
+        saveWorkingEntries();
         minecraft.setScreen(parent);
     }
 

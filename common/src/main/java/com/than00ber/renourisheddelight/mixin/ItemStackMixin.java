@@ -4,6 +4,7 @@ import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -30,7 +31,7 @@ public abstract class ItemStackMixin {
         FoodProperties properties = stack.get(DataComponents.FOOD);
 
         if (properties != null || properties == null && Configuration.Common.getInstance().hasConfiguredEntry(stack.getItem())) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties);
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties, Minecraft.getInstance().getSingleplayerServer());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
 
             if (Configuration.Client.getInstance().showFoodDisplayInInventory) {

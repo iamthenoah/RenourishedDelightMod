@@ -1,50 +1,41 @@
 package com.than00ber.renourisheddelight.data;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.util.profiling.ProfilerFiller;
 
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public final class FoodConfigDataLoader implements ResourceManagerReloadListener {
+public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
     private static final String DIRECTORY = "presets";
-    private static final FoodConfigDataLoader INSTANCE = new FoodConfigDataLoader();
 
-    public static FoodConfigDataLoader getInstance() {
-        return INSTANCE;
+    public FoodConfigDataLoader() {
+        super(new Gson(), DIRECTORY);
     }
 
     @Override
-    public void onResourceManagerReload(@NotNull ResourceManager resourceManager) {
+    protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
         List<Configuration.FoodItemEntry> entries = new ArrayList<>();
-        Map<ResourceLocation, Resource> resources = resourceManager.listResources(DIRECTORY, path -> path.getPath().endsWith(".json"));
 
-        for (Map.Entry<ResourceLocation, Resource> resource : resources.entrySet()) {
-            try (Reader reader = resource.getValue().openAsReader()) {
-                JsonElement root = JsonParser.parseReader(reader);
-                if (!root.isJsonArray()) continue;
+        for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
+            if (!resource.getValue().isJsonArray()) continue;
 
-                for (JsonElement element : root.getAsJsonArray()) {
-                    if (element.isJsonObject()) {
-                        entries.add(parseEntry(element.getAsJsonObject()));
-                    }
+            for (JsonElement element : resource.getValue().getAsJsonArray()) {
+                if (element.isJsonObject()) {
+                    entries.add(parseEntry(element.getAsJsonObject()));
                 }
-            } catch (Exception exception) {
-                RenourishedDelightMod.LOGGER.warn("Failed to parse preset file {}", resource.getKey(), exception);
             }
         }
         FoodPresetRegistry.set(entries);
