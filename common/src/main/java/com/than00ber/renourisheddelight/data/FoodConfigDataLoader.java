@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 public class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
 
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
     private static final String DIRECTORY = "presets";
 
     public FoodConfigDataLoader() {
@@ -27,16 +29,17 @@ public class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
     protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
         List<Configuration.FoodItemEntry> entries = new ArrayList<>();
 
-        for (JsonElement resource : resources.values()) {
-            if (!resource.isJsonArray()) continue;
+        for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
+            if (!resource.getValue().isJsonArray()) continue;
 
-            for (JsonElement element : resource.getAsJsonArray()) {
+            for (JsonElement element : resource.getValue().getAsJsonArray()) {
                 if (element.isJsonObject()) {
                     entries.add(parseEntry(element.getAsJsonObject()));
                 }
             }
         }
-        Configuration.Common.getInstance().mergeDataConfigs(entries);
+        FoodPresetRegistry.set(entries);
+        RenourishedDelightMod.LOGGER.info("Loaded {} preset food entries from {} data file(s)", entries.size(), resources.size());
     }
 
     private static Configuration.FoodItemEntry parseEntry(JsonObject object) {

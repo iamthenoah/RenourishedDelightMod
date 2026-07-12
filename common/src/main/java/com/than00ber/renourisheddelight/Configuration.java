@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight;
 
+import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,39 +66,37 @@ public final class Configuration {
         }
 
         public boolean hasConfiguredEntry(String id) {
-            return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+            return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item)) || FoodPresetRegistry.get(id) != null;
         }
 
-        public void mergeDataConfigs(List<FoodItemEntry> entries) {
-            boolean changed = false;
-
-            for (FoodItemEntry entry : entries) {
-                if (!entry.item.isEmpty() && !hasConfiguredEntry(entry.item)) {
-                    foodItemConfigurations.add(entry);
-                    changed = true;
-                }
+        private @Nullable FoodItemEntry findEntry(String id) {
+            for (FoodItemEntry entry : foodItemConfigurations) {
+                if (id.equals(entry.item)) return entry;
             }
-            if (changed) {
-                AutoConfig.getConfigHolder(Common.class).save();
-            }
-            populateDefaults();
+            return null;
         }
 
-        private void populateDefaults() {
+        private AttributeBonus computeGenericDefault(Item item) {
+            FoodProperties properties = item.components().get(DataComponents.FOOD);
+            int nutrition = properties != null ? properties.nutrition() : 2;
+            float saturation = properties != null ? properties.saturation() : 0.0F;
+
+            return new AttributeBonus(
+                    Attributes.MAX_HEALTH.getRegisteredName(),
+                    AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
+                    Math.max(1, ConsumableFoodInstance.toHearts(nutrition, saturation)),
+                    ConsumableFoodInstance.toDuration(nutrition, saturation));
+        }
+
+        public void populateDefaults() {
             boolean changed = false;
 
             for (Item item : BuiltInRegistries.ITEM) {
                 FoodProperties properties = item.components().get(DataComponents.FOOD);
                 if (properties != null && !hasConfiguredEntry(item)) {
-                    AttributeBonus maxHealth = new AttributeBonus(
-                            Attributes.MAX_HEALTH.getRegisteredName(),
-                            AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                            Math.max(1, ConsumableFoodInstance.toHearts(properties.nutrition(), properties.saturation())),
-                            ConsumableFoodInstance.toDuration(properties.nutrition(), properties.saturation()));
-
                     FoodItemEntry entry = new FoodItemEntry();
                     entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
-                    entry.attributes = new ArrayList<>(List.of(maxHealth));
+                    entry.attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
                     foodItemConfigurations.add(entry);
                     changed = true;
                 }
@@ -106,27 +106,34 @@ public final class Configuration {
             }
         }
 
+        public FoodItemEntry createEntry(Item item) {
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            FoodItemEntry existing = findEntry(id);
+            if (existing != null) return existing;
+
+            FoodItemEntry preset = FoodPresetRegistry.get(id);
+            List<AttributeBonus> seed = preset != null && !preset.attributes.isEmpty()
+                    ? new ArrayList<>(preset.attributes)
+                    : new ArrayList<>(List.of(computeGenericDefault(item)));
+
+            FoodItemEntry entry = new FoodItemEntry();
+            entry.item = id;
+            entry.attributes = seed;
+            foodItemConfigurations.add(entry);
+            AutoConfig.getConfigHolder(Common.class).save();
+            return entry;
+        }
+
         public List<AttributeBonus> getAttributes(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
-            FoodItemEntry match = null;
 
-            for (FoodItemEntry entry : foodItemConfigurations) {
-                if (id.equals(entry.item)) {
-                    match = entry;
-                    break;
-                }
-            }
+            FoodItemEntry preset = FoodPresetRegistry.get(id);
+            if (preset != null && !preset.attributes.isEmpty()) return preset.attributes;
+
+            FoodItemEntry match = findEntry(id);
             if (match != null && !match.attributes.isEmpty()) return match.attributes;
-            FoodProperties properties = item.components().get(DataComponents.FOOD);
-            int nutrition = properties != null ? properties.nutrition() : 2;
-            float saturation = properties != null ? properties.saturation() : 0.0F;
 
-            AttributeBonus maxHealth = new AttributeBonus(
-                    Attributes.MAX_HEALTH.getRegisteredName(),
-                    AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                    Math.max(1, ConsumableFoodInstance.toHearts(nutrition, saturation)),
-                    ConsumableFoodInstance.toDuration(nutrition, saturation));
-            List<AttributeBonus> attributes = new ArrayList<>(List.of(maxHealth));
+            List<AttributeBonus> attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
 
             if (match != null) {
                 match.attributes = attributes;

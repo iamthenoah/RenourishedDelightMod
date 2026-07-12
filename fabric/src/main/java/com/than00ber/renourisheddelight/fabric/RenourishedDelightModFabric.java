@@ -2,18 +2,15 @@ package com.than00ber.renourisheddelight.fabric;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.effect.NourishmentMobEffect;
-import com.than00ber.renourisheddelight.fabric.data.FabricFoodConfigDataLoader;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.PotionRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
@@ -33,7 +30,6 @@ public final class RenourishedDelightModFabric implements ModInitializer {
                 ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "nourishment"),
                 new Potion(new MobEffectInstance(EffectRegistry.NOURISHMENT, 9600, 0))));
         FabricBrewingRecipeRegistryBuilder.BUILD.register(x -> x.addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.NOURISHMENT));
-        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new FabricFoodConfigDataLoader());
         RenourishedDelightMod.init();
     }
 }

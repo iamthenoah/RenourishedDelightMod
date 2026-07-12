@@ -190,21 +190,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         Item item = BuiltInRegistries.ITEM.get(id);
         if (item == Items.AIR) return;
-        String key = id.toString();
-        List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
-
-        for (Configuration.FoodItemEntry entry : entries) {
-            if (entry.item.equals(key)) {
-                newItemField.setValue("");
-                openBonuses(entry);
-                return;
-            }
-        }
-        Configuration.FoodItemEntry entry = new Configuration.FoodItemEntry();
-        entry.item = key;
-        entries.add(entry);
+        Configuration.FoodItemEntry entry = Configuration.Common.getInstance().createEntry(item);
         newItemField.setValue("");
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
         openBonuses(entry);
     }
 
