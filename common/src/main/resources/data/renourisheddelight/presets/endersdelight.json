@@ -7,6 +7,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
       }
     ]
   },
@@ -15,6 +21,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 1200
@@ -29,6 +41,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
       }
     ]
   },
@@ -37,6 +55,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
+      },
+      {
+        "attribute": "spell_power:shadow",
         "operation": "add_multiplied_base",
         "amount": 0.11,
         "duration": 16800
@@ -57,6 +81,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.5,
         "duration": 3600
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
       }
     ]
   },
@@ -68,6 +98,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.11,
         "duration": 16800
+      },
+      {
+        "attribute": "spell_power:shadow",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
       }
     ]
   },
@@ -76,6 +112,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 6000
+      },
+      {
+        "attribute": "spell_power:arcane",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 6000
@@ -96,6 +138,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 12000
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 12000
       }
     ]
   },
@@ -104,6 +158,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
+      },
+      {
+        "attribute": "spell_power:generic",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 3600
@@ -118,6 +178,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 4800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 4800
       }
     ]
   },
@@ -126,6 +192,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:shadow",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 12000
@@ -146,6 +218,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
       }
     ]
   },
@@ -160,6 +244,18 @@
       },
       {
         "attribute": "irons_spellbooks:cooldown_reduction",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
         "operation": "add_multiplied_base",
         "amount": 0.5,
         "duration": 10800
@@ -180,6 +276,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
       }
     ]
   },
@@ -197,6 +305,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 28800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
       }
     ]
   },
@@ -205,6 +325,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:evocation_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:arcane",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 12000
@@ -219,6 +345,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 14400
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 14400
       }
     ]
   },
@@ -230,6 +362,12 @@
         "operation": "add_multiplied_base",
         "amount": 0.17,
         "duration": 28800
+      },
+      {
+        "attribute": "spell_power:generic",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
       }
     ]
   },
@@ -238,6 +376,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:cast_time_reduction",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 21600
+      },
+      {
+        "attribute": "spell_power:haste",
         "operation": "add_multiplied_base",
         "amount": 0.11,
         "duration": 21600
@@ -258,6 +402,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 28800
+      },
+      {
+        "attribute": "spell_power:fire",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
       }
     ]
   },
@@ -272,6 +428,18 @@
       },
       {
         "attribute": "irons_spellbooks:mana_regen",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:haste",
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 12000
@@ -292,6 +460,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
       }
     ]
   },
@@ -306,6 +486,18 @@
       },
       {
         "attribute": "irons_spellbooks:max_mana",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
         "operation": "add_multiplied_base",
         "amount": 0.6,
         "duration": 10800
@@ -326,6 +518,18 @@
         "operation": "add_multiplied_base",
         "amount": 0.5,
         "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 10800
       }
     ]
   },
@@ -334,6 +538,12 @@
     "attributes": [
       {
         "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:shadow",
         "operation": "add_multiplied_base",
         "amount": 0.08,
         "duration": 12000
