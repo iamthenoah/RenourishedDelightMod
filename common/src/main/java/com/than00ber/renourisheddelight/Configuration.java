@@ -1,7 +1,6 @@
 package com.than00ber.renourisheddelight;
 
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
@@ -23,7 +22,6 @@ public final class Configuration {
     public static void init() {
         AutoConfig.register(Client.class, JanksonConfigSerializer::new);
         AutoConfig.register(Common.class, JanksonConfigSerializer::new);
-        LifecycleEvent.SETUP.register(() -> Configuration.Common.getInstance().populateDefaults());
     }
 
     @Config(name = RenourishedDelightMod.MOD_ID + "/client")
@@ -62,8 +60,26 @@ public final class Configuration {
         }
 
         public boolean hasConfiguredEntry(Item item) {
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            return hasConfiguredEntry(BuiltInRegistries.ITEM.getKey(item).toString());
+        }
+
+        public boolean hasConfiguredEntry(String id) {
             return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+        }
+
+        public void mergeDataConfigs(List<FoodItemEntry> entries) {
+            boolean changed = false;
+
+            for (FoodItemEntry entry : entries) {
+                if (!entry.item.isEmpty() && !hasConfiguredEntry(entry.item)) {
+                    foodItemConfigurations.add(entry);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                AutoConfig.getConfigHolder(Common.class).save();
+            }
+            populateDefaults();
         }
 
         private void populateDefaults() {
@@ -71,18 +87,19 @@ public final class Configuration {
 
             for (Item item : BuiltInRegistries.ITEM) {
                 FoodProperties properties = item.components().get(DataComponents.FOOD);
-                if (properties == null || hasConfiguredEntry(item)) continue;
-                AttributeBonus maxHealth = new AttributeBonus(
-                        Attributes.MAX_HEALTH.getRegisteredName(),
-                        AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                        Math.max(1, ConsumableFoodInstance.toHearts(properties.nutrition(), properties.saturation())),
-                        ConsumableFoodInstance.toDuration(properties.nutrition(), properties.saturation()));
+                if (properties != null && !hasConfiguredEntry(item)) {
+                    AttributeBonus maxHealth = new AttributeBonus(
+                            Attributes.MAX_HEALTH.getRegisteredName(),
+                            AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
+                            Math.max(1, ConsumableFoodInstance.toHearts(properties.nutrition(), properties.saturation())),
+                            ConsumableFoodInstance.toDuration(properties.nutrition(), properties.saturation()));
 
-                FoodItemEntry entry = new FoodItemEntry();
-                entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
-                entry.attributes = new ArrayList<>(List.of(maxHealth));
-                foodItemConfigurations.add(entry);
-                changed = true;
+                    FoodItemEntry entry = new FoodItemEntry();
+                    entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
+                    entry.attributes = new ArrayList<>(List.of(maxHealth));
+                    foodItemConfigurations.add(entry);
+                    changed = true;
+                }
             }
             if (changed) {
                 AutoConfig.getConfigHolder(Common.class).save();
@@ -150,6 +167,7 @@ public final class Configuration {
     }
 
     public static final class FoodItemEntry {
+
         public String item = "";
         public List<AttributeBonus> attributes = new ArrayList<>();
     }
