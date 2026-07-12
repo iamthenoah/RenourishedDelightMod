@@ -27,7 +27,7 @@ public final class LevelFoodConfig {
     private static final LevelFoodConfig INSTANCE = new LevelFoodConfig();
 
     public static void init() {
-        getInstance().clear();
+        getInstance().cache.clear();
     }
 
     public static LevelFoodConfig getInstance() {
@@ -55,10 +55,6 @@ public final class LevelFoodConfig {
             save(x, entries);
             return entries;
         });
-    }
-
-    public void clear() {
-        cache.clear();
     }
 
     public void save(Path file, List<FoodItemEntry> entries) {

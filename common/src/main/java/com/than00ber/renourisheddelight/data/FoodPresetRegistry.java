@@ -12,7 +12,7 @@ public final class FoodPresetRegistry {
     private static final FoodPresetRegistry INSTANCE = new FoodPresetRegistry();
 
     public static void init() {
-        getInstance().clear();
+        getInstance().presets.clear();
     }
 
     public static FoodPresetRegistry getInstance() {
@@ -29,10 +29,6 @@ public final class FoodPresetRegistry {
 
     public @Nullable FoodItemEntry get(String id) {
         return presets.get(id);
-    }
-
-    public void clear() {
-        presets = Map.of();
     }
 
     public List<FoodItemEntry> all() {
