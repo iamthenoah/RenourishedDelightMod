@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class LevelFoodConfig {
 
@@ -37,7 +38,11 @@ public final class LevelFoodConfig {
 
     private static List<FoodItemEntry> loadMerged(Path file) {
         List<FoodItemEntry> entries = read(file);
-        if (entries == null) entries = ConfigUtil.copyOf(CommonConfiguration.getInstance().foodItemConfigurations);
+        if (entries == null) {
+            entries = CommonConfiguration.getInstance().foodItemConfigurations.stream()
+                    .map(FoodItemEntry::copy)
+                    .collect(Collectors.toList());
+        }
         ConfigUtil.mergePresets(entries);
         save(file, entries);
         return entries;

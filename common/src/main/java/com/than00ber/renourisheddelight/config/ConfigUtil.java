@@ -14,32 +14,28 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ConfigUtil {
 
     public static void mergePresets(List<FoodItemEntry> entries) {
         for (FoodItemEntry preset : FoodPresetRegistry.all()) {
-            if (preset.item.isEmpty()) continue;
-            FoodItemEntry match = entries.stream().filter(x -> preset.item.equals(x.item)).findFirst().orElse(null);
+            if (!preset.item.isEmpty()) {
+                FoodItemEntry match = entries.stream()
+                        .filter(x -> preset.item.equals(x.item))
+                        .findFirst()
+                        .orElse(null);
 
-            if (preset.override) {
-                if (match == null) {
-                    match = new FoodItemEntry();
-                    match.item = preset.item;
-                    entries.add(match);
-                }
-                match.attributes = copyOfBonuses(preset.attributes);
-            } else if (match == null) {
-                FoodItemEntry entry = new FoodItemEntry();
-                entry.item = preset.item;
-                entry.attributes = copyOfBonuses(preset.attributes);
-                entries.add(entry);
-            } else {
-                for (AttributeBonus bonus : preset.attributes) {
-                    boolean present = match.attributes.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
-                    if (!present) {
-                        match.attributes.add(copyOf(bonus));
+                if (match != null) {
+                    if (!preset.override) {
+                        for (AttributeBonus bonus : preset.attributes) {
+                            if (match.attributes.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
+                                match.attributes.add(bonus.copy());
+                            }
+                        }
                     }
+                } else {
+                    entries.add(preset.copy());
                 }
             }
         }
@@ -53,12 +49,10 @@ public final class ConfigUtil {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry preset = FoodPresetRegistry.get(id);
         List<AttributeBonus> seed = preset != null && !preset.attributes.isEmpty()
-                ? copyOfBonuses(preset.attributes)
+                ? preset.attributes.stream().map(AttributeBonus::copy).collect(Collectors.toList()) 
                 : new ArrayList<>(List.of(computeGenericDefault(item)));
 
-        FoodItemEntry entry = new FoodItemEntry();
-        entry.item = id;
-        entry.attributes = seed;
+        FoodItemEntry entry = new FoodItemEntry(id, seed);
         entries.add(entry);
         return entry;
     }
@@ -73,29 +67,5 @@ public final class ConfigUtil {
                 AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
                 Math.max(1, ConsumableFoodInstance.toHearts(nutrition, saturation)),
                 ConsumableFoodInstance.toDuration(nutrition, saturation));
-    }
-
-    public static List<FoodItemEntry> copyOf(List<FoodItemEntry> source) {
-        List<FoodItemEntry> copy = new ArrayList<>();
-        for (FoodItemEntry entry : source) {
-            FoodItemEntry clone = new FoodItemEntry();
-            clone.item = entry.item;
-            clone.override = entry.override;
-            clone.attributes = copyOfBonuses(entry.attributes);
-            copy.add(clone);
-        }
-        return copy;
-    }
-
-    private static List<AttributeBonus> copyOfBonuses(List<AttributeBonus> source) {
-        List<AttributeBonus> copy = new ArrayList<>();
-        for (AttributeBonus bonus : source) {
-            copy.add(copyOf(bonus));
-        }
-        return copy;
-    }
-
-    private static AttributeBonus copyOf(AttributeBonus bonus) {
-        return new AttributeBonus(bonus.attribute, bonus.operation, bonus.amount, bonus.duration);
     }
 }

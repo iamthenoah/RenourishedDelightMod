@@ -18,4 +18,8 @@ public final class AttributeBonus {
         this.amount = amount;
         this.duration = duration;
     }
+    
+    public AttributeBonus copy() {
+        return new AttributeBonus(attribute, operation, amount, duration);
+    }
 }

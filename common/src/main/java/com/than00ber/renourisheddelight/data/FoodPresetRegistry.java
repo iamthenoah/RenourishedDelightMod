@@ -2,23 +2,19 @@ package com.than00ber.renourisheddelight.data;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class FoodPresetRegistry {
 
     private static Map<String, FoodItemEntry> presets = Map.of();
 
     public static void set(List<FoodItemEntry> entries) {
-        Map<String, FoodItemEntry> map = new HashMap<>();
-
-        for (FoodItemEntry entry : entries) {
-            if (!entry.item.isEmpty()) {
-                map.put(entry.item, entry);
-            }
-        }
-        presets = map;
+        presets = entries.stream()
+                .filter(x -> !x.item.isEmpty())
+                .collect(Collectors.toMap(x -> x.item, Function.identity()));
     }
 
     public static @Nullable FoodItemEntry get(String id) {

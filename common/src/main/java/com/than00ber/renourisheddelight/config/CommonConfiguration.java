@@ -15,7 +15,6 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,29 +34,23 @@ public final class CommonConfiguration implements ConfigData {
         return AutoConfig.getConfigHolder(CommonConfiguration.class).getConfig();
     }
 
-    public boolean hasConfiguredEntry(Item item) {
-        return hasConfiguredEntry(BuiltInRegistries.ITEM.getKey(item).toString());
+    public boolean hasConfiguredEntry(Object value) {
+        String id = value instanceof Item item
+                ? BuiltInRegistries.ITEM.getKey(item).toString()
+                : value.toString();
+        return FoodPresetRegistry.get(id) != null || foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
     }
 
-    public boolean hasConfiguredEntry(String id) {
-        return foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item)) || FoodPresetRegistry.get(id) != null;
-    }
-
-    private @Nullable FoodItemEntry findEntry(String id) {
-        return ConfigUtil.findEntry(foodItemConfigurations, id);
-    }
-
-    public void populateDefaults() {
+    private void populateDefaults() {
         boolean changed = false;
 
         for (Item item : BuiltInRegistries.ITEM) {
-            FoodProperties properties = item.components().get(DataComponents.FOOD);
-            if (properties != null && !hasConfiguredEntry(item)) {
-                FoodItemEntry entry = new FoodItemEntry();
-                entry.item = BuiltInRegistries.ITEM.getKey(item).toString();
-                entry.attributes = new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)));
-                foodItemConfigurations.add(entry);
+            if (item.components().get(DataComponents.FOOD) != null && !hasConfiguredEntry(item)) {
                 changed = true;
+                
+                foodItemConfigurations.add(new FoodItemEntry(
+                        BuiltInRegistries.ITEM.getKey(item).toString(),
+                        new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)))));
             }
         }
         if (changed) {
@@ -87,7 +80,7 @@ public final class CommonConfiguration implements ConfigData {
     public List<AttributeBonus> getAttributes(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry preset = FoodPresetRegistry.get(id);
-        FoodItemEntry match = findEntry(id);
+        FoodItemEntry match = ConfigUtil.findEntry(foodItemConfigurations, id);
 
         if (preset != null && preset.override && !preset.attributes.isEmpty()) {
             return preset.attributes;
@@ -97,8 +90,9 @@ public final class CommonConfiguration implements ConfigData {
             if (match != null) merged.addAll(match.attributes);
 
             for (AttributeBonus bonus : preset.attributes) {
-                boolean present = merged.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
-                if (!present) merged.add(bonus);
+                if (merged.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
+                    merged.add(bonus);
+                }
             }
             return merged;
         }
@@ -110,10 +104,7 @@ public final class CommonConfiguration implements ConfigData {
         if (match != null) {
             match.attributes = attributes;
         } else {
-            FoodItemEntry entry = new FoodItemEntry();
-            entry.item = id;
-            entry.attributes = attributes;
-            foodItemConfigurations.add(entry);
+            foodItemConfigurations.add(new FoodItemEntry(id, attributes));
         }
         AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         return attributes;
@@ -121,27 +112,27 @@ public final class CommonConfiguration implements ConfigData {
 
     @ConfigEntry.Gui.Excluded
     @Comment("""
-            Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
-            [
-              {
-                item: "minecraft:golden_apple",
-                attributes: [
-                  {
-                    attribute: "minecraft:generic.max_health",
-                    operation: "add_value",
-                    amount: 4.0,
-                    duration: 6000,
-                  },
-                  {
-                    attribute: "minecraft:generic.movement_speed",
-                    operation: "add_multiplied_base",
-                    amount: 0.2,
-                    duration: 2400,
-                  }
-                ]
-              }
-            ]
-            operation can be: add_value, add_multiplied_base, add_multiplied_total
+    Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
+    [
+      {
+        item: "minecraft:golden_apple",
+        attributes: [
+          {
+            attribute: "minecraft:generic.max_health",
+            operation: "add_value",
+            amount: 4.0,
+            duration: 6000,
+          },
+          {
+            attribute: "minecraft:generic.movement_speed",
+            operation: "add_multiplied_base",
+            amount: 0.2,
+            duration: 2400,
+          }
+        ]
+      }
+    ]
+    operation can be: add_value, add_multiplied_base, add_multiplied_total
     """)
     public List<FoodItemEntry> foodItemConfigurations = new ArrayList<>();
 }

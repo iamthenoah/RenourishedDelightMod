@@ -49,14 +49,15 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
     }
 
     private static FoodItemEntry parseEntry(JsonObject object) {
-        FoodItemEntry entry = new FoodItemEntry();
-        entry.item = GsonHelper.getAsString(object, "item", "");
-        entry.override = GsonHelper.getAsBoolean(object, "override", false);
-        entry.attributes = new ArrayList<>();
+        FoodItemEntry entry = new FoodItemEntry(
+                GsonHelper.getAsString(object, "item", ""),
+                new ArrayList<>(),
+                GsonHelper.getAsBoolean(object, "override", false));
 
         for (JsonElement element : GsonHelper.getAsJsonArray(object, "attributes", new JsonArray())) {
             if (element.isJsonObject()) {
                 JsonObject bonus = element.getAsJsonObject();
+
                 entry.attributes.add(new AttributeBonus(
                         GsonHelper.getAsString(bonus, "attribute", ""),
                         GsonHelper.getAsString(bonus, "operation", "add_value"),
