@@ -17,20 +17,20 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> attributes) {
+public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
 
     private static final int SIXTY_SECONDS = 20 * 60;
 
     public int duration() {
-        return attributes.stream().mapToInt(AttributeBonusInstance::duration)
+        return attributes.stream().mapToInt(AttributeModifierInstance::duration)
                 .max()
                 .orElse(0);
     }
 
     public int time() {
         return attributes.stream()
-                .max(Comparator.comparingInt(AttributeBonusInstance::duration))
-                .map(AttributeBonusInstance::time)
+                .max(Comparator.comparingInt(AttributeModifierInstance::duration))
+                .map(AttributeModifierInstance::time)
                 .orElse(0);
     }
 
@@ -50,10 +50,10 @@ public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> att
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
         Configuration.Common common = Configuration.Common.getInstance();
-        List<AttributeBonusInstance> attributes = new ArrayList<>();
+        List<AttributeModifierInstance> attributes = new ArrayList<>();
 
         for (Configuration.AttributeBonus bonus : common.getAttributes(item)) {
-            AttributeBonusInstance instance = resolveBonus(bonus);
+            AttributeModifierInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }
         if (attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
@@ -62,20 +62,20 @@ public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> att
                     AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
                     Math.max(1, toHearts(nutrition, saturation)),
                     toDuration(nutrition, saturation));
-            AttributeBonusInstance health = resolveBonus(maxHealth);
+            AttributeModifierInstance health = resolveBonus(maxHealth);
             if (health != null) attributes.addFirst(health);
         }
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeBonusInstance resolveBonus(Configuration.AttributeBonus bonus) {
+    private static @Nullable AttributeModifierInstance resolveBonus(Configuration.AttributeBonus bonus) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute());
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation());
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         int duration = Math.max(1, bonus.duration());
         AttributeModifier modifier = new AttributeModifier(id, bonus.amount(), operation);
-        return new AttributeBonusInstance(attribute, modifier, duration, 0);
+        return new AttributeModifierInstance(attribute, modifier, duration, 0);
     }
 
     private static @Nullable Holder<Attribute> resolveAttribute(String id) {
@@ -125,17 +125,17 @@ public record ConsumableFoodInstance(Item item, List<AttributeBonusInstance> att
         CompoundTag compoundTag = new CompoundTag();
         compoundTag.putString("Item", BuiltInRegistries.ITEM.getKey(instance.item).toString());
         ListTag attributes = new ListTag();
-        instance.attributes.forEach(x -> attributes.add(AttributeBonusInstance.save(x)));
+        instance.attributes.forEach(x -> attributes.add(AttributeModifierInstance.save(x)));
         compoundTag.put("Attributes", attributes);
         return compoundTag;
     }
 
     public static ConsumableFoodInstance load(CompoundTag compoundTag) {
         Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(compoundTag.getString("Item")));
-        List<AttributeBonusInstance> attributes = new ArrayList<>();
+        List<AttributeModifierInstance> attributes = new ArrayList<>();
 
         for (Tag tag : compoundTag.getList("Attributes", Tag.TAG_COMPOUND)) {
-            AttributeBonusInstance bonus = AttributeBonusInstance.load((CompoundTag) tag);
+            AttributeModifierInstance bonus = AttributeModifierInstance.load((CompoundTag) tag);
             if (bonus != null) attributes.add(bonus);
         }
         return new ConsumableFoodInstance(item, attributes);

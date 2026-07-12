@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.AttributeBonusInstance;
+import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
@@ -67,7 +67,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
                 if (isDeadOrDying()) {
                     for (ConsumableFoodInstance instance : diet.getSlots()) {
-                        for (AttributeBonusInstance bonus : instance.attributes()) {
+                        for (AttributeModifierInstance bonus : instance.attributes()) {
                             AttributeInstance attribute = player.getAttribute(bonus.attribute());
                             if (attribute != null) attribute.removeModifier(bonus.modifier());
                         }

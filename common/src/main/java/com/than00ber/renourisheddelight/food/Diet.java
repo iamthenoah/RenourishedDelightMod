@@ -95,7 +95,7 @@ public class Diet {
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
 
-        for (AttributeBonusInstance bonus : instance.attributes()) {
+        for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
             if (attribute == null) continue;
 
@@ -112,7 +112,7 @@ public class Diet {
     public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.remove(instance);
 
-        for (AttributeBonusInstance bonus : instance.attributes()) {
+        for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
             if (attribute != null) attribute.removeModifier(bonus.modifier());
         }
@@ -120,7 +120,7 @@ public class Diet {
 
     private void expireBonuses(ServerPlayer player, ConsumableFoodInstance instance) {
         for (int i = 0; i < instance.attributes().size(); i++) {
-            AttributeBonusInstance bonus = instance.attributes().get(i);
+            AttributeModifierInstance bonus = instance.attributes().get(i);
 
             if (bonus.isExpired()) {
                 AttributeInstance attribute = player.getAttribute(bonus.attribute());

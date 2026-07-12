@@ -8,14 +8,14 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.jetbrains.annotations.Nullable;
 
-public final class AttributeBonusInstance {
+public final class AttributeModifierInstance {
 
     private final Holder<Attribute> attribute;
     private final AttributeModifier modifier;
     private final int duration;
     private int time;
 
-    public AttributeBonusInstance(Holder<Attribute> attribute, AttributeModifier modifier, int duration, int time) {
+    public AttributeModifierInstance(Holder<Attribute> attribute, AttributeModifier modifier, int duration, int time) {
         this.attribute = attribute;
         this.modifier = modifier;
         this.duration = duration;
@@ -46,7 +46,7 @@ public final class AttributeBonusInstance {
         time = Math.max(0, time + ticks);
     }
 
-    public static CompoundTag save(AttributeBonusInstance instance) {
+    public static CompoundTag save(AttributeModifierInstance instance) {
         CompoundTag compoundTag = new CompoundTag();
         compoundTag.putString("Attribute", BuiltInRegistries.ATTRIBUTE.getKey(instance.attribute.value()).toString());
         compoundTag.put("Modifier", instance.modifier.save());
@@ -55,13 +55,13 @@ public final class AttributeBonusInstance {
         return compoundTag;
     }
 
-    public static @Nullable AttributeBonusInstance load(CompoundTag compoundTag) {
+    public static @Nullable AttributeModifierInstance load(CompoundTag compoundTag) {
         Attribute attribute = BuiltInRegistries.ATTRIBUTE.get(ResourceLocation.parse(compoundTag.getString("Attribute")));
         if (attribute == null) return null;
         Holder<Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
         AttributeModifier modifier = AttributeModifier.load(compoundTag.getCompound("Modifier"));
         int duration = compoundTag.getInt("Duration");
         int time = compoundTag.getInt("Time");
-        return new AttributeBonusInstance(holder, modifier, duration, time);
+        return new AttributeModifierInstance(holder, modifier, duration, time);
     }
 }

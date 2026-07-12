@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.Configuration;
-import com.than00ber.renourisheddelight.food.AttributeBonusInstance;
+import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
@@ -40,7 +40,7 @@ public abstract class ItemStackMixin {
             }
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
-            for (AttributeBonusInstance bonus : instance.attributes()) {
+            for (AttributeModifierInstance bonus : instance.attributes()) {
                 double rawAmount = bonus.modifier().amount();
                 String amount = String.valueOf(Math.abs(rawAmount));
                 Component description = Component.translatable(bonus.attribute().value().getDescriptionId());
