@@ -1,0 +1,19 @@
+[
+  {
+    "item": "minecraft:cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.movement_speed",
+        "operation": "add_multiplied_base",
+        "amount": 0.1,
+        "duration": 4800
+      }
+    ]
+  }
+]
