@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public final class ConfigUtil {
 
     public static void mergePresets(List<FoodItemEntry> entries) {
-        for (FoodItemEntry preset : FoodPresetRegistry.all()) {
+        for (FoodItemEntry preset : FoodPresetRegistry.getInstance().all()) {
             if (!preset.item.isEmpty()) {
                 FoodItemEntry match = entries.stream()
                         .filter(x -> preset.item.equals(x.item))
@@ -47,7 +47,7 @@ public final class ConfigUtil {
 
     public static FoodItemEntry seedEntry(List<FoodItemEntry> entries, Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.get(id);
+        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
         List<AttributeBonus> seed = preset != null && !preset.attributes.isEmpty()
                 ? preset.attributes.stream().map(AttributeBonus::copy).collect(Collectors.toList()) 
                 : new ArrayList<>(List.of(computeGenericDefault(item)));

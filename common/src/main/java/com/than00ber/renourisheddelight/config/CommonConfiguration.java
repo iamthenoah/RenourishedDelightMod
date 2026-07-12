@@ -38,7 +38,7 @@ public final class CommonConfiguration implements ConfigData {
         String id = value instanceof Item item
                 ? BuiltInRegistries.ITEM.getKey(item).toString()
                 : value.toString();
-        return FoodPresetRegistry.get(id) != null || foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+        return FoodPresetRegistry.getInstance().get(id) != null || foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
     }
 
     private void populateDefaults() {
@@ -59,16 +59,17 @@ public final class CommonConfiguration implements ConfigData {
     }
 
     public List<AttributeBonus> getAttributes(Item item, @Nullable MinecraftServer server) {
-        Path levelFile = LevelFoodConfig.resolveFile(server);
+        LevelFoodConfig levelFoodConfig = LevelFoodConfig.getInstance();
+        Path levelFile = levelFoodConfig.resolveFile(server);
 
         if (levelFile != null) {
-            List<FoodItemEntry> entries = LevelFoodConfig.resolveEntries(levelFile);
+            List<FoodItemEntry> entries = levelFoodConfig.resolveEntries(levelFile);
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
             FoodItemEntry match = ConfigUtil.findEntry(entries, id);
 
             if (match == null) {
                 match = ConfigUtil.seedEntry(entries, item);
-                LevelFoodConfig.save(levelFile, entries);
+                levelFoodConfig.save(levelFile, entries);
             }
             if (!match.attributes.isEmpty()) {
                 return match.attributes;
@@ -79,7 +80,7 @@ public final class CommonConfiguration implements ConfigData {
 
     public List<AttributeBonus> getAttributes(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.get(id);
+        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
         FoodItemEntry match = ConfigUtil.findEntry(foodItemConfigurations, id);
 
         if (preset != null && preset.override && !preset.attributes.isEmpty()) {

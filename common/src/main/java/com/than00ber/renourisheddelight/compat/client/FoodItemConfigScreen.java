@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
@@ -42,15 +43,15 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-        this.levelConfigFile = LevelFoodConfig.resolveFile(net.minecraft.client.Minecraft.getInstance().getSingleplayerServer());
+        this.levelConfigFile = LevelFoodConfig.getInstance().resolveFile(Minecraft.getInstance().getSingleplayerServer());
         this.workingEntries = levelConfigFile != null
-                ? LevelFoodConfig.resolveEntries(levelConfigFile)
+                ? LevelFoodConfig.getInstance().resolveEntries(levelConfigFile)
                 : CommonConfiguration.getInstance().foodItemConfigurations;
     }
 
     private void saveWorkingEntries() {
         if (levelConfigFile != null) {
-            LevelFoodConfig.save(levelConfigFile, workingEntries);
+            LevelFoodConfig.getInstance().save(levelConfigFile, workingEntries);
         } else {
             AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         }

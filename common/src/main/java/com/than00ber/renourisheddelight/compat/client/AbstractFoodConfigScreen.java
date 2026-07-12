@@ -20,7 +20,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected static final int MAX_SUGGESTIONS = 40;
     protected static final int VISIBLE_SUGGESTIONS = 10;
     protected static final float SUGGESTION_Z = 400.0F;
-    protected static final int TITLE_Y = 8;
+    protected static final int TITLE_Y = 11;
 
     protected final List<SuggestField> suggestFields = new ArrayList<>();
 

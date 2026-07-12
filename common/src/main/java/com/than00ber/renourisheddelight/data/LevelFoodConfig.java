@@ -24,34 +24,46 @@ public final class LevelFoodConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type LIST_TYPE = new TypeToken<List<FoodItemEntry>>() {}.getType();
-    private static final Map<Path, List<FoodItemEntry>> CACHE = new HashMap<>();
+    private static final LevelFoodConfig INSTANCE = new LevelFoodConfig();
 
-    public static @Nullable Path resolveFile(@Nullable MinecraftServer server) {
+    public static void init() {
+        getInstance().clear();
+    }
+
+    public static LevelFoodConfig getInstance() {
+        return INSTANCE;
+    }
+
+    private final Map<Path, List<FoodItemEntry>> cache = new HashMap<>();
+
+    public @Nullable Path resolveFile(@Nullable MinecraftServer server) {
         return server == null ? null : server.getWorldPath(LevelResource.ROOT)
                 .resolve(RenourishedDelightMod.MOD_ID)
                 .resolve("food_items.json");
     }
 
-    public static List<FoodItemEntry> resolveEntries(Path file) {
-        return CACHE.computeIfAbsent(file, LevelFoodConfig::loadMerged);
+    public List<FoodItemEntry> resolveEntries(Path file) {
+        return cache.computeIfAbsent(file, x -> {
+            List<FoodItemEntry> entries = read(x);
+
+            if (entries == null) {
+                entries = CommonConfiguration.getInstance().foodItemConfigurations.stream()
+                        .map(FoodItemEntry::copy)
+                        .collect(Collectors.toList());
+            }
+            ConfigUtil.mergePresets(entries);
+            save(x, entries);
+            return entries;
+        });
     }
 
-    private static List<FoodItemEntry> loadMerged(Path file) {
-        List<FoodItemEntry> entries = read(file);
-        if (entries == null) {
-            entries = CommonConfiguration.getInstance().foodItemConfigurations.stream()
-                    .map(FoodItemEntry::copy)
-                    .collect(Collectors.toList());
-        }
-        ConfigUtil.mergePresets(entries);
-        save(file, entries);
-        return entries;
+    public void clear() {
+        cache.clear();
     }
 
-    public static void save(Path file, List<FoodItemEntry> entries) {
-        CACHE.put(file, entries);
-
+    public void save(Path file, List<FoodItemEntry> entries) {
         try {
+            cache.put(file, entries);
             Files.createDirectories(file.getParent());
             Files.writeString(file, GSON.toJson(entries));
         } catch (IOException exception) {
@@ -59,16 +71,15 @@ public final class LevelFoodConfig {
         }
     }
 
-    private static @Nullable List<FoodItemEntry> read(Path file) {
-        if (!Files.isRegularFile(file)) return null;
-
-        try {
-            String content = Files.readString(file);
-            List<FoodItemEntry> entries = GSON.fromJson(content, LIST_TYPE);
-            return entries != null ? entries : new ArrayList<>();
-        } catch (IOException exception) {
-            RenourishedDelightMod.LOGGER.warn("Failed to read per-world food config from {}", file, exception);
-            return null;
+    private @Nullable List<FoodItemEntry> read(Path file) {
+        if (Files.isRegularFile(file)) {
+            try {
+                List<FoodItemEntry> entries = GSON.fromJson(Files.readString(file), LIST_TYPE);
+                return entries != null ? entries : new ArrayList<>();
+            } catch (IOException exception) {
+                RenourishedDelightMod.LOGGER.warn("Failed to read per-world food config from {}", file, exception);
+            }
         }
+        return null;
     }
 }

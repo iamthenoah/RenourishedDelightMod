@@ -40,15 +40,15 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
 
             for (JsonElement element : resource.getValue().getAsJsonArray()) {
                 if (element.isJsonObject()) {
-                    entries.add(parseEntry(element.getAsJsonObject()));
+                    entries.add(toFoodItemEntry(element.getAsJsonObject()));
                 }
             }
         }
-        FoodPresetRegistry.set(entries);
+        FoodPresetRegistry.getInstance().set(entries);
         RenourishedDelightMod.LOGGER.info("Loaded {} preset food entries from {} data file(s)", entries.size(), resources.size());
     }
 
-    private static FoodItemEntry parseEntry(JsonObject object) {
+    private FoodItemEntry toFoodItemEntry(JsonObject object) {
         FoodItemEntry entry = new FoodItemEntry(
                 GsonHelper.getAsString(object, "item", ""),
                 new ArrayList<>(),

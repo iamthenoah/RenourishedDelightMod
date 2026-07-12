@@ -9,19 +9,33 @@ import java.util.stream.Collectors;
 
 public final class FoodPresetRegistry {
 
-    private static Map<String, FoodItemEntry> presets = Map.of();
+    private static final FoodPresetRegistry INSTANCE = new FoodPresetRegistry();
 
-    public static void set(List<FoodItemEntry> entries) {
+    public static void init() {
+        getInstance().clear();
+    }
+
+    public static FoodPresetRegistry getInstance() {
+        return INSTANCE;
+    }
+
+    private Map<String, FoodItemEntry> presets = Map.of();
+    
+    public void set(List<FoodItemEntry> entries) {
         presets = entries.stream()
                 .filter(x -> !x.item.isEmpty())
                 .collect(Collectors.toMap(x -> x.item, Function.identity()));
     }
 
-    public static @Nullable FoodItemEntry get(String id) {
+    public @Nullable FoodItemEntry get(String id) {
         return presets.get(id);
     }
 
-    public static List<FoodItemEntry> all() {
+    public void clear() {
+        presets = Map.of();
+    }
+
+    public List<FoodItemEntry> all() {
         return List.copyOf(presets.values());
     }
 }

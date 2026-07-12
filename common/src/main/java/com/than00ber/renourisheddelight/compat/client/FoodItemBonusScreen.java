@@ -234,7 +234,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int centerX = width / 2;
-        int subtitleY = 22;
+        int subtitleY = 25;
         int subtitleTextY = subtitleY + 4;
 
         Component itemText = Component.literal(entry.item).withStyle(ChatFormatting.GRAY);

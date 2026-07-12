@@ -5,7 +5,10 @@ import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.data.FoodConfigDataLoader;
+import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import dev.architectury.event.events.common.LifecycleEvent;
 import org.slf4j.Logger;
 
 public final class RenourishedDelightMod {
@@ -18,6 +21,10 @@ public final class RenourishedDelightMod {
         CommonConfiguration.init();
         GameRuleRegistry.init();
         FoodConfigDataLoader.init();
+        LifecycleEvent.SERVER_STOPPED.register(x -> {
+            FoodPresetRegistry.init();
+            LevelFoodConfig.init();
+        });
     }
 
     public static void initClient() {
