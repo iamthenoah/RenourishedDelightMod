@@ -1,7 +1,9 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -118,7 +120,13 @@ public class Diet {
 
             if (bonus.isExpired()) {
                 AttributeInstance attribute = player.getAttribute(bonus.attribute());
-                if (attribute != null) attribute.removeModifier(bonus.modifier());
+
+                if (attribute != null) {
+                    if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
+                        NetworkManager.sendToPlayer(player, new SuppressHurtFlashPayload());
+                    }
+                    attribute.removeModifier(bonus.modifier());
+                }
                 instance.attributes().remove(i);
                 i--;
             }
