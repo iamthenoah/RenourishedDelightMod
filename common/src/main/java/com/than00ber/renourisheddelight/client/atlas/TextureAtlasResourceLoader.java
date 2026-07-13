@@ -296,16 +296,16 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     }
     
     private int[] getColorPalette(Item item) {
-        NativeImage carrotImage = itemToNativeImage(item, 16);
-        if (carrotImage == null) return null;
+        NativeImage image = itemToNativeImage(item, 16);
+        if (image == null) return null;
 
-        int width = carrotImage.getWidth();
-        int height = carrotImage.getHeight();
+        int width = image.getWidth();
+        int height = image.getHeight();
         List<Integer> opaquePixels = new ArrayList<>();
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                int pixel = carrotImage.getPixelRGBA(x, y);
+                int pixel = image.getPixelRGBA(x, y);
                 int a = (pixel >> 24) & 0xFF;
                 
                 if (a != 0) {

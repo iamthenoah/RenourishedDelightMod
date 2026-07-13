@@ -1,7 +1,9 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -71,7 +73,9 @@ public class Diet {
                 .filter(x -> x.item() == item)
                 .findFirst()
                 .orElse(null);
-        boolean replenishable = existing != null && existing.duration() > 0 && existing.time() * 100 / existing.duration() > replenishThreshold;
+        boolean replenishable = existing != null 
+                && existing.duration() > 0 
+                && existing.time() * 100 / existing.duration() > replenishThreshold;
 
         return replenishable
                 ? EatingOutcome.REPLENISH
@@ -97,15 +101,7 @@ public class Diet {
 
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
-            if (attribute == null) continue;
-
-            double before = attribute.getValue();
-            attribute.addPermanentModifier(bonus.modifier());
-
-            if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-                double delta = attribute.getValue() - before;
-                if (delta > 0) player.heal((float) delta);
-            }
+            if (attribute != null) attribute.addPermanentModifier(bonus.modifier());
         }
     }
 
@@ -124,7 +120,13 @@ public class Diet {
 
             if (bonus.isExpired()) {
                 AttributeInstance attribute = player.getAttribute(bonus.attribute());
-                if (attribute != null) attribute.removeModifier(bonus.modifier());
+
+                if (attribute != null) {
+                    if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
+                        NetworkManager.sendToPlayer(player, new SuppressHurtFlashPayload());
+                    }
+                    attribute.removeModifier(bonus.modifier());
+                }
                 instance.attributes().remove(i);
                 i--;
             }

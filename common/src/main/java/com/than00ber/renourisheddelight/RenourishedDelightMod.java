@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.data.FoodConfigDataLoader;
 import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.data.LevelFoodConfig;
+import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.event.events.common.LifecycleEvent;
 import org.slf4j.Logger;
@@ -29,5 +30,6 @@ public final class RenourishedDelightMod {
 
     public static void initClient() {
         FoodBarOverlay.init();
+        SuppressHurtFlashPayload.init();
     }
 }
