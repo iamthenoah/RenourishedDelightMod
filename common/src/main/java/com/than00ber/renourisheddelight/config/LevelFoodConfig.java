@@ -1,12 +1,13 @@
-package com.than00ber.renourisheddelight.data;
+package com.than00ber.renourisheddelight.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.ConfigUtil;
+import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.food.AttributeBonus;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,7 @@ public final class LevelFoodConfig {
                         .map(FoodItemEntry::copy)
                         .collect(Collectors.toList());
             }
-            ConfigUtil.mergePresets(entries);
+            mergePresets(entries);
             save(x, entries);
             return entries;
         });
@@ -80,5 +81,28 @@ public final class LevelFoodConfig {
             }
         }
         return null;
+    }
+
+    private static void mergePresets(List<FoodItemEntry> entries) {
+        for (FoodItemEntry preset : FoodPresetRegistry.getInstance().all()) {
+            if (!preset.item.isEmpty()) {
+                FoodItemEntry match = entries.stream()
+                        .filter(x -> preset.item.equals(x.item))
+                        .findFirst()
+                        .orElse(null);
+
+                if (match != null) {
+                    if (!preset.override) {
+                        for (AttributeBonus bonus : preset.attributes) {
+                            if (match.attributes.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
+                                match.attributes.add(bonus.copy());
+                            }
+                        }
+                    }
+                } else {
+                    entries.add(preset.copy());
+                }
+            }
+        }
     }
 }

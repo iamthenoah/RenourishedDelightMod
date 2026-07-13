@@ -45,7 +45,7 @@
   "config.renourisheddelight.reset_confirm": "Are you sure?",
   "config.renourisheddelight.client.hud_position": "Reposition Hunger HUD",
   "config.renourisheddelight.client.golden_palette_item_hint": "Item ID, minecraft:gold_ingot",
-  "config.renourisheddelight.client.hud_position.hint": "Drag the box to reposition, then press Escape to save.",
+  "config.renourisheddelight.client.hud_position.hint": "Drag the food HUD to reposition, then press Escape to save.",
   "config.renourisheddelight.food_items": "Food Item Settings",
   "config.renourisheddelight.food_items.bonus_title": "Item Bonus Settings",
   "config.renourisheddelight.food_items.new_item": "Item ID",

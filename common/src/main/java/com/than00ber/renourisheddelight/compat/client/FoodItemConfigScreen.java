@@ -2,8 +2,8 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.ConfigUtil;
+import com.than00ber.renourisheddelight.config.LevelFoodConfig;
 import com.than00ber.renourisheddelight.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.LevelFoodConfig;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;

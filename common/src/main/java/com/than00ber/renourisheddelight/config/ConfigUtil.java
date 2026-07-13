@@ -17,29 +17,6 @@ import java.util.List;
 
 public final class ConfigUtil {
 
-    public static void mergePresets(List<FoodItemEntry> entries) {
-        for (FoodItemEntry preset : FoodPresetRegistry.getInstance().all()) {
-            if (!preset.item.isEmpty()) {
-                FoodItemEntry match = entries.stream()
-                        .filter(x -> preset.item.equals(x.item))
-                        .findFirst()
-                        .orElse(null);
-
-                if (match != null) {
-                    if (!preset.override) {
-                        for (AttributeBonus bonus : preset.attributes) {
-                            if (match.attributes.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
-                                match.attributes.add(bonus.copy());
-                            }
-                        }
-                    }
-                } else {
-                    entries.add(preset.copy());
-                }
-            }
-        }
-    }
-
     public static @Nullable FoodItemEntry findEntry(List<FoodItemEntry> entries, String id) {
         return entries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
     }
