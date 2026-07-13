@@ -70,10 +70,7 @@ public final class Configuration {
         }
 
         private @Nullable FoodItemEntry findEntry(String id) {
-            for (FoodItemEntry entry : foodItemConfigurations) {
-                if (id.equals(entry.item)) return entry;
-            }
-            return null;
+            return foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
         }
 
         private AttributeBonus computeGenericDefault(Item item) {
@@ -126,13 +123,20 @@ public final class Configuration {
 
         public List<AttributeBonus> getAttributes(Item item) {
             String id = BuiltInRegistries.ITEM.getKey(item).toString();
-
             FoodItemEntry preset = FoodPresetRegistry.get(id);
-            if (preset != null && !preset.attributes.isEmpty()) return preset.attributes;
-
             FoodItemEntry match = findEntry(id);
-            if (match != null && !match.attributes.isEmpty()) return match.attributes;
 
+            if (preset != null && preset.override && !preset.attributes.isEmpty()) {
+                return preset.attributes;
+            }
+            if (preset != null && !preset.attributes.isEmpty()) {
+                List<AttributeBonus> merged = new ArrayList<>(preset.attributes);
+                if (match != null) merged.addAll(match.attributes);
+                return merged;
+            }
+            if (match != null && !match.attributes.isEmpty()) {
+                return match.attributes;
+            }
             List<AttributeBonus> attributes = new ArrayList<>(List.of(computeGenericDefault(item)));
 
             if (match != null) {
@@ -176,6 +180,7 @@ public final class Configuration {
     public static final class FoodItemEntry {
 
         public String item = "";
+        public boolean override = false;
         public List<AttributeBonus> attributes = new ArrayList<>();
     }
 
