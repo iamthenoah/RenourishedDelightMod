@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
-import com.than00ber.renourisheddelight.network.MaxHealthShrinkAware;
+import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,10 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LocalPlayerMixin {
 
     @Inject(method = "hurtTo", at = @At("TAIL"))
-    private void clearMaxHealthShrinkTilt(float health, CallbackInfo callback) {
-        LocalPlayer player = (LocalPlayer) (Object) this;
-
-        if (((MaxHealthShrinkAware) player).consumeRecentMaxHealthShrink()) {
+    private void hurtTo(float health, CallbackInfo callback) {
+        if (SuppressHurtFlashPayload.isSuppressed()) {
+            LocalPlayer player = (LocalPlayer) (Object) this;
             player.hurtTime = 0;
             player.hurtDuration = 0;
         }

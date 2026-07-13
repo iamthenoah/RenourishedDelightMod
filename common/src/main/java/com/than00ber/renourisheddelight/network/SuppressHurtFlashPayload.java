@@ -12,19 +12,20 @@ public record SuppressHurtFlashPayload() implements CustomPacketPayload {
 
     private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "suppress_hurt_flash"));
     private static final StreamCodec<RegistryFriendlyByteBuf, SuppressHurtFlashPayload> CODEC = StreamCodec.unit(new SuppressHurtFlashPayload());
+    private static final long WINDOW_MILLIS = 500L;
+
+    private static long shrinkTimestamp = -1L;
 
     public static void init() {
-        NetworkManager.registerReceiver(NetworkManager.s2c(), SuppressHurtFlashPayload.TYPE, SuppressHurtFlashPayload.CODEC, (p, c) -> c.queue(() -> p.handle(c)));
+        NetworkManager.registerReceiver(NetworkManager.s2c(), TYPE, CODEC, (payload, context) -> context.queue(() -> shrinkTimestamp = System.currentTimeMillis()));
+    }
+
+    public static boolean isSuppressed() {
+        return shrinkTimestamp >= 0 && System.currentTimeMillis() - shrinkTimestamp <= WINDOW_MILLIS;
     }
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-    
-    public void handle(NetworkManager.PacketContext context) {
-        if (context.getPlayer() instanceof MaxHealthShrinkAware aware) {
-            aware.maxHealthHasShrunk();
-        }
     }
 }

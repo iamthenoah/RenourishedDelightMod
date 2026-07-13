@@ -1,10 +1,9 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.than00ber.renourisheddelight.network.MaxHealthShrinkAware;
+import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,12 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class GameRendererMixin {
 
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-    private void suppressMaxHealthShrinkTilt(PoseStack poseStack, float partialTick, CallbackInfo callback) {
-        Entity camera = Minecraft.getInstance().getCameraEntity();
-
-        if (camera instanceof LivingEntity livingEntity && camera instanceof MaxHealthShrinkAware aware && aware.consumeRecentMaxHealthShrink()) {
-            livingEntity.hurtTime = 0;
-            livingEntity.hurtDuration = 0;
+    private void bobHurt(PoseStack poseStack, float partialTick, CallbackInfo callback) {
+        if (SuppressHurtFlashPayload.isSuppressed() && Minecraft.getInstance().getCameraEntity() instanceof LivingEntity entity) {
+            entity.hurtTime = 0;
+            entity.hurtDuration = 0;
             callback.cancel();
         }
     }
