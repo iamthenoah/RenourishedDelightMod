@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -82,9 +83,17 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
                 .bounds(centerX + 125, height - 56, 20, 20)
                 .build());
+
+        int buttonsY = height - 28;
+        int buttonsWidth = 200;
+        int buttonsLeft = centerX - buttonsWidth / 2;
+        int gap = 5;
+        int halfWidth = (buttonsWidth - gap) / 2;
+
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
-                .bounds(centerX - 100, height - 28, 200, 20)
+                .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
+        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
         rebuildContent();
     }
 
@@ -157,7 +166,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
                 icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
             }
 
-            Button nameButton = Button.builder(Component.literal(entry.item), button -> openBonuses(entry))
+            Component nameLabel = item != null ? item.getDescription() : Component.literal(entry.item);
+            Button nameButton = Button.builder(nameLabel, button -> openBonuses(entry))
                     .bounds(nameX, y, nameWidth, 20)
                     .build();
             addRenderableWidget(nameButton);
@@ -232,6 +242,18 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void removeItem(FoodItemEntry entry) {
         workingEntries.remove(entry);
         saveWorkingEntries();
+        rebuildContent();
+    }
+
+    private void resetList() {
+        workingEntries.clear();
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (item.components().get(DataComponents.FOOD) != null) {
+                workingEntries.add(new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), ConfigUtil.computeDefaultBonuses(item)));
+            }
+        }
+        saveWorkingEntries();
+        scrollOffset = 0;
         rebuildContent();
     }
 

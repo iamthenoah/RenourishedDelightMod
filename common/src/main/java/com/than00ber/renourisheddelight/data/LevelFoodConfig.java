@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.data;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
@@ -70,10 +71,12 @@ public final class LevelFoodConfig {
     private @Nullable List<FoodItemEntry> read(Path file) {
         if (Files.isRegularFile(file)) {
             try {
-                List<FoodItemEntry> entries = GSON.fromJson(Files.readString(file), LIST_TYPE);
+                String content = Files.readString(file);
+                if (content.isBlank()) return null;
+                List<FoodItemEntry> entries = GSON.fromJson(content, LIST_TYPE);
                 return entries != null ? entries : new ArrayList<>();
-            } catch (IOException exception) {
-                RenourishedDelightMod.LOGGER.warn("Failed to read per-world food config from {}", file, exception);
+            } catch (IOException | JsonParseException exception) {
+                RenourishedDelightMod.LOGGER.warn("Failed to read per-world food config from {}, resetting it", file, exception);
             }
         }
         return null;

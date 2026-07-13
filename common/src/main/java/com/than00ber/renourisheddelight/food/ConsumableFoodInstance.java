@@ -83,7 +83,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new AttributeModifierInstance(attribute, modifier, duration, 0);
     }
 
-    private static @Nullable Holder<Attribute> resolveAttribute(String id) {
+    public static @Nullable Holder<Attribute> resolveAttribute(String id) {
         Attribute attribute = tryGetAttribute(id);
 
         if (attribute == null && id != null) {

@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -48,6 +49,20 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     }
 
     protected void renderFooterActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
+    protected Button createResetButton(int x, int y, int width, int height, Runnable action) {
+        boolean[] armed = {false};
+        return Button.builder(Component.translatable("config.renourisheddelight.food_items.reset"), button -> {
+            if (armed[0]) {
+                armed[0] = false;
+                button.setMessage(Component.translatable("config.renourisheddelight.food_items.reset"));
+                action.run();
+            } else {
+                armed[0] = true;
+                button.setMessage(Component.translatable("config.renourisheddelight.food_items.reset_confirm").withStyle(ChatFormatting.YELLOW));
+            }
+        }).bounds(x, y, width, height).build();
     }
 
     protected boolean isInsideScrollbar(double mouseX, double mouseY) {

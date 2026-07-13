@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class ConfigUtil {
 
@@ -47,14 +46,23 @@ public final class ConfigUtil {
 
     public static FoodItemEntry seedEntry(List<FoodItemEntry> entries, Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-        List<AttributeBonus> seed = preset != null && !preset.attributes.isEmpty()
-                ? preset.attributes.stream().map(AttributeBonus::copy).collect(Collectors.toList()) 
-                : new ArrayList<>(List.of(computeGenericDefault(item)));
-
-        FoodItemEntry entry = new FoodItemEntry(id, seed);
+        FoodItemEntry entry = new FoodItemEntry(id, computeDefaultBonuses(item));
         entries.add(entry);
         return entry;
+    }
+
+    public static List<AttributeBonus> computeDefaultBonuses(Item item) {
+        String id = BuiltInRegistries.ITEM.getKey(item).toString();
+        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
+        List<AttributeBonus> bonuses = new ArrayList<>();
+        bonuses.add(computeGenericDefault(item));
+
+        if (preset != null) {
+            for (AttributeBonus bonus : preset.attributes) {
+                bonuses.add(bonus.copy());
+            }
+        }
+        return bonuses;
     }
 
     public static AttributeBonus computeGenericDefault(Item item) {
