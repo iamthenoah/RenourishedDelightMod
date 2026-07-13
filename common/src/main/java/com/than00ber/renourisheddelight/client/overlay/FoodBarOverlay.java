@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.than00ber.renourisheddelight.client.atlas.Texture;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
+import com.than00ber.renourisheddelight.compat.client.HudPositionScreen;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
@@ -35,12 +36,13 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     private boolean isVisible() {
         Minecraft minecraft = Minecraft.getInstance();
 
-        return minecraft.player != null && !(minecraft.player.getVehicle() != null 
+        return minecraft.player != null && !(minecraft.player.getVehicle() != null
                 && minecraft.player.getVehicle().showVehicleHealth())
                 && minecraft.gameMode != null
                 && !minecraft.options.hideGui
                 && minecraft.gameMode.canHurtPlayer()
-                && minecraft.getCameraEntity() instanceof Player;
+                && minecraft.getCameraEntity() instanceof Player
+                && !(minecraft.screen instanceof HudPositionScreen);
     }
 
     @Override
@@ -50,27 +52,43 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
         if (isVisible() && atlas != null && player instanceof DietHolder holder) {
             List<ConsumableFoodInstance> slots = holder.getDiet().getSlots();
-            
+
             if (!slots.isEmpty()) {
                 Window window = Minecraft.getInstance().getWindow();
                 int x = window.getGuiScaledWidth() / 2 + 10 + ClientConfiguration.getInstance().foodBarOffsetX;
                 int y = window.getGuiScaledHeight() - 39 + ClientConfiguration.getInstance().foodBarOffsetY;
-                renderFoodBar(graphics, atlas, new Point(x, y), player, slots);
+                boolean blink = updateBlink(slots.size());
+                boolean hunger = player.hasEffect(MobEffects.HUNGER);
+                boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+                renderSlots(graphics, atlas, new Point(x, y), slots, blink, hunger, nourished);
             }
         }
     }
 
-    private void renderFoodBar(GuiGraphics graphics, TextureAtlas atlas, Point pos, Player player, List<ConsumableFoodInstance> slots) {
+    private boolean updateBlink(int count) {
         int tick = Minecraft.getInstance().gui.getGuiTicks();
-        int count = slots.size();
 
         if (count < previousFoodCount) {
             foodBlinkEndTick = tick + 20;
         }
         previousFoodCount = count;
-        boolean blink = foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
-        boolean hunger = player.hasEffect(MobEffects.HUNGER);
-        boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+        return foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
+    }
+
+    public static void renderPreview(GuiGraphics graphics, Point pos, List<ConsumableFoodInstance> slots) {
+        TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
+
+        if (atlas != null && !slots.isEmpty()) {
+            renderSlots(graphics, atlas, pos, slots, false, false, false);
+        }
+    }
+
+    public static int countIconSlots(List<ConsumableFoodInstance> slots) {
+        return computeShares(merge(slots)).values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    private static void renderSlots(GuiGraphics graphics, TextureAtlas atlas, Point pos, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished) {
+        int tick = Minecraft.getInstance().gui.getGuiTicks();
         int globalIndex = 0;
 
         for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
@@ -80,19 +98,17 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
+    private static void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
         Texture[] textures = atlas.getTextures(instance.item());
 
         if (textures != null) {
             float fillRatio = 1.0f - ((float) instance.time() / (float) instance.duration());
             int width = Math.round(size * 8 * fillRatio);
 
-            // existing silhouette pass
             for (int i = 0; i < size; i++) {
                 int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
             }
-            // existing filled pass
             graphics.pose().pushPose();
             graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
 
@@ -103,7 +119,6 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             graphics.disableScissor();
             graphics.pose().popPose();
 
-            // existing outline pass
             for (int i = 0; i < size; i++) {
                 int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
                 int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
@@ -112,7 +127,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private List<ConsumableFoodInstance> merge(List<ConsumableFoodInstance> slots) {
+    private static List<ConsumableFoodInstance> merge(List<ConsumableFoodInstance> slots) {
         Map<Item, ConsumableFoodInstance> merged = new LinkedHashMap<>();
 
         for (ConsumableFoodInstance instance : slots) {
@@ -127,7 +142,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return new ArrayList<>(merged.values());
     }
 
-    private Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> merged) {
+    private static Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> merged) {
         int totalDuration = merged.stream().mapToInt(ConsumableFoodInstance::duration).sum();
         Map<ConsumableFoodInstance, Integer> result = new LinkedHashMap<>();
         int remainingSlots = 10;
@@ -163,7 +178,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return result;
     }
 
-    private int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger, boolean nourished) {
+    private static int computeWobbleOffset(ConsumableFoodInstance food, int index, int tick, boolean hunger, boolean nourished) {
         if (nourished) return computeNourishmentWobble(index, tick);
         int timeLeft = food.duration() - food.time();
         float threeMinutes = 60 * 20 * 3;
@@ -173,7 +188,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return tick % (wobble * 3 + 1) == 0 ? ((tick + index) % 2 == 0) ? 1 : -1 : 0;
     }
 
-    private int computeNourishmentWobble(int index, int tick) {
+    private static int computeNourishmentWobble(int index, int tick) {
         int positionInCycle = tick % (25 + 20);
         return positionInCycle >= 25 ? 0 : index == positionInCycle ? -2 : 0;
     }

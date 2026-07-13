@@ -48,9 +48,6 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     }
 
-    protected void renderFooterActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-    }
-
     protected Button createResetButton(int x, int y, int width, int height, Runnable action) {
         boolean[] armed = {false};
         return Button.builder(Component.translatable("config.renourisheddelight.food_items.reset"), button -> {
@@ -73,9 +70,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected void scrollToMouse(double mouseY) {
         double ratio = (mouseY - scrollTrackTop) / Math.max(1, scrollTrackBottom - scrollTrackTop);
-        scrollOffset = (int) Math.round(ratio * scrollMaxOffset);
-        if (scrollOffset < 0) scrollOffset = 0;
-        if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
+        scrollOffset = Math.clamp((int) Math.round(ratio * scrollMaxOffset), 0, scrollMaxOffset);
         rebuildContent();
     }
 
@@ -131,9 +126,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             return true;
         }
         if (scrollMaxOffset > 0) {
-            scrollOffset -= (int) Math.signum(scrollY);
-            if (scrollOffset < 0) scrollOffset = 0;
-            if (scrollOffset > scrollMaxOffset) scrollOffset = scrollMaxOffset;
+            scrollOffset = Math.clamp(scrollOffset - (int) Math.signum(scrollY), 0, scrollMaxOffset);
             rebuildContent();
             return true;
         }
@@ -154,7 +147,6 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
         renderHeaderActions(graphics, mouseX, mouseY, partialTick);
         renderScrollableContent(graphics, mouseX, mouseY, partialTick);
-        renderFooterActions(graphics, mouseX, mouseY, partialTick);
 
         if (scrollMaxOffset > 0) {
             int trackHeight = scrollTrackBottom - scrollTrackTop;
@@ -182,7 +174,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return true;
     }
 
     protected void renderPanelChrome(GuiGraphics graphics) {
@@ -243,7 +235,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
         protected void scroll(int direction) {
             int maxOffset = Math.max(0, matches.size() - visibleCount());
-            scrollOffset = Math.max(0, Math.min(scrollOffset + direction, maxOffset));
+            scrollOffset = Math.clamp(scrollOffset + direction, 0, maxOffset);
         }
 
         private int contentWidth() {
@@ -308,15 +300,14 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             }
 
             if (scrollable) {
-                int barX = x;
-                graphics.fill(barX, y, barX + barWidth, y + totalHeight, 0x40FFFFFF);
+                graphics.fill(x, y, x + barWidth, y + totalHeight, 0x40FFFFFF);
 
                 double fraction = visible / (double) matches.size();
                 int thumbHeight = Math.max(6, (int) Math.round(totalHeight * fraction));
                 int thumbTravel = totalHeight - thumbHeight;
                 double scrollFraction = scrollOffset / (double) Math.max(1, matches.size() - visible);
                 int thumbY = y + (int) Math.round(thumbTravel * scrollFraction);
-                graphics.fill(barX, thumbY, barX + barWidth, thumbY + thumbHeight, 0xFFFFFFFF);
+                graphics.fill(x, thumbY, x + barWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
             graphics.pose().popPose();
         }
