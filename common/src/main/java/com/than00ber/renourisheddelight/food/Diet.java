@@ -71,7 +71,9 @@ public class Diet {
                 .filter(x -> x.item() == item)
                 .findFirst()
                 .orElse(null);
-        boolean replenishable = existing != null && existing.duration() > 0 && existing.time() * 100 / existing.duration() > replenishThreshold;
+        boolean replenishable = existing != null 
+                && existing.duration() > 0 
+                && existing.time() * 100 / existing.duration() > replenishThreshold;
 
         return replenishable
                 ? EatingOutcome.REPLENISH
@@ -97,15 +99,7 @@ public class Diet {
 
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
-            if (attribute == null) continue;
-
-            double before = attribute.getValue();
-            attribute.addPermanentModifier(bonus.modifier());
-
-            if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-                double delta = attribute.getValue() - before;
-                if (delta > 0) player.heal((float) delta);
-            }
+            if (attribute != null) attribute.addPermanentModifier(bonus.modifier());
         }
     }
 

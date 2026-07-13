@@ -151,46 +151,6 @@ public final class Configuration {
             return attributes;
         }
 
-        public void syncPresetEntries() {
-            for (FoodItemEntry preset : FoodPresetRegistry.all()) {
-                if (preset.item.isEmpty()) continue;
-                FoodItemEntry match = findEntry(preset.item);
-
-                if (preset.override) {
-                    if (match == null) {
-                        match = new FoodItemEntry();
-                        match.item = preset.item;
-                        foodItemConfigurations.add(match);
-                    }
-                    match.attributes = copyOf(preset.attributes);
-                } else if (match == null) {
-                    FoodItemEntry entry = new FoodItemEntry();
-                    entry.item = preset.item;
-                    entry.attributes = copyOf(preset.attributes);
-                    foodItemConfigurations.add(entry);
-                } else {
-                    for (AttributeBonus bonus : preset.attributes) {
-                        boolean present = match.attributes.stream().anyMatch(x -> x.attribute.equals(bonus.attribute));
-                        if (!present) {
-                            match.attributes.add(copyOf(bonus));
-                        }
-                    }
-                }
-            }
-        }
-
-        private static List<AttributeBonus> copyOf(List<AttributeBonus> source) {
-            List<AttributeBonus> copy = new ArrayList<>();
-            for (AttributeBonus bonus : source) {
-                copy.add(copyOf(bonus));
-            }
-            return copy;
-        }
-
-        private static AttributeBonus copyOf(AttributeBonus bonus) {
-            return new AttributeBonus(bonus.attribute, bonus.operation, bonus.amount, bonus.duration);
-        }
-
         @ConfigEntry.Gui.Excluded
         @Comment("""
                 Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
