@@ -50,14 +50,14 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected Button createResetButton(int x, int y, int width, int height, Runnable action) {
         boolean[] armed = {false};
-        return Button.builder(Component.translatable("config.renourisheddelight.food_items.reset"), button -> {
+        return Button.builder(Component.translatable("config.renourisheddelight.reset_all"), button -> {
             if (armed[0]) {
                 armed[0] = false;
-                button.setMessage(Component.translatable("config.renourisheddelight.food_items.reset"));
+                button.setMessage(Component.translatable("config.renourisheddelight.reset_all"));
                 action.run();
             } else {
                 armed[0] = true;
-                button.setMessage(Component.translatable("config.renourisheddelight.food_items.reset_confirm").withStyle(ChatFormatting.YELLOW));
+                button.setMessage(Component.translatable("config.renourisheddelight.reset_confirm").withStyle(ChatFormatting.YELLOW));
             }
         }).bounds(x, y, width, height).build();
     }

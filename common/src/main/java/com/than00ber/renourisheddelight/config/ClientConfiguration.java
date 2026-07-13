@@ -32,8 +32,8 @@ public final class ClientConfiguration implements ConfigData {
     public String goldenPaletteItem = "minecraft:golden_carrot";
 
     @ConfigEntry.Gui.Tooltip
-    @Comment("Whether to render the active food items panel next to the inventory screen (default: true)")
-    public boolean showFoodDisplayInInventory = true;
+    @Comment("Whether to render the active food items panel next to the inventory screen (default: false)")
+    public boolean showFoodDisplayInInventory = false;
 
     @ConfigEntry.Gui.Tooltip
     @Comment("Cache generated item icon atlases to disk, so resource reloads skip re-rendering every icon when nothing changed (default: true)")

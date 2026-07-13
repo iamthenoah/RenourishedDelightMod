@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,6 +16,8 @@ public final class ConfigMenuScreen extends Screen {
 
     private static final int ROW_HEIGHT = 24;
     private static final String DEFAULT_GOLDEN_PALETTE_ITEM = "minecraft:golden_carrot";
+    private static final boolean DEFAULT_SHOW_FOOD_DISPLAY = false;
+    private static final boolean DEFAULT_ENABLE_ATLAS_CACHE = true;
 
     private final @Nullable Screen parent;
     private EditBox goldenPaletteItemField;
@@ -39,7 +42,7 @@ public final class ConfigMenuScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client.hud_position"), button -> minecraft.setScreen(new HudPositionScreen(this)))
                 .bounds(centerX - 100, top, 150, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client.hud_reset"), button -> {
+        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.reset"), button -> {
                     config.foodBarOffsetX = 0;
                     config.foodBarOffsetY = 0;
                     AutoConfig.getConfigHolder(ClientConfiguration.class).save();
@@ -51,16 +54,16 @@ public final class ConfigMenuScreen extends Screen {
         goldenPaletteItemField.setMaxLength(256);
         goldenPaletteItemField.setValue(config.goldenPaletteItem.isBlank() ? DEFAULT_GOLDEN_PALETTE_ITEM : config.goldenPaletteItem);
         goldenPaletteItemField.setHint(Component.translatable("config.renourisheddelight.client.golden_palette_item_hint"));
-        goldenPaletteItemField.setTooltip(Tooltip.create(Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip")));
+        goldenPaletteItemField.setTooltip(Tooltip.create(Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip", EffectRegistry.NOURISHMENT.value().getDisplayName())));
         addRenderableWidget(goldenPaletteItemField);
 
-        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client.hud_reset"),
+        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.reset"),
                         button -> goldenPaletteItemField.setValue(DEFAULT_GOLDEN_PALETTE_ITEM))
                 .bounds(centerX + 55, top + ROW_HEIGHT, 45, 20)
                 .build());
 
-        addToggle(centerX - 100, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayValue, value -> showFoodDisplayValue = value);
-        addToggle(centerX - 100, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.enableAtlasCache", enableAtlasCacheValue, value -> enableAtlasCacheValue = value);
+        addToggle(centerX - 100, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayValue, DEFAULT_SHOW_FOOD_DISPLAY, value -> showFoodDisplayValue = value);
+        addToggle(centerX - 100, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.enableAtlasCache", enableAtlasCacheValue, DEFAULT_ENABLE_ATLAS_CACHE, value -> enableAtlasCacheValue = value);
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.food_items"),
                         button -> minecraft.setScreen(new FoodItemConfigScreen(this)))
@@ -72,13 +75,22 @@ public final class ConfigMenuScreen extends Screen {
                 .build());
     }
 
-    private void addToggle(int x, int y, String labelKey, boolean initial, java.util.function.Consumer<Boolean> onChange) {
+    private void addToggle(int x, int y, String labelKey, boolean initial, boolean defaultValue, java.util.function.Consumer<Boolean> onChange) {
         boolean[] state = {initial};
-        addRenderableWidget(Button.builder(toggleLabel(labelKey, initial), button -> {
+        Button toggleButton = Button.builder(toggleLabel(labelKey, initial), button -> {
             state[0] = !state[0];
             onChange.accept(state[0]);
             button.setMessage(toggleLabel(labelKey, state[0]));
-        }).bounds(x, y, 200, 20).build());
+        }).bounds(x, y, 150, 20).build();
+        addRenderableWidget(toggleButton);
+
+        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.reset"), button -> {
+                    state[0] = defaultValue;
+                    onChange.accept(defaultValue);
+                    toggleButton.setMessage(toggleLabel(labelKey, defaultValue));
+                })
+                .bounds(x + 155, y, 45, 20)
+                .build());
     }
 
     private Component toggleLabel(String labelKey, boolean value) {
