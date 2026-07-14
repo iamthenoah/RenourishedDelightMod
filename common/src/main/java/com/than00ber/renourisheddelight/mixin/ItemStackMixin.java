@@ -30,7 +30,7 @@ public abstract class ItemStackMixin {
         ItemStack stack = (ItemStack) (Object) this;
         FoodProperties properties = stack.get(DataComponents.FOOD);
 
-        if (properties != null || properties == null && CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
+        if (properties != null || CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
             ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties, Minecraft.getInstance().getSingleplayerServer());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));

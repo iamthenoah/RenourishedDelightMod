@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -116,11 +117,10 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                     AtlasCache.save(cacheDir, "large", largeBuilder, packIds, items.size());
                 }
             } catch (Exception exception) {
-                // silent fail
+                RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas", exception);
             } finally {
                 long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
-                System.out.printf("[RenourishedDelight] Item icon atlas %s in %d ms%n",
-                        cacheHit ? "loaded from cache" : "generated", elapsedMs);
+                RenourishedDelightMod.LOGGER.info("Item icon atlas {} in {} ms", cacheHit ? "loaded from cache" : "generated", elapsedMs);
             }
         });
     }

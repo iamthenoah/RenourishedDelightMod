@@ -12,7 +12,7 @@ public final class FoodPresetRegistry {
     private static final FoodPresetRegistry INSTANCE = new FoodPresetRegistry();
 
     public static void init() {
-        getInstance().presets.clear();
+        getInstance().presets = Map.of();
     }
 
     public static FoodPresetRegistry getInstance() {
