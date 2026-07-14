@@ -45,8 +45,10 @@ public final class LevelFoodConfig {
     }
 
     public List<FoodItemEntry> resolveEntries(Path file) {
-        return cache.computeIfAbsent(file, x -> {
-            List<FoodItemEntry> entries = read(x);
+        List<FoodItemEntry> cached = cache.get(file);
+
+        if (cached == null) {
+            List<FoodItemEntry> entries = read(file);
 
             if (entries == null) {
                 entries = CommonConfiguration.getInstance().foodItemConfigurations.stream()
@@ -54,9 +56,10 @@ public final class LevelFoodConfig {
                         .collect(Collectors.toList());
             }
             mergePresets(entries);
-            save(x, entries);
+            save(file, entries);
             return entries;
-        });
+        }
+        return cached;
     }
 
     public void save(Path file, List<FoodItemEntry> entries) {
