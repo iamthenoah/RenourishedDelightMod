@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
@@ -34,12 +33,6 @@ public abstract class ItemStackMixin {
         if (properties != null || properties == null && CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
             ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties, Minecraft.getInstance().getSingleplayerServer());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
-
-            if (ClientConfiguration.getInstance().showFoodDisplayInInventory) {
-                String fed = StringUtil.formatTickDuration(instance.duration(), 20);
-                tooltip.add(Component.translatable("tooltip.fed", fed).withStyle(ChatFormatting.BLUE));
-                tooltip.add(Component.empty());
-            }
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
             for (AttributeModifierInstance bonus : instance.attributes()) {

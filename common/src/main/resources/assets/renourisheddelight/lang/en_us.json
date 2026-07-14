@@ -1,6 +1,5 @@
 {  
   "tooltip.eaten": "When Eaten:",
-  "tooltip.fed": "Fed (%s)",
   "message.eating_too_many": "I'm full right now.",
   "message.eating_not_balanced": "I can't eat the same thing twice!",
   "gamerule.renourisheddelight:playerStartingHearts": "Player Starting Hearts",

@@ -19,7 +19,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -87,8 +86,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                         }
                     }
                     if (large) {
-                        Item item = slot.item();
-                        Component name = item.getDescription();
+                        Component name = slot.item().getDescription();
 
                         if (font.width(name) > 90) {
                             String truncated = font.plainSubstrByWidth(name.getString(), 90 - font.width("…")).stripTrailing();
