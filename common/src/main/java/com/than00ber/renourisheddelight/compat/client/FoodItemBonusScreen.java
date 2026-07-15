@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.config.ConfigUtil;
 import com.than00ber.renourisheddelight.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
@@ -215,7 +214,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.addAll(ConfigUtil.computeDefaultBonuses(icon));
+            entry.attributes.addAll(AttributeBonus.computeDefaultBonuses(icon));
         }
         scrollOffset = 0;
         rebuildContent();

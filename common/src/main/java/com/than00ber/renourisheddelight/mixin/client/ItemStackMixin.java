@@ -1,4 +1,4 @@
-package com.than00ber.renourisheddelight.mixin;
+package com.than00ber.renourisheddelight.mixin.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -31,7 +32,10 @@ public abstract class ItemStackMixin {
         FoodProperties properties = stack.get(DataComponents.FOOD);
 
         if (properties != null || CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties, Minecraft.getInstance().getSingleplayerServer());
+            MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
+            ConsumableFoodInstance instance = server != null
+                    ? ConsumableFoodInstance.create(stack.getItem(), properties, server)
+                    : ConsumableFoodInstance.create(stack.getItem(), properties);
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 

@@ -1,9 +1,9 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.ConfigUtil;
-import com.than00ber.renourisheddelight.config.LevelFoodConfig;
+import com.than00ber.renourisheddelight.config.WorldFoodConfig;
 import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
@@ -15,12 +15,12 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.*;
 
 public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
@@ -38,21 +38,21 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
-    private final @Nullable Path levelConfigFile;
+    private final @Nullable MinecraftServer server;
     private final List<FoodItemEntry> workingEntries;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-        this.levelConfigFile = LevelFoodConfig.getInstance().resolveFile(Minecraft.getInstance().getSingleplayerServer());
-        this.workingEntries = levelConfigFile != null
-                ? LevelFoodConfig.getInstance().resolveEntries(levelConfigFile)
+        this.server = Minecraft.getInstance().getSingleplayerServer();
+        this.workingEntries = server != null
+                ? WorldFoodConfig.get(server).getEntries()
                 : CommonConfiguration.getInstance().foodItemConfigurations;
     }
 
     private void saveWorkingEntries() {
-        if (levelConfigFile != null) {
-            LevelFoodConfig.getInstance().save(levelConfigFile, workingEntries);
+        if (server != null) {
+            WorldFoodConfig.get(server).setDirty();
         } else {
             AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         }
@@ -142,7 +142,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
         int listTop = 76;
         int listBottom = height - 68;
-        int rowGap = ROW_HEIGHT - 20;
+        int rowGap = ROW_HEIGHT - 17;
         int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
         scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
         scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
@@ -231,10 +231,11 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private FoodItemEntry createEntry(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry existing = ConfigUtil.findEntry(workingEntries, id);
+        FoodItemEntry existing = workingEntries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
         if (existing != null) return existing;
 
-        FoodItemEntry entry = ConfigUtil.seedEntry(workingEntries, item);
+        FoodItemEntry entry = new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item));
+        workingEntries.add(entry);
         saveWorkingEntries();
         return entry;
     }
@@ -249,7 +250,9 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         workingEntries.clear();
         for (Item item : BuiltInRegistries.ITEM) {
             if (item.components().get(DataComponents.FOOD) != null) {
-                workingEntries.add(new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), ConfigUtil.computeDefaultBonuses(item)));
+                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+                List<AttributeBonus> bonuses = AttributeBonus.computeDefaultBonuses(item);
+                workingEntries.add(new FoodItemEntry(id, bonuses));
             }
         }
         saveWorkingEntries();
@@ -269,10 +272,10 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        Component hint = Component.translatable(levelConfigFile != null
-                ? "config.renourisheddelight.food_items.scope_world"
-                : "config.renourisheddelight.food_items.scope_global").withStyle(ChatFormatting.GRAY);
-        graphics.drawCenteredString(font, hint, width / 2, 60, 0xAAAAAA);
+        Component scopeText = server != null
+                ? Component.translatable("config.renourisheddelight.food_items.scope_world").withStyle(ChatFormatting.YELLOW)
+                : Component.translatable("config.renourisheddelight.food_items.scope_global").withStyle(ChatFormatting.GRAY);
+        graphics.drawCenteredString(font, scopeText, width / 2, 62, 0xFFFFFF);
     }
 
     @Override

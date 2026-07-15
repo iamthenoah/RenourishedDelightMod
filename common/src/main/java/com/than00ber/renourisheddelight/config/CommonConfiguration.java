@@ -13,11 +13,8 @@ import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
-import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,10 +43,9 @@ public final class CommonConfiguration implements ConfigData {
         for (Item item : BuiltInRegistries.ITEM) {
             if (item.components().get(DataComponents.FOOD) != null && !hasConfiguredEntry(item)) {
                 changed = true;
-                
-                foodItemConfigurations.add(new FoodItemEntry(
-                        BuiltInRegistries.ITEM.getKey(item).toString(),
-                        new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)))));
+                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+                ArrayList<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
+                foodItemConfigurations.add(new FoodItemEntry(id, attributes));
             }
         }
         if (changed) {
@@ -57,30 +53,10 @@ public final class CommonConfiguration implements ConfigData {
         }
     }
 
-    public List<AttributeBonus> getAttributes(Item item, @Nullable MinecraftServer server) {
-        LevelFoodConfig levelFoodConfig = LevelFoodConfig.getInstance();
-        Path levelFile = levelFoodConfig.resolveFile(server);
-
-        if (levelFile != null) {
-            List<FoodItemEntry> entries = levelFoodConfig.resolveEntries(levelFile);
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
-            FoodItemEntry match = ConfigUtil.findEntry(entries, id);
-
-            if (match == null) {
-                match = ConfigUtil.seedEntry(entries, item);
-                levelFoodConfig.save(levelFile, entries);
-            }
-            if (!match.attributes.isEmpty()) {
-                return match.attributes;
-            }
-        }
-        return getAttributes(item);
-    }
-
     public List<AttributeBonus> getAttributes(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-        FoodItemEntry match = ConfigUtil.findEntry(foodItemConfigurations, id);
+        FoodItemEntry match = foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
 
         if (preset != null && preset.override && !preset.attributes.isEmpty()) {
             return preset.attributes;
@@ -99,7 +75,7 @@ public final class CommonConfiguration implements ConfigData {
         if (match != null && !match.attributes.isEmpty()) {
             return match.attributes;
         }
-        List<AttributeBonus> attributes = new ArrayList<>(List.of(ConfigUtil.computeGenericDefault(item)));
+        List<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
 
         if (match != null) {
             match.attributes = attributes;

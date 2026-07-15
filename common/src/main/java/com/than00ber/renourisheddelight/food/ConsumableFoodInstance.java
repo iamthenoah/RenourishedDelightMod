@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.food;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.WorldFoodConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -48,16 +49,19 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties) {
-        return create(item, properties, null);
+        return create(item, properties, CommonConfiguration.getInstance().getAttributes(item));
     }
 
-    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, @Nullable MinecraftServer server) {
+    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, MinecraftServer server) {
+        return create(item, properties, WorldFoodConfig.get(server).getAttributes(item));
+    }
+
+    private static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, List<AttributeBonus> bonuses) {
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
-        CommonConfiguration common = CommonConfiguration.getInstance();
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (AttributeBonus bonus : common.getAttributes(item, server)) {
+        for (AttributeBonus bonus : bonuses) {
             AttributeModifierInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }

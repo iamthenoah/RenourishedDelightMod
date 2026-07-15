@@ -9,12 +9,12 @@
   "client": [
     "client.EffectRenderingInventoryScreenMixin",
     "client.GameRendererMixin",
+    "client.ItemStackMixin",
     "client.LocalPlayerMixin"
   ],
   "mixins": [
     "FoodDataMixin",
     "ItemMixin",
-    "ItemStackMixin",
     "LivingEntityMixin",
     "PlayerMixin"
   ]
