@@ -43,6 +43,8 @@ public enum EatingOutcome {
 
     public void consume(ServerPlayer player, Diet diet, Item item) {
         FoodProperties properties = item.components().get(DataComponents.FOOD);
+        GameRules rules = player.level().getGameRules();
+        boolean wasFull = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
 
         switch (this) {
             case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
@@ -73,14 +75,12 @@ public enum EatingOutcome {
                 }
             }
         }
-        if (nourishable) {
-            GameRules gamerules = player.level().getGameRules();
-            int maxSlots = gamerules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-            boolean applyNourishment = gamerules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
+        if (nourishable && wasFull) {
+            boolean applyNourishment = rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
 
-            if (applyNourishment && diet.getSlots().size() >= maxSlots) {
+            if (applyNourishment) {
                 int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
-                int percent = gamerules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
+                int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
                 int duration = Math.toIntExact(Math.round(smallest * (percent / 100.0)));
 
                 if (duration > 0) {

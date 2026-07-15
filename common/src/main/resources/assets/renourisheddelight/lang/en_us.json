@@ -34,6 +34,8 @@
   "gamerule.renourisheddelight:jumpFoodDrain.description": "Extra ticks of food drained every time a player jumps.",
   "gamerule.renourisheddelight:sprintFoodDrain": "Sprint Food Drain",
   "gamerule.renourisheddelight:sprintFoodDrain.description": "Extra ticks of food drained per tick while a player is sprinting.",
+  "gamerule.renourisheddelight:disableHealthRegenWhenHungry": "Disable Health Regen When Hungry",
+  "gamerule.renourisheddelight:disableHealthRegenWhenHungry.description": "When the player has an empty stomach, health regen will be disabled.",
   "item.minecraft.potion.effect.nourishment": "Potion of Nourishment",
   "item.minecraft.splash_potion.effect.nourishment": "Splash Potion of Nourishment",
   "item.minecraft.lingering_potion.effect.nourishment": "Lingering Potion of Nourishment",
