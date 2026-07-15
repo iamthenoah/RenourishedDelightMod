@@ -25,7 +25,7 @@ import java.util.List;
 public abstract class ItemStackMixin {
 
     @Inject(method = "getTooltipLines", at = @At("RETURN"), cancellable = true)
-    private void renourisheddelight$appendFoodTooltip(Item.TooltipContext context, Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> callback) {
+    private void getTooltipLines(Item.TooltipContext context, Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> callback) {
         ItemStack stack = (ItemStack) (Object) this;
         FoodProperties properties = stack.get(DataComponents.FOOD);
 

@@ -25,6 +25,7 @@ public final class GameRuleRegistry {
     public static final GameRules.Key<GameRules.IntegerValue> ATTACK_FOOD_DRAIN = register("attackFoodDrain", GameRules.IntegerValue.create(0));
     public static final GameRules.Key<GameRules.IntegerValue> JUMP_FOOD_DRAIN = register("jumpFoodDrain", GameRules.IntegerValue.create(0));
     public static final GameRules.Key<GameRules.IntegerValue> SPRINT_FOOD_DRAIN = register("sprintFoodDrain", GameRules.IntegerValue.create(0));
+    public static final GameRules.Key<GameRules.BooleanValue> DISABLE_HEALTH_REGEN_WHEN_HUNGRY = register("disableHealthRegenWhenHungry", GameRules.BooleanValue.create(true));
 
     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String id, GameRules.Type<T> value) {
         return GameRules.register(RenourishedDelightMod.MOD_ID + ":" + id, GameRules.Category.PLAYER, value);
