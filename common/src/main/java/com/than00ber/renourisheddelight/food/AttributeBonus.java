@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.than00ber.renourisheddelight.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;

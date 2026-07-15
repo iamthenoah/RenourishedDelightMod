@@ -1,4 +1,4 @@
-package com.than00ber.renourisheddelight.data;
+package com.than00ber.renourisheddelight.config.data;
 
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 

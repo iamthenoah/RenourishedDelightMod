@@ -2,7 +2,7 @@ package com.than00ber.renourisheddelight.food;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.WorldFoodConfig;
+import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;

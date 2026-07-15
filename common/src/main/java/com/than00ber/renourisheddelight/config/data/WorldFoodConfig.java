@@ -1,6 +1,6 @@
-package com.than00ber.renourisheddelight.config;
+package com.than00ber.renourisheddelight.config.data;
 
-import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;

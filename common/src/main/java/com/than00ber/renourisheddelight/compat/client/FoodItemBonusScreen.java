@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;

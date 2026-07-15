@@ -1,8 +1,8 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.WorldFoodConfig;
-import com.than00ber.renourisheddelight.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;

@@ -1,8 +1,8 @@
 package com.than00ber.renourisheddelight.config;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
