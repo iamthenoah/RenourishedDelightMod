@@ -159,8 +159,9 @@ public class Diet {
 
             ticksSinceDamage++;
             boolean pastDamageDelay = nourished || ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+            boolean emptyStomach = rules.getBoolean(GameRuleRegistry.DISABLE_HEALTH_REGEN_WHEN_HUNGRY) && slots.isEmpty();
             boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt() && pastDamageDelay;
-            if (needsRegen) regen++;
+            if (!emptyStomach && needsRegen) regen++;
 
             if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
                 player.heal(1.0F);
