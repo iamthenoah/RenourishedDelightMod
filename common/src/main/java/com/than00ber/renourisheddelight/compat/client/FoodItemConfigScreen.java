@@ -1,17 +1,22 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
+import com.than00ber.renourisheddelight.food.AttributeBonus;
+import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -27,7 +32,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private final @Nullable Screen parent;
     private final List<IconEntry> icons = new ArrayList<>();
     private final List<AbstractWidget> rowWidgets = new ArrayList<>();
-    private List<SuggestOption> itemOptions = List.of();
 
     private EditBox newItemField;
     private @Nullable CycleButton<String> modFilterButton;
@@ -35,14 +39,29 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
+    private final @Nullable MinecraftServer server;
+    private final List<FoodItemEntry> workingEntries;
+
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
+        this.server = Minecraft.getInstance().getSingleplayerServer();
+        this.workingEntries = server != null
+                ? WorldFoodConfig.get(server).getEntries()
+                : CommonConfiguration.getInstance().foodItemConfigurations;
+    }
+
+    private void saveWorkingEntries() {
+        if (server != null) {
+            WorldFoodConfig.get(server).setDirty();
+        } else {
+            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+        }
     }
 
     @Override
     protected void init() {
-        itemOptions = buildItemOptions();
+        List<SuggestOption> itemOptions = buildItemOptions();
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
 
@@ -65,9 +84,17 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
                 .bounds(centerX + 125, height - 56, 20, 20)
                 .build());
+
+        int buttonsY = height - 28;
+        int buttonsWidth = 200;
+        int buttonsLeft = centerX - buttonsWidth / 2;
+        int gap = 5;
+        int halfWidth = (buttonsWidth - gap) / 2;
+
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
-                .bounds(centerX - 100, height - 28, 200, 20)
+                .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
+        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
         rebuildContent();
     }
 
@@ -84,7 +111,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
 
         int centerX = width / 2;
-        List<Configuration.FoodItemEntry> entries = Configuration.Common.getInstance().foodItemConfigurations;
+        List<FoodItemEntry> entries = workingEntries;
         noItemsConfigured = entries.isEmpty();
         List<String> namespaces = new ArrayList<>();
         namespaces.add(ALL_MODS);
@@ -95,9 +122,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         modFilterButton = CycleButton.builder((String value) -> value.equals(ALL_MODS)
                         ? Component.translatable("config.renourisheddelight.food_items.all_mods")
-                        : Component.literal(value))
+                        : Component.literal(value).withStyle(isModInstalled(value) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
                 .withValues(namespaces)
                 .withInitialValue(modFilter)
+                .withTooltip(value -> value.equals(ALL_MODS) || isModInstalled(value)
+                        ? null
+                        : Tooltip.create(Component.translatable("config.renourisheddelight.food_items.mod_not_installed").withStyle(ChatFormatting.RED)))
                 .create(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.food_items.filter"), (button, value) -> {
                     modFilter = value;
                     scrollOffset = 0;
@@ -106,14 +136,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addRenderableWidget(modFilterButton);
         rowWidgets.add(modFilterButton);
 
-        List<Configuration.FoodItemEntry> filtered = entries.stream()
+        List<FoodItemEntry> filtered = entries.stream()
                 .filter(entry -> modFilter.equals(ALL_MODS) || namespaceOf(entry).equals(modFilter))
                 .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
                 .toList();
 
-        int listTop = 64;
+        int listTop = 76;
         int listBottom = height - 68;
-        int rowGap = ROW_HEIGHT - 20;
+        int rowGap = ROW_HEIGHT - 17;
         int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
         scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
         scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
@@ -129,7 +159,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
-            Configuration.FoodItemEntry entry = filtered.get(i + scrollOffset);
+            FoodItemEntry entry = filtered.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
 
             Item item = resolveItem(entry.item);
@@ -137,7 +167,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
                 icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
             }
 
-            Button nameButton = Button.builder(Component.literal(entry.item), button -> openBonuses(entry))
+            Component nameLabel = item != null ? item.getDescription() : Component.literal(entry.item);
+            Button nameButton = Button.builder(nameLabel, button -> openBonuses(entry))
                     .bounds(nameX, y, nameWidth, 20)
                     .build();
             addRenderableWidget(nameButton);
@@ -151,9 +182,13 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
     }
 
-    private String namespaceOf(Configuration.FoodItemEntry entry) {
+    private String namespaceOf(FoodItemEntry entry) {
         int colon = entry.item.indexOf(':');
         return colon >= 0 ? entry.item.substring(0, colon) : "minecraft";
+    }
+
+    private boolean isModInstalled(String namespace) {
+        return namespace.equals("minecraft") || Platform.isModLoaded(namespace);
     }
 
     private @Nullable Item resolveItem(String id) {
@@ -190,25 +225,58 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
         Item item = BuiltInRegistries.ITEM.get(id);
         if (item == Items.AIR) return;
-        Configuration.FoodItemEntry entry = Configuration.Common.getInstance().createEntry(item);
+        FoodItemEntry entry = createEntry(item);
         newItemField.setValue("");
         openBonuses(entry);
     }
 
-    private void removeItem(Configuration.FoodItemEntry entry) {
-        Configuration.Common.getInstance().foodItemConfigurations.remove(entry);
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
+    private FoodItemEntry createEntry(Item item) {
+        String id = BuiltInRegistries.ITEM.getKey(item).toString();
+        FoodItemEntry existing = workingEntries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
+        if (existing != null) return existing;
+
+        FoodItemEntry entry = new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item));
+        workingEntries.add(entry);
+        saveWorkingEntries();
+        return entry;
+    }
+
+    private void removeItem(FoodItemEntry entry) {
+        workingEntries.remove(entry);
+        saveWorkingEntries();
         rebuildContent();
     }
 
-    private void openBonuses(Configuration.FoodItemEntry entry) {
-        minecraft.setScreen(new FoodItemBonusScreen(this, entry));
+    private void resetList() {
+        workingEntries.clear();
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (item.components().get(DataComponents.FOOD) != null) {
+                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+                List<AttributeBonus> bonuses = AttributeBonus.computeDefaultBonuses(item);
+                workingEntries.add(new FoodItemEntry(id, bonuses));
+            }
+        }
+        saveWorkingEntries();
+        scrollOffset = 0;
+        rebuildContent();
+    }
+
+    private void openBonuses(FoodItemEntry entry) {
+        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::saveWorkingEntries));
     }
 
     @Override
     protected void onDone() {
-        AutoConfig.getConfigHolder(Configuration.Common.class).save();
+        saveWorkingEntries();
         minecraft.setScreen(parent);
+    }
+
+    @Override
+    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        MutableComponent scopeText = server != null
+                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
+                : Component.translatable("config.renourisheddelight.food_items.scope_global");
+        graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
     }
 
     @Override
@@ -222,5 +290,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private record IconEntry(ItemStack stack, int x, int y) {
+        // do nothing
     }
 }

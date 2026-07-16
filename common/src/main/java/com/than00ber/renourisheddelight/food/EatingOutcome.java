@@ -47,7 +47,7 @@ public enum EatingOutcome {
         boolean wasFull = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
 
         switch (this) {
-            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties));
+            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
             case EFFECTS_ONLY -> {
                 if (properties != null) {
                     properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
@@ -60,7 +60,7 @@ public enum EatingOutcome {
                         .orElse(null);
 
                 if (instance != null) {
-                    int refresh = ConsumableFoodInstance.create(item, properties).duration();
+                    int refresh = ConsumableFoodInstance.create(item, properties, player.getServer()).duration();
                     instance.attributes().forEach(bonus -> bonus.tick(-refresh));
                 }
             }
@@ -71,7 +71,7 @@ public enum EatingOutcome {
 
                 if (instance != null) {
                     diet.removeFromSlot(player, instance);
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
                 }
             }
         }

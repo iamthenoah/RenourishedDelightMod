@@ -2,12 +2,13 @@ package com.than00ber.renourisheddelight;
 
 import com.mojang.logging.LogUtils;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
-import com.than00ber.renourisheddelight.data.FoodConfigDataLoader;
+import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.FoodConfigDataLoader;
+import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.event.events.common.LifecycleEvent;
-import dev.architectury.registry.ReloadListenerRegistry;
-import net.minecraft.server.packs.PackType;
 import org.slf4j.Logger;
 
 public final class RenourishedDelightMod {
@@ -16,10 +17,12 @@ public final class RenourishedDelightMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static void init() {
-        Configuration.init();
+        FoodPresetRegistry.init();
+        ClientConfiguration.init();
+        CommonConfiguration.init();
         GameRuleRegistry.init();
-        LifecycleEvent.SETUP.register(() -> Configuration.Common.getInstance().populateDefaults());
-        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigDataLoader(), FoodConfigDataLoader.ID);
+        FoodConfigDataLoader.init();
+        LifecycleEvent.SERVER_STOPPED.register(x -> FoodPresetRegistry.init());
     }
 
     public static void initClient() {

@@ -101,7 +101,14 @@ public class Diet {
 
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
-            if (attribute != null) attribute.addPermanentModifier(bonus.modifier());
+            
+            if (attribute != null) {
+                attribute.addPermanentModifier(bonus.modifier());
+                
+                if (attribute == player.getAttribute(Attributes.MAX_HEALTH)) {
+                    ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+                }
+            }
         }
     }
 

@@ -1,13 +1,15 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.than00ber.renourisheddelight.Configuration;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -47,17 +49,24 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties) {
+        return create(item, properties, CommonConfiguration.getInstance().getAttributes(item));
+    }
+
+    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, MinecraftServer server) {
+        return create(item, properties, WorldFoodConfig.get(server).getAttributes(item));
+    }
+
+    private static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, List<AttributeBonus> bonuses) {
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
-        Configuration.Common common = Configuration.Common.getInstance();
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (Configuration.AttributeBonus bonus : common.getAttributes(item)) {
+        for (AttributeBonus bonus : bonuses) {
             AttributeModifierInstance instance = resolveBonus(bonus);
             if (instance != null) attributes.add(instance);
         }
         if (attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
-            Configuration.AttributeBonus maxHealth = new Configuration.AttributeBonus(
+            AttributeBonus maxHealth = new AttributeBonus(
                     Attributes.MAX_HEALTH.getRegisteredName(),
                     AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
                     Math.max(1, toHearts(nutrition, saturation)),
@@ -68,17 +77,17 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeModifierInstance resolveBonus(Configuration.AttributeBonus bonus) {
-        Holder<Attribute> attribute = resolveAttribute(bonus.attribute());
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus) {
+        Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
         if (attribute == null) return null;
-        AttributeModifier.Operation operation = parseOperation(bonus.operation());
+        AttributeModifier.Operation operation = parseOperation(bonus.operation);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        int duration = Math.max(1, bonus.duration());
-        AttributeModifier modifier = new AttributeModifier(id, bonus.amount(), operation);
+        int duration = Math.max(1, bonus.duration);
+        AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
         return new AttributeModifierInstance(attribute, modifier, duration, 0);
     }
 
-    private static @Nullable Holder<Attribute> resolveAttribute(String id) {
+    public static @Nullable Holder<Attribute> resolveAttribute(String id) {
         Attribute attribute = tryGetAttribute(id);
 
         if (attribute == null && id != null) {

@@ -1,12 +1,14 @@
-package com.than00ber.renourisheddelight.mixin;
+package com.than00ber.renourisheddelight.mixin.client;
 
-import com.than00ber.renourisheddelight.Configuration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -29,15 +31,12 @@ public abstract class ItemStackMixin {
         ItemStack stack = (ItemStack) (Object) this;
         FoodProperties properties = stack.get(DataComponents.FOOD);
 
-        if (properties != null || properties == null && Configuration.Common.getInstance().hasConfiguredEntry(stack.getItem())) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), properties);
+        if (properties != null || CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
+            MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
+            ConsumableFoodInstance instance = server != null
+                    ? ConsumableFoodInstance.create(stack.getItem(), properties, server)
+                    : ConsumableFoodInstance.create(stack.getItem(), properties);
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
-
-            if (Configuration.Client.getInstance().showFoodDisplayInInventory) {
-                String fed = StringUtil.formatTickDuration(instance.duration(), 20);
-                tooltip.add(Component.translatable("tooltip.fed", fed).withStyle(ChatFormatting.BLUE));
-                tooltip.add(Component.empty());
-            }
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
             for (AttributeModifierInstance bonus : instance.attributes()) {

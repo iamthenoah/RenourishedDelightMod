@@ -60,10 +60,10 @@ public final class AtlasCache {
                     return new TextureAtlas(textures);
                 } else {
                     image.close();
-                    System.out.printf("[RenourishedDelight] Atlas cache miss for '%s': %s%n", name, mismatch);
+                    RenourishedDelightMod.LOGGER.info("Atlas cache miss for '{}': {}", name, mismatch);
                 }
             } catch (Exception exception) {
-                System.out.printf("[RenourishedDelight] Atlas cache miss for '%s': failed to read cache (%s)%n", name, exception);
+                RenourishedDelightMod.LOGGER.warn("Atlas cache miss for '{}': failed to read cache", name, exception);
             }
         }
         return null;
@@ -104,7 +104,7 @@ public final class AtlasCache {
             }
             Files.writeString(dir.resolve(name + ".json"), GSON.toJson(meta));
         } catch (IOException exception) {
-            System.out.printf("[RenourishedDelight] Failed to save atlas cache for '%s': %s%n", name, exception);
+            RenourishedDelightMod.LOGGER.warn("Failed to save atlas cache for '{}'", name, exception);
         }
     }
 

@@ -9,5 +9,7 @@
   "client": [
     "client.GuiMixin"
   ],
-  "mixins": []
+  "mixins": [
+    "ServerPacksSourceMixin"
+  ]
 }
