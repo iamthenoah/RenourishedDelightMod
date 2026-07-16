@@ -1,4 +1,5 @@
 {  
+  "pack.renourisheddelight.presets": "RD: Food Compatibility Presets",
   "tooltip.eaten": "When Eaten:",
   "message.eating_too_many": "I'm full right now.",
   "message.eating_not_balanced": "I can't eat the same thing twice!",

@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
@@ -272,10 +273,10 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        Component scopeText = server != null
-                ? Component.translatable("config.renourisheddelight.food_items.scope_world").withStyle(ChatFormatting.YELLOW)
-                : Component.translatable("config.renourisheddelight.food_items.scope_global").withStyle(ChatFormatting.GRAY);
-        graphics.drawCenteredString(font, scopeText, width / 2, 62, 0xFFFFFF);
+        MutableComponent scopeText = server != null
+                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
+                : Component.translatable("config.renourisheddelight.food_items.scope_global");
+        graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
     }
 
     @Override
