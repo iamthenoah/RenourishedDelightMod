@@ -14,6 +14,10 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,19 +25,18 @@ import java.util.Map;
 public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
-    private static final String DIRECTORY = "presets";
 
     public static void init() {
         ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigDataLoader(), FoodConfigDataLoader.ID);
     }
 
     public FoodConfigDataLoader() {
-        super(new Gson(), DIRECTORY);
+        super(new Gson(), "presets");
     }
 
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
-        List<FoodItemEntry> entries = new ArrayList<>();
+        List<FoodItemEntry> entries = new ArrayList<>(loadBuiltinPresets());
 
         for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
             if (!resource.getValue().isJsonArray()) continue;
@@ -48,7 +51,26 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
         RenourishedDelightMod.LOGGER.info("Loaded {} preset food entries from {} data file(s)", entries.size(), resources.size());
     }
 
-    private FoodItemEntry toFoodItemEntry(JsonObject object) {
+
+    public static List<FoodItemEntry> loadBuiltinPresets() {
+        List<FoodItemEntry> entries = new ArrayList<>();
+
+        try (InputStream stream = FoodConfigDataLoader.class.getResourceAsStream("/data/renourisheddelight/presets/minecraft.json")) {
+            if (stream == null) return entries;
+            JsonElement root = new Gson().fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), JsonElement.class);
+
+            if (root != null && root.isJsonArray()) {
+                for (JsonElement element : root.getAsJsonArray()) {
+                    if (element.isJsonObject()) entries.add(toFoodItemEntry(element.getAsJsonObject()));
+                }
+            }
+        } catch (IOException exception) {
+            RenourishedDelightMod.LOGGER.warn("Failed to load built-in food presets", exception);
+        }
+        return entries;
+    }
+    
+    private static FoodItemEntry toFoodItemEntry(JsonObject object) {
         FoodItemEntry entry = new FoodItemEntry(
                 GsonHelper.getAsString(object, "item", ""),
                 new ArrayList<>(),

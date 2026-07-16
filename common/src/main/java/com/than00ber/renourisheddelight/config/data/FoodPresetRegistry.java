@@ -12,7 +12,7 @@ public final class FoodPresetRegistry {
     private static final FoodPresetRegistry INSTANCE = new FoodPresetRegistry();
 
     public static void init() {
-        getInstance().presets = Map.of();
+        getInstance().set(FoodConfigDataLoader.loadBuiltinPresets());
     }
 
     public static FoodPresetRegistry getInstance() {
@@ -24,14 +24,10 @@ public final class FoodPresetRegistry {
     public void set(List<FoodItemEntry> entries) {
         presets = entries.stream()
                 .filter(x -> !x.item.isEmpty())
-                .collect(Collectors.toMap(x -> x.item, Function.identity()));
+                .collect(Collectors.toMap(x -> x.item, Function.identity(), (f, s) -> s));
     }
 
     public @Nullable FoodItemEntry get(String id) {
         return presets.get(id);
-    }
-
-    public List<FoodItemEntry> all() {
-        return List.copyOf(presets.values());
     }
 }

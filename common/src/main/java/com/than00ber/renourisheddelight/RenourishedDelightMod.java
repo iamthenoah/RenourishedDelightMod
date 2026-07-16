@@ -17,6 +17,7 @@ public final class RenourishedDelightMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static void init() {
+        FoodPresetRegistry.init();
         ClientConfiguration.init();
         CommonConfiguration.init();
         GameRuleRegistry.init();
