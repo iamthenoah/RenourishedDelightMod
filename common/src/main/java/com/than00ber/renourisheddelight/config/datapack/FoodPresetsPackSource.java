@@ -21,7 +21,7 @@ public final class FoodPresetsPackSource implements RepositorySource {
 
         if (root != null) {
             String location = "mod/" + RenourishedDelightMod.MOD_ID + ":presets";
-            Component name = Component.translatable("pack.renourisheddelight.presets");
+            Component name = Component.translatable("pack." + RenourishedDelightMod.MOD_ID + ".presets");
             PackLocationInfo info = new PackLocationInfo(location, name, PackSource.BUILT_IN, Optional.empty());
             Pack.ResourcesSupplier supplier = getResourcesSupplier(info, root);
             PackSelectionConfig packet = new PackSelectionConfig(true, Pack.Position.TOP, false);
