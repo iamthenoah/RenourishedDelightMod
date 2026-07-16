@@ -46,6 +46,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
+    private boolean isFirstReload = true;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -60,6 +61,8 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         Minecraft.getInstance().executeBlocking(() -> {
             long startNanos = System.nanoTime();
             boolean cacheHit = false;
+            boolean skipSave = isFirstReload;
+            isFirstReload = false;
 
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
@@ -112,9 +115,11 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 miniAtlas = miniBuilder.done();
                 largeAtlas = largeBuilder.done();
 
-                if (cacheEnabled) {
+                if (cacheEnabled && !skipSave) {
                     AtlasCache.save(cacheDir, "mini", miniBuilder, packIds, items.size());
                     AtlasCache.save(cacheDir, "large", largeBuilder, packIds, items.size());
+                } else if (cacheEnabled) {
+                    RenourishedDelightMod.LOGGER.info("Skipping atlas cache save on the first (pre-mod-packs) reload of this session");
                 }
             } catch (Exception exception) {
                 RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas", exception);
