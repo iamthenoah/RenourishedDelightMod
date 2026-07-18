@@ -345,7 +345,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
 
     private void renderFieldTooltip(GuiGraphics graphics, EditBox box, @Nullable Component text, int mouseX, int mouseY) {
         if (text != null && isHovering(box, mouseX, mouseY)) {
-            graphics.renderTooltip(font, text, mouseX, mouseY);
+            setTooltipForNextRenderPass(text);
         }
     }
 
@@ -360,7 +360,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
                     || !isValidAmount(amountValue) || !isValidDuration(durationValue);
 
             if (invalid && isHoveringBarrier(row.attribute(), mouseX, mouseY)) {
-                graphics.renderTooltip(font, Component.translatable("config.renourisheddelight.food_items.bonus_invalid"), mouseX, mouseY);
+                setTooltipForNextRenderPass(Component.translatable("config.renourisheddelight.food_items.bonus_invalid"));
             }
             renderFieldTooltip(graphics, row.attribute(), attributeTooltip(attributeValue), mouseX, mouseY);
             renderFieldTooltip(graphics, row.operation(), operationTooltip(operationValue), mouseX, mouseY);
