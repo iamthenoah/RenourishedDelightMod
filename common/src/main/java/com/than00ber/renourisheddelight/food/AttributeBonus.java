@@ -38,9 +38,12 @@ public final class AttributeBonus {
     public static List<AttributeBonus> computeDefaultBonuses(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
+        boolean overridden = preset != null && preset.override && !preset.attributes.isEmpty();
         List<AttributeBonus> bonuses = new ArrayList<>();
-        bonuses.add(computeGenericDefault(item));
 
+        if (!overridden) {
+            bonuses.add(computeGenericDefault(item));
+        }
         if (preset != null) {
             for (AttributeBonus bonus : preset.attributes) {
                 bonuses.add(bonus.copy());
