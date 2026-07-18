@@ -79,8 +79,8 @@ subprojects {
         gameVersions = [minecraftVersion]
         projectId = project.archivesBaseName
         versionType = version?.split('-')[1] ?: 'alpha'
+        changelog = System.getenv('CHANGELOG')
         syncBodyFrom = rootProject.file("docs/COVER.md").text
-        changelog = rootProject.file("docs/CHANGELOG.md").text
         uploadFile = remapJar
 
         dependencies {

@@ -10,7 +10,6 @@ jobs:
 
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout Repository
@@ -38,8 +37,10 @@ jobs:
         run: ./gradlew :neoforge:modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CHANGELOG: ${{ github.event.release.body }}
 
       - name: Publish Fabric to Modrinth
         run: ./gradlew :fabric:modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CHANGELOG: ${{ github.event.release.body }}

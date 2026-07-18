@@ -12,9 +12,9 @@ Renourished Delight changes how eating works. Instead of one hunger bar that eve
 
 ## How it works
 
-Normally in Minecraft, food just refills your hunger bar and saturation, full stop. With this mod, every food item you eat gets its own slot (up to a limit you can configure) and while it's active, it gives you bonuses like extra max health, speed, or other attribute boosts. Each slot counts down over time and drops off once its duration runs out, so you'll want to keep eating to keep your buffs going instead of eating once and forgetting about it.
+Normally in Minecraft, food just refills your hunger bar and saturation. With this mod, every food item you eat gets its own slot (up to a limit you can configure) and while it's active, it gives you bonuses like extra max health, speed or other attribute boosts. Each slot counts down over time and drops off once its duration runs out, so you'll want to keep eating to keep your buffs going instead of eating once and forgetting about it.
 
-Different foods give different bonuses and last different amounts of time, so eating a variety of food actually matters now instead of just grabbing whatever gives the most hunger points.
+Different foods give different bonuses and last different amounts of time, so eating a variety of food actually matters now instead of just grabbing whatever gives the most hunger points. _Food attributes works for every mod out of the box_, but you can always change that on the config page.
 
 ## Nourishment
 
