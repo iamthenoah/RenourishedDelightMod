@@ -215,17 +215,20 @@ public class Diet {
     }
 
     private int computeRegenInterval(GameRules rules, boolean nourished) {
-        if (nourished) return rules.getInt(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL);
         int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
-        if (slots.isEmpty()) return base;
-        double avgSaturation = slots.stream()
-                .mapToDouble(x -> Optional.ofNullable(x.item().components().get(DataComponents.FOOD))
-                        .map(FoodProperties::saturation)
-                        .orElse(0.0F))
-                .average()
-                .orElse(0.0F);
-        double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
-        return Math.max(5, (int) Math.round(base * scale));
+        int interval = base;
+
+        if (!slots.isEmpty()) {
+            double avgSaturation = slots.stream()
+                    .mapToDouble(x -> Optional.ofNullable(x.item().components().get(DataComponents.FOOD))
+                            .map(FoodProperties::saturation)
+                            .orElse(0.0F))
+                    .average()
+                    .orElse(0.0F);
+            double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
+            interval = Math.max(5, (int) Math.round(base * scale));
+        }
+        return nourished ? Math.min(interval, rules.getInt(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL)) : interval;
     }
 
     public static CompoundTag save(Diet diet) {
