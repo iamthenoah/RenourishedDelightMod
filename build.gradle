@@ -79,6 +79,8 @@ subprojects {
         gameVersions = [minecraftVersion]
         projectId = project.archivesBaseName
         versionType = version?.split('-')[1] ?: 'alpha'
+        syncBodyFrom = rootProject.file("docs/COVER.md").text
+        changelog = rootProject.file("docs/CHANGELOG.md").text
         uploadFile = remapJar
 
         dependencies {
@@ -86,4 +88,6 @@ subprojects {
             required.project 'cloth-config'
         }
     }
+
+    tasks.modrinth.dependsOn(tasks.modrinthSyncBody)
 }
