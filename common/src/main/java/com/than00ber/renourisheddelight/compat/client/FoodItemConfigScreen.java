@@ -4,6 +4,7 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
@@ -11,15 +12,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.StringUtil;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -113,9 +119,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         int centerX = width / 2;
         List<FoodItemEntry> entries = workingEntries;
         noItemsConfigured = entries.isEmpty();
-        List<String> namespaces = new ArrayList<>();
-        namespaces.add(ALL_MODS);
-        namespaces.addAll(new TreeSet<>(entries.stream().map(this::namespaceOf).toList()));
+        List<String> namespaces = computeNamespaces();
 
         if (!namespaces.contains(modFilter)) {
             modFilter = ALL_MODS;
@@ -170,6 +174,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             Component nameLabel = item != null ? item.getDescription() : Component.literal(entry.item);
             Button nameButton = Button.builder(nameLabel, button -> openBonuses(entry))
                     .bounds(nameX, y, nameWidth, 20)
+                    .tooltip(buildAttributesTooltip(entry))
                     .build();
             addRenderableWidget(nameButton);
             rowWidgets.add(nameButton);
@@ -180,6 +185,72 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             addRenderableWidget(removeButton);
             rowWidgets.add(removeButton);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 1 && modFilterButton != null && modFilterButton.isMouseOver(mouseX, mouseY)) {
+            modFilterButton.playDownSound(Minecraft.getInstance().getSoundManager());
+            cycleModFilterBackward();
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void cycleModFilterBackward() {
+        List<String> namespaces = computeNamespaces();
+        int index = namespaces.indexOf(modFilter);
+        int previous = index <= 0 ? namespaces.size() - 1 : index - 1;
+        modFilter = namespaces.get(previous);
+        scrollOffset = 0;
+        rebuildContent();
+    }
+
+    private List<String> computeNamespaces() {
+        List<String> namespaces = new ArrayList<>();
+        namespaces.add(ALL_MODS);
+        namespaces.addAll(new TreeSet<>(workingEntries.stream().map(this::namespaceOf).toList()));
+        return namespaces;
+    }
+
+    private Tooltip buildAttributesTooltip(FoodItemEntry entry) {
+        if (entry.attributes.isEmpty()) {
+            return Tooltip.create(Component.translatable("config.renourisheddelight.food_items.no_bonuses"));
+        }
+        MutableComponent text = Component.empty();
+
+        for (int i = 0; i < entry.attributes.size(); i++) {
+            if (i > 0) text.append("\n");
+            text.append(formatBonusLine(entry.attributes.get(i)));
+        }
+        return Tooltip.create(text);
+    }
+
+    private Component formatBonusLine(AttributeBonus bonus) {
+        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(bonus.attribute);
+        Component name = attribute != null
+                ? Component.translatable(attribute.value().getDescriptionId())
+                : Component.literal(bonus.attribute);
+
+        AttributeModifier.Operation operation = resolveOperation(bonus.operation);
+        boolean percent = operation == AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+                || operation == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
+        double display = percent ? bonus.amount * 100.0 : bonus.amount;
+        String durationText = StringUtil.formatTickDuration(bonus.duration, 20);
+
+        Component amountLine = display >= 0
+                ? Component.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(display), name)
+                : Component.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(-display), name);
+
+        return Component.empty().append(amountLine).append(" (" + durationText + ")");
+    }
+
+    private AttributeModifier.Operation resolveOperation(@Nullable String raw) {
+        String value = raw != null ? raw.trim().toLowerCase(Locale.ROOT) : "";
+        for (AttributeModifier.Operation operation : AttributeModifier.Operation.values()) {
+            if (operation.getSerializedName().equals(value)) return operation;
+        }
+        return AttributeModifier.Operation.ADD_VALUE;
     }
 
     private String namespaceOf(FoodItemEntry entry) {

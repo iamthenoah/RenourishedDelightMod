@@ -19,6 +19,8 @@
   "gamerule.renourisheddelight:hungerFoodDrain.description": "Defines how much hunger effects food exhaustion.",
   "gamerule.renourisheddelight:regenHealthTickInterval": "Health Regen Interval",
   "gamerule.renourisheddelight:regenHealthTickInterval.description": "Number of ticks between natural health regeneration.",
+  "gamerule.renourisheddelight:nourishmentRegenTickInterval": "Nourished Health Regen Interval",
+  "gamerule.renourisheddelight:nourishmentRegenTickInterval.description": "Number of ticks between natural health regeneration while nourished. Lower means faster health regen.",
   "gamerule.renourisheddelight:regenHealthFoodDrain": "Health Regen Food Drain",
   "gamerule.renourisheddelight:regenHealthFoodDrain.description": "How food is drained every time health regen occurs.",
   "gamerule.renourisheddelight:applyNourishmentWhenFull": "Apply Nourishment When Full",
