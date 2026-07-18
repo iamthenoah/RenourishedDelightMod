@@ -215,7 +215,7 @@ public class Diet {
     }
 
     private int computeRegenInterval(GameRules rules, boolean nourished) {
-        if (nourished) return 5;
+        if (nourished) return rules.getInt(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL);
         int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
         if (slots.isEmpty()) return base;
         double avgSaturation = slots.stream()

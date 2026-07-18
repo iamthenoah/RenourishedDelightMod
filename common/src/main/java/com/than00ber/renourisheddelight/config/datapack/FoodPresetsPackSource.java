@@ -17,14 +17,14 @@ public final class FoodPresetsPackSource implements RepositorySource {
 
     @Override
     public void loadPacks(Consumer<Pack> consumer) {
-        Path root = resolvePackRoot();
+        Path root = getPackRoot();
 
         if (root != null) {
             String location = "mod/" + RenourishedDelightMod.MOD_ID + ":presets";
             Component name = Component.translatable("pack." + RenourishedDelightMod.MOD_ID + ".presets");
             PackLocationInfo info = new PackLocationInfo(location, name, PackSource.BUILT_IN, Optional.empty());
             Pack.ResourcesSupplier supplier = getResourcesSupplier(info, root);
-            PackSelectionConfig packet = new PackSelectionConfig(true, Pack.Position.TOP, false);
+            PackSelectionConfig packet = new PackSelectionConfig(false, Pack.Position.TOP, false);
             Pack pack = Pack.readMetaAndCreate(info, supplier, PackType.SERVER_DATA, packet);
 
             if (pack != null) {
@@ -34,8 +34,9 @@ public final class FoodPresetsPackSource implements RepositorySource {
     }
 
     private Pack.ResourcesSupplier getResourcesSupplier(PackLocationInfo info, Path root) {
-        PackResources resources = new PathPackResources(info, root);
         return new Pack.ResourcesSupplier() {
+            final PackResources resources = new PathPackResources(info, root);
+
             @Override
             public @NotNull PackResources openPrimary(PackLocationInfo location) {
                 return resources;
@@ -48,7 +49,7 @@ public final class FoodPresetsPackSource implements RepositorySource {
         };
     }
 
-    private Path resolvePackRoot() {
+    private Path getPackRoot() {
         URL url = RenourishedDelightMod.class.getResource("/datapacks/food_presets/pack.mcmeta");
 
         try {
