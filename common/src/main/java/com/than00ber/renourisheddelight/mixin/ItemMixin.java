@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.food.EatingOutcome;
 import dev.architectury.extensions.injected.InjectedItemExtension;
@@ -8,7 +7,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.item.Item;
@@ -39,19 +37,6 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
             }
         } else {
             callback.setReturnValue(InteractionResultHolder.pass(player.getItemInHand(hand)));
-        }
-    }
-
-    @Inject(method = "finishUsingItem", at = @At("HEAD"))
-    public void finishUsingItem(ItemStack stack, Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
-        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {
-            Diet diet = holder.getDiet();
-            EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
-
-            if (outcome.isSuccess()) {
-                outcome.consume(player, diet, stack.getItem());
-                holder.updateDiet();
-            }
         }
     }
 }

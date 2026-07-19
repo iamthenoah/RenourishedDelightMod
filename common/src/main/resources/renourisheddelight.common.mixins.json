@@ -15,6 +15,7 @@
   "mixins": [
     "FoodDataMixin",
     "ItemMixin",
+    "ItemStackMixin",
     "LivingEntityMixin",
     "PlayerMixin"
   ]
