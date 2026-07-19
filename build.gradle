@@ -51,7 +51,7 @@ subprojects {
     }
     shadowJar {
         configurations = [project.configurations.shadowBundle]
-        archiveClassifier = ''
+        archiveClassifier = 'dev-shadow'
     }
 
     tasks.withType(JavaCompile).configureEach {

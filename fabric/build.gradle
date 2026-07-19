@@ -16,8 +16,8 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:$fabricApiVersion"
     implementation "dev.architectury:architectury-fabric:$architecturyApiVersion"
 
-    common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
-    shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
+    common(project(':common')) { transitive = false }
+    shadowBundle project(path: ':common', configuration: 'shadowRuntimeElements')
 
     implementation "me.shedaniel.cloth:cloth-config-fabric:$clothConfigVersion"
 
