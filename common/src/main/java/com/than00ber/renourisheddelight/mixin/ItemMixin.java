@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedItemExtension {
 
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
-    public void use(Level level, Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResultHolder<ItemStack>> callback) {
+    public void renourisheddelight$use(Level level, Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResultHolder<ItemStack>> callback) {
         ItemStack stack = player.getItemInHand(hand);
 
         if (stack.getItem().components().has(DataComponents.FOOD) && !level.isClientSide() && player instanceof DietHolder holder) {

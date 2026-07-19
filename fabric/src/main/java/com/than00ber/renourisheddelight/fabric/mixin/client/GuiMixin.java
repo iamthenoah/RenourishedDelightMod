@@ -13,12 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class GuiMixin {
 
     @Inject(method = "renderFood", at = @At("HEAD"), cancellable = true)
-    private void renderFood(CallbackInfo callback) {
+    private void renourisheddelight$renderFood(CallbackInfo callback) {
         callback.cancel();
     }
 
     @ModifyArg(method = "renderPlayerHealth", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;blitSprite(Lnet/minecraft/resources/ResourceLocation;IIII)V"), index = 2)
-    private int renderPlayerHealth(int y) {
+    private int renourisheddelight$renderPlayerHealth(int y) {
         return Minecraft.getInstance().player instanceof DietHolder holder && !holder.getDiet().getSlots().isEmpty() ? y : y + 10;
     }
 }

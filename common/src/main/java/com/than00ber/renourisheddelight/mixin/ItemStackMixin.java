@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ItemStackMixin {
 
     @Inject(method = "finishUsingItem", at = @At("HEAD"))
-    private void finishUsingItem(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
+    private void renourisheddelight$finishUsingItem(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
         ItemStack stack = (ItemStack) (Object) this;
 
         if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {

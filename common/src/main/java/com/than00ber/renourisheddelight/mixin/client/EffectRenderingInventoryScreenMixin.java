@@ -43,7 +43,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"))
-    private void renderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+    private void renourisheddelight$renderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
         savedTopPos = -1;
 
         if (ClientConfiguration.getInstance().showFoodDisplayInInventory) {
@@ -106,7 +106,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     }
 
     @Inject(method = "renderEffects", at = @At("RETURN"))
-    private void renderEffectsReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+    private void renourisheddelight$renderEffectsReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
         if (savedTopPos != -1) {
             topPos = savedTopPos;
             savedTopPos = -1;

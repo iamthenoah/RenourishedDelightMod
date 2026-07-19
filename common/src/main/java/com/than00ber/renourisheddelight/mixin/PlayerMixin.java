@@ -47,17 +47,17 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "defineSynchedData", at = @At("TAIL"))
-    private void defineSynchedData(SynchedEntityData.Builder builder, CallbackInfo callback) {
+    private void renourisheddelight$defineSynchedData(SynchedEntityData.Builder builder, CallbackInfo callback) {
         builder.define(DIET_ACCESSOR, new Diet());
     }
 
     @Inject(method = "actuallyHurt", at = @At("HEAD"))
-    private void actuallyHurt(CallbackInfo callback) {
+    private void renourisheddelight$actuallyHurt(CallbackInfo callback) {
         getDiet().onDamaged();
     }
-    
+
     @Inject(method = "tick", at = @At("HEAD"))
-    public void tick(CallbackInfo callback) {
+    public void renourisheddelight$tick(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
                 int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
@@ -90,7 +90,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
-    private void stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
+    private void renourisheddelight$stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival() && sleepStartDayTime != -1L) {
                 long elapsed = player.level().getDayTime() - sleepStartDayTime;
@@ -110,7 +110,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "attack", at = @At("HEAD"))
-    private void attack(Entity target, CallbackInfo callback) {
+    private void renourisheddelight$attack(Entity target, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
                 int drain = player.level().getGameRules().getInt(GameRuleRegistry.ATTACK_FOOD_DRAIN);
@@ -123,7 +123,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "jumpFromGround", at = @At("HEAD"))
-    private void jumpFromGround(CallbackInfo callback) {
+    private void renourisheddelight$jumpFromGround(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
                 int drain = player.level().getGameRules().getInt(GameRuleRegistry.JUMP_FOOD_DRAIN);
@@ -136,12 +136,12 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
 
     @Inject(method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
-    private void addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
+    private void renourisheddelight$addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         compoundTag.put("Diet", Diet.save(getDiet()));
     }
 
     @Inject(method = "readAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
-    private void readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
+    private void renourisheddelight$readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         entityData.set(DIET_ACCESSOR, Diet.load(compoundTag.getCompound("Diet")), true);
     }
 }

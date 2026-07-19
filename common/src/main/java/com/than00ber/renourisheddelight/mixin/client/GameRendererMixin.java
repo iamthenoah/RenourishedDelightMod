@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class GameRendererMixin {
 
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-    private void bobHurt(PoseStack poseStack, float partialTick, CallbackInfo callback) {
+    private void renourisheddelight$bobHurt(PoseStack poseStack, float partialTick, CallbackInfo callback) {
         if (SuppressHurtFlashPayload.isSuppressed() && Minecraft.getInstance().getCameraEntity() instanceof LivingEntity entity) {
             entity.hurtTime = 0;
             entity.hurtDuration = 0;

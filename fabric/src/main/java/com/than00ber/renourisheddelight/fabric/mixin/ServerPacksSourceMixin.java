@@ -14,7 +14,7 @@ import java.util.Arrays;
 public abstract class ServerPacksSourceMixin {
 
     @Redirect(method = "createPackRepository(Ljava/nio/file/Path;Lnet/minecraft/world/level/validation/DirectoryValidator;)Lnet/minecraft/server/packs/repository/PackRepository;", at = @At(value = "NEW", target = "net/minecraft/server/packs/repository/PackRepository"))
-    private static PackRepository createPackRepository(RepositorySource[] sources) {
+    private static PackRepository renourisheddelight$createPackRepository(RepositorySource[] sources) {
         RepositorySource[] extended = Arrays.copyOf(sources, sources.length + 1);
         extended[sources.length] = new FoodPresetsPackSource();
         return new PackRepository(extended);

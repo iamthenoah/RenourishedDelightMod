@@ -24,12 +24,12 @@ public abstract class FoodDataMixin {
     @Unique @Nullable private ServerPlayer player;
 
     @Inject(method = "needsFood", at = @At("HEAD"), cancellable = true)
-    public void needsFood(CallbackInfoReturnable<Boolean> callback) {
+    public void renourisheddelight$needsFood(CallbackInfoReturnable<Boolean> callback) {
         callback.setReturnValue(true);
     }
-    
+
     @Inject(method = "add", at = @At("HEAD"), cancellable = true)
-    public void add(int nutrition, float saturation, CallbackInfo callback) {
+    public void renourisheddelight$add(int nutrition, float saturation, CallbackInfo callback) {
         if (player instanceof DietHolder holder
                 && !player.getMainHandItem().has(DataComponents.FOOD)
                 && !player.getOffhandItem().has(DataComponents.FOOD)
@@ -50,7 +50,7 @@ public abstract class FoodDataMixin {
     }
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    public void tick(Player player, CallbackInfo callback) {
+    public void renourisheddelight$tick(Player player, CallbackInfo callback) {
         if (this.player == null && player instanceof ServerPlayer serverPlayer) {
             this.player = serverPlayer;
         }

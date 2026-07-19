@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LocalPlayerMixin {
 
     @Inject(method = "hurtTo", at = @At("TAIL"))
-    private void hurtTo(float health, CallbackInfo callback) {
+    private void renourisheddelight$hurtTo(float health, CallbackInfo callback) {
         if (SuppressHurtFlashPayload.isSuppressed()) {
             LocalPlayer player = (LocalPlayer) (Object) this;
             player.hurtTime = 0;

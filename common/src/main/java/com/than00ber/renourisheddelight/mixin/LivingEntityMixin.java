@@ -18,7 +18,7 @@ public abstract class LivingEntityMixin {
     private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
 
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
-    private void addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {
+    private void renourisheddelight$addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {
         if (FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(instance.getEffect().value()))) {
             callback.setReturnValue(true);
             LivingEntity self = (LivingEntity) (Object) this;
