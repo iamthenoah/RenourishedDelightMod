@@ -2,7 +2,7 @@ package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityMixin {
 
     @Unique
-    private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
+    private static final Identifier FARMERS_DELIGHT_NOURISHMENT = Identifier.fromNamespaceAndPath("farmersdelight", "nourishment");
 
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
     private void addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {

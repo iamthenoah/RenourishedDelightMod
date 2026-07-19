@@ -6,7 +6,7 @@ import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -41,11 +41,11 @@ public final class AtlasCache {
 
                 if (mismatch == null) {
                     DynamicTexture texture = new DynamicTexture(image);
-                    ResourceLocation location = Minecraft.getInstance().getTextureManager().register(name, texture);
+                    Identifier location = Minecraft.getInstance().getTextureManager().register(name, texture);
                     Map<Item, Texture[]> textures = new HashMap<>();
 
                     for (Map.Entry<String, int[][]> entry : meta.items.entrySet()) {
-                        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.getKey()));
+                        Item item = BuiltInRegistries.ITEM.get(Identifier.parse(entry.getKey()));
                         if (item == Items.AIR) continue;
                         int[][] coords = entry.getValue();
                         Texture[] slots = new Texture[coords.length];
@@ -93,7 +93,7 @@ public final class AtlasCache {
             meta.items = new LinkedHashMap<>();
 
             for (Map.Entry<Item, Texture[]> entry : builder.textures.entrySet()) {
-                ResourceLocation key = BuiltInRegistries.ITEM.getKey(entry.getKey());
+                Identifier key = BuiltInRegistries.ITEM.getKey(entry.getKey());
                 Texture[] slots = entry.getValue();
                 int[][] coords = new int[slots.length][];
 

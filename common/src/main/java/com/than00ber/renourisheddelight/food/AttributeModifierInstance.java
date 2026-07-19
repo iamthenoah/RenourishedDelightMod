@@ -3,10 +3,14 @@ package com.than00ber.renourisheddelight.food;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 public final class AttributeModifierInstance {
 
@@ -49,19 +53,24 @@ public final class AttributeModifierInstance {
     public static CompoundTag save(AttributeModifierInstance instance) {
         CompoundTag compoundTag = new CompoundTag();
         compoundTag.putString("Attribute", BuiltInRegistries.ATTRIBUTE.getKey(instance.attribute.value()).toString());
-        compoundTag.put("Modifier", instance.modifier.save());
+        Tag modifierTag = AttributeModifier.CODEC.encodeStart(NbtOps.INSTANCE, instance.modifier).getOrThrow();
+        compoundTag.put("Modifier", modifierTag);
         compoundTag.putInt("Duration", instance.duration);
         compoundTag.putInt("Time", instance.time);
         return compoundTag;
     }
 
     public static @Nullable AttributeModifierInstance load(CompoundTag compoundTag) {
-        Attribute attribute = BuiltInRegistries.ATTRIBUTE.get(ResourceLocation.parse(compoundTag.getString("Attribute")));
-        if (attribute == null) return null;
-        Holder<Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
-        AttributeModifier modifier = AttributeModifier.load(compoundTag.getCompound("Modifier"));
-        int duration = compoundTag.getInt("Duration");
-        int time = compoundTag.getInt("Time");
-        return new AttributeModifierInstance(holder, modifier, duration, time);
+        Optional<String> attributeId = compoundTag.getString("Attribute");
+        if (attributeId.isEmpty()) return null;
+        Optional<Holder.Reference<Attribute>> attribute = BuiltInRegistries.ATTRIBUTE.get(Identifier.parse(attributeId.get()));
+        if (attribute.isEmpty()) return null;
+        Optional<CompoundTag> modifierTag = compoundTag.getCompound("Modifier");
+        if (modifierTag.isEmpty()) return null;
+        Optional<AttributeModifier> modifier = AttributeModifier.CODEC.parse(NbtOps.INSTANCE, modifierTag.get()).result();
+        if (modifier.isEmpty()) return null;
+        int duration = compoundTag.getInt("Duration").orElse(0);
+        int time = compoundTag.getInt("Time").orElse(0);
+        return new AttributeModifierInstance(attribute.get(), modifier.get(), duration, time);
     }
 }

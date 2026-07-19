@@ -9,11 +9,11 @@ import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Inventory;
@@ -33,8 +33,8 @@ import java.util.List;
 @Mixin(EffectRenderingInventoryScreen.class)
 public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> {
 
-    @Shadow @Final private static ResourceLocation EFFECT_BACKGROUND_LARGE_SPRITE;
-    @Shadow @Final private static ResourceLocation EFFECT_BACKGROUND_SMALL_SPRITE;
+    @Shadow @Final private static Identifier EFFECT_BACKGROUND_LARGE_SPRITE;
+    @Shadow @Final private static Identifier EFFECT_BACKGROUND_SMALL_SPRITE;
 
     @Unique private int savedTopPos = -1;
 
@@ -43,7 +43,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"))
-    private void renderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+    private void renderEffects(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
         savedTopPos = -1;
 
         if (ClientConfiguration.getInstance().showFoodDisplayInInventory) {
@@ -106,7 +106,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     }
 
     @Inject(method = "renderEffects", at = @At("RETURN"))
-    private void renderEffectsReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
+    private void renderEffectsReturn(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, CallbackInfo callback) {
         if (savedTopPos != -1) {
             topPos = savedTopPos;
             savedTopPos = -1;

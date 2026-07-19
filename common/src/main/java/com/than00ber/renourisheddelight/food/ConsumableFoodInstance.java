@@ -8,7 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -81,7 +81,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation);
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
+        Identifier id = Identifier.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         int duration = Math.max(1, bonus.duration);
         AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
         return new AttributeModifierInstance(attribute, modifier, duration, 0);
@@ -104,7 +104,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
 
     private static @Nullable Attribute tryGetAttribute(String id) {
         try {
-            return BuiltInRegistries.ATTRIBUTE.get(ResourceLocation.parse(id));
+            return BuiltInRegistries.ATTRIBUTE.getValue(Identifier.parse(id));
         } catch (Exception exception) {
             return null;
         }
@@ -140,13 +140,13 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance load(CompoundTag compoundTag) {
-        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(compoundTag.getString("Item")));
+        Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(Identifier.parse(compoundTag.getString("Item").get()));
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (Tag tag : compoundTag.getList("Attributes", Tag.TAG_COMPOUND)) {
+        for (Tag tag : compoundTag.getList("Attributes").get()) {
             AttributeModifierInstance bonus = AttributeModifierInstance.load((CompoundTag) tag);
             if (bonus != null) attributes.add(bonus);
         }
-        return new ConsumableFoodInstance(item, attributes);
+        return new ConsumableFoodInstance(item.get().value(), attributes);
     }
 }

@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -42,10 +42,10 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected abstract void onDone();
 
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderHeaderActions(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
-    protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderScrollableContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     protected Button createResetButton(int x, int y, int width, int height, Runnable action) {
@@ -134,13 +134,13 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void renderBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fill(0, 54 + 1, width, height - 60, 0x40000000);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderPanelChrome(graphics);
         graphics.drawCenteredString(font, title, width / 2, TITLE_Y, 0xFFFFFF);
@@ -177,7 +177,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         return true;
     }
 
-    protected void renderPanelChrome(GuiGraphics graphics) {
+    protected void renderPanelChrome(GuiGraphicsExtractor graphics) {
         int headerBottom = 54;
         int footerTop = height - 62;
 
@@ -270,7 +270,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             return globalIndex < matches.size() ? globalIndex : -1;
         }
 
-        protected void render(GuiGraphics graphics, int mouseX, int mouseY) {
+        protected void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
             int x = box.getX();
             int y = listTop();
             int listWidth = contentWidth();

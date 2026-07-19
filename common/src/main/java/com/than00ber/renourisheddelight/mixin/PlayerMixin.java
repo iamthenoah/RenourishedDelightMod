@@ -6,7 +6,6 @@ import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +16,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -60,7 +62,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     public void tick(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
-                int hearts = player.level().getGameRules().getInt(GameRuleRegistry.PLAYER_STARTING_HEARTS);
+                int hearts = player.level().getGameRules().get(GameRuleRegistry.PLAYER_STARTING_HEARTS);
                 AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
                 if (maxHealth != null) maxHealth.setBaseValue(Math.clamp(hearts, 2, 40));
                 Diet diet = getDiet();
@@ -81,11 +83,11 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     }
     
     @Override
-    public void startSleeping(BlockPos pos) {
+    public void startSleeping(@NonNull BlockPos pos) {
         super.startSleeping(pos);
 
         if ((Object) this instanceof ServerPlayer player) {
-            sleepStartDayTime = player.level().getDayTime();
+            sleepStartDayTime = player.level().getOverworldClockTime();
         }
     }
 
@@ -93,12 +95,12 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     private void stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival() && sleepStartDayTime != -1L) {
-                long elapsed = player.level().getDayTime() - sleepStartDayTime;
+                long elapsed = player.level().getOverworldClockTime() - sleepStartDayTime;
                 sleepStartDayTime = -1L;
     
                 if (elapsed > 0) {
                     double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
-                    int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
+                    int sleepFoodDrain = player.level().getGameRules().get(GameRuleRegistry.SLEEP_FOOD_DRAIN);
                     int drain = (int) Math.round(sleepFoodDrain * fraction);
     
                     if (getDiet().drain(player, drain)) {
@@ -113,7 +115,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     private void attack(Entity target, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
-                int drain = player.level().getGameRules().getInt(GameRuleRegistry.ATTACK_FOOD_DRAIN);
+                int drain = player.level().getGameRules().get(GameRuleRegistry.ATTACK_FOOD_DRAIN);
 
                 if (getDiet().drain(player, drain)) {
                     updateDiet();
@@ -126,7 +128,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     private void jumpFromGround(CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival()) {
-                int drain = player.level().getGameRules().getInt(GameRuleRegistry.JUMP_FOOD_DRAIN);
+                int drain = player.level().getGameRules().get(GameRuleRegistry.JUMP_FOOD_DRAIN);
 
                 if (getDiet().drain(player, drain)) {
                     updateDiet();
@@ -135,13 +137,13 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
         }
     }
 
-    @Inject(method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
-    private void addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
-        compoundTag.put("Diet", Diet.save(getDiet()));
+    @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
+    private void addAdditionalSaveData(ValueOutput output, CallbackInfo ci) {
+        output.putString("Diet", Diet.save(getDiet()));
     }
 
-    @Inject(method = "readAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
-    private void readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
-        entityData.set(DIET_ACCESSOR, Diet.load(compoundTag.getCompound("Diet")), true);
+    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
+    private void readAdditionalSaveData(ValueInput input, CallbackInfo ci) {
+        entityData.set(DIET_ACCESSOR, Diet.load(input.getString("Diet")), true);
     }
 }

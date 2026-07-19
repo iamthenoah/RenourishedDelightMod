@@ -22,7 +22,7 @@ public final class RenourishedDelightMod {
         CommonConfiguration.init();
         GameRuleRegistry.init();
         FoodConfigDataLoader.init();
-        LifecycleEvent.SERVER_STOPPED.register(x -> FoodPresetRegistry.init());
+        LifecycleEvent.SERVER_STOPPED.register(_ -> FoodPresetRegistry.init());
     }
 
     public static void initClient() {

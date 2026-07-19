@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.registry.ReloadListenerRegistry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
 
     public static void init() {
         ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigDataLoader(), FoodConfigDataLoader.ID);
@@ -35,10 +35,10 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
     }
 
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
+    protected void apply(Map<Identifier, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
         List<FoodItemEntry> entries = new ArrayList<>(loadBuiltinPresets());
 
-        for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
+        for (Map.Entry<Identifier, JsonElement> resource : resources.entrySet()) {
             if (!resource.getValue().isJsonArray()) continue;
 
             for (JsonElement element : resource.getValue().getAsJsonArray()) {

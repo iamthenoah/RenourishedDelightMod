@@ -5,12 +5,12 @@ import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 public record SuppressHurtFlashPayload() implements CustomPacketPayload {
 
-    private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "suppress_hurt_flash"));
+    private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "suppress_hurt_flash"));
     private static final StreamCodec<RegistryFriendlyByteBuf, SuppressHurtFlashPayload> CODEC = StreamCodec.unit(new SuppressHurtFlashPayload());
     private static final long WINDOW_MILLIS = 500L;
 

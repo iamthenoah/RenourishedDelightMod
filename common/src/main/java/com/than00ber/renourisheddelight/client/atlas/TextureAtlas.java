@@ -3,7 +3,7 @@ package com.than00ber.renourisheddelight.client.atlas;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,7 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
 
     public static class Builder {
 
-        protected final ResourceLocation name;
+        protected final Identifier name;
         protected final DynamicTexture texture;
         protected final Map<Item, Texture[]> textures = new HashMap<>();
 
