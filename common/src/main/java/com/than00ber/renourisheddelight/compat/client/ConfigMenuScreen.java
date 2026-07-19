@@ -22,12 +22,10 @@ public final class ConfigMenuScreen extends Screen {
     private static final int DONE_BUTTON_GAP = 10;
     private static final String DEFAULT_GOLDEN_PALETTE_ITEM = "minecraft:golden_carrot";
     private static final boolean DEFAULT_SHOW_FOOD_DISPLAY = false;
-    private static final boolean DEFAULT_ENABLE_ATLAS_CACHE = true;
 
     private final @Nullable Screen parent;
     private EditBox goldenPaletteItemField;
     private boolean showFoodDisplayValue;
-    private boolean enableAtlasCacheValue;
     private int top;
 
     public ConfigMenuScreen(@Nullable Screen parent) {
@@ -39,11 +37,10 @@ public final class ConfigMenuScreen extends Screen {
     protected void init() {
         ClientConfiguration config = ClientConfiguration.getInstance();
         showFoodDisplayValue = config.showFoodDisplayInInventory;
-        enableAtlasCacheValue = config.enableAtlasCache;
 
         int centerX = width / 2;
         int left = centerX - TOTAL_WIDTH / 2;
-        top = height / 2 - ROW_HEIGHT * 3;
+        top = height / 2 - (ROW_HEIGHT * 5) / 2;
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client.hud_position"), button -> minecraft.setScreen(new HudPositionScreen(this)))
                 .bounds(left, top, FIELD_WIDTH, 20)
@@ -69,15 +66,14 @@ public final class ConfigMenuScreen extends Screen {
                 .build());
 
         addToggle(left, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayValue, DEFAULT_SHOW_FOOD_DISPLAY, value -> showFoodDisplayValue = value);
-        addToggle(left, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.enableAtlasCache", enableAtlasCacheValue, DEFAULT_ENABLE_ATLAS_CACHE, value -> enableAtlasCacheValue = value);
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.food_items"),
                         button -> minecraft.setScreen(new FoodItemConfigScreen(this)))
-                .bounds(left, top + ROW_HEIGHT * 4, TOTAL_WIDTH, 20)
+                .bounds(left, top + ROW_HEIGHT * 3, TOTAL_WIDTH, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),
                         button -> onClose())
-                .bounds(left, top + ROW_HEIGHT * 5 + DONE_BUTTON_GAP, TOTAL_WIDTH, 20)
+                .bounds(left, top + ROW_HEIGHT * 4 + DONE_BUTTON_GAP, TOTAL_WIDTH, 20)
                 .build());
     }
 
@@ -115,7 +111,6 @@ public final class ConfigMenuScreen extends Screen {
         ClientConfiguration config = ClientConfiguration.getInstance();
         config.goldenPaletteItem = goldenPaletteItemField.getValue().trim();
         config.showFoodDisplayInInventory = showFoodDisplayValue;
-        config.enableAtlasCache = enableAtlasCacheValue;
         AutoConfig.getConfigHolder(ClientConfiguration.class).save();
         minecraft.setScreen(parent);
     }

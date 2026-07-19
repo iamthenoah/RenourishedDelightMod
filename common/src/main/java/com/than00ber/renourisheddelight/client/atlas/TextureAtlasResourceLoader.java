@@ -17,7 +17,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -30,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.awt.*;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -46,7 +44,6 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
-    private boolean isFirstReload = true;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -60,35 +57,13 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         Minecraft.getInstance().executeBlocking(() -> {
             long startNanos = System.nanoTime();
-            boolean cacheHit = false;
-            boolean skipSave = isFirstReload;
-            isFirstReload = false;
 
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
                         .filter(item -> item.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-                boolean cacheEnabled = ClientConfiguration.getInstance().enableAtlasCache;
-                Path cacheDir = null;
-                List<String> packIds = null;
 
-                if (cacheEnabled) {
-                    packIds = Minecraft.getInstance().getResourcePackRepository().getSelectedPacks().stream()
-                            .map(Pack::getId)
-                            .sorted()
-                            .toList();
-                    cacheDir = AtlasCache.cacheDir();
-                    TextureAtlas cachedMini = AtlasCache.tryLoad(cacheDir, "mini", 9, packIds, items.size());
-                    TextureAtlas cachedLarge = AtlasCache.tryLoad(cacheDir, "large", 18, packIds, items.size());
-
-                    if (cachedMini != null && cachedLarge != null) {
-                        miniAtlas = cachedMini;
-                        largeAtlas = cachedLarge;
-                        cacheHit = true;
-                        return;
-                    }
-                }
                 TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
                 TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
                 int[] colorPalette = getColorPalette(getGoldenPaletteItem());
@@ -114,18 +89,11 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 }
                 miniAtlas = miniBuilder.done();
                 largeAtlas = largeBuilder.done();
-
-                if (cacheEnabled && !skipSave) {
-                    AtlasCache.save(cacheDir, "mini", miniBuilder, packIds, items.size());
-                    AtlasCache.save(cacheDir, "large", largeBuilder, packIds, items.size());
-                } else if (cacheEnabled) {
-                    RenourishedDelightMod.LOGGER.info("Skipping atlas cache save on the first (pre-mod-packs) reload of this session");
-                }
             } catch (Exception exception) {
                 RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas", exception);
             } finally {
                 long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
-                RenourishedDelightMod.LOGGER.info("Item icon atlas {} in {} ms", cacheHit ? "loaded from cache" : "generated", elapsedMs);
+                RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", elapsedMs);
             }
         });
     }

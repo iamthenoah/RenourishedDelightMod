@@ -34,8 +34,4 @@ public final class ClientConfiguration implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     @Comment("Whether to render the active food items panel next to the inventory screen (default: false)")
     public boolean showFoodDisplayInInventory = false;
-
-    @ConfigEntry.Gui.Tooltip
-    @Comment("Cache generated item icon atlases to disk, so resource reloads skip re-rendering every icon when nothing changed (default: true)")
-    public boolean enableAtlasCache = true;
 }
