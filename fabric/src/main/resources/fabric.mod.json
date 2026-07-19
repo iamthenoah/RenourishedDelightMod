@@ -28,7 +28,7 @@
     "${modId}.fabric.mixins.json"
   ],
   "depends": {
-    "java": ">=17",
+    "java": ">=25",
     "fabric-api": "*",
     "fabricloader": ">=${fabricLoaderVersion}",
     "architectury": ">=${architecturyApiVersion}",
