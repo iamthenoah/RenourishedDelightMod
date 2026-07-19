@@ -17,7 +17,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -61,10 +61,10 @@ public class Diet {
     
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
-        boolean allowSameItem = rules.getBoolean(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
-        boolean enoughSpace = slots.size() < rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
-        boolean replaceLowest = rules.getBoolean(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
-        int replenishThreshold = 100 - rules.getInt(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
+        boolean allowSameItem = rules.get(GameRuleRegistry.ALLOW_EATING_SAME_ITEM);
+        boolean enoughSpace = slots.size() < rules.get(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+        boolean replaceLowest = rules.get(GameRuleRegistry.REPLACE_LOWEST_FOOD_ITEM);
+        int replenishThreshold = 100 - rules.get(GameRuleRegistry.FOOD_REPLENISHABLE_THRESHOLD);
 
         FoodProperties properties = item.components().get(DataComponents.FOOD);
         boolean hasEffect = properties != null && !properties.effects().isEmpty();
@@ -106,7 +106,7 @@ public class Diet {
                 attribute.addPermanentModifier(bonus.modifier());
                 
                 if (attribute == player.getAttribute(Attributes.MAX_HEALTH)) {
-                    ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+                    ticksSinceDamage = player.level().getGameRules().get(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
                 }
             }
         }
@@ -165,9 +165,9 @@ public class Diet {
             boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
 
             ticksSinceDamage++;
-            boolean pastDamageDelay = nourished || ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
-            boolean emptyStomach = rules.getBoolean(GameRuleRegistry.DISABLE_HEALTH_REGEN_WHEN_HUNGRY) && slots.isEmpty();
-            boolean needsRegen = rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION) && player.isHurt() && pastDamageDelay;
+            boolean pastDamageDelay = nourished || ticksSinceDamage >= rules.get(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+            boolean emptyStomach = rules.get(GameRuleRegistry.DISABLE_HEALTH_REGEN_WHEN_HUNGRY) && slots.isEmpty();
+            boolean needsRegen = rules.get(GameRules.NATURAL_HEALTH_REGENERATION) && player.isHurt() && pastDamageDelay;
             if (!emptyStomach && needsRegen) regen++;
 
             if (needsRegen && regen >= computeRegenInterval(rules, nourished)) {
@@ -179,7 +179,7 @@ public class Diet {
                     ConsumableFoodInstance instance = slots.stream()
                             .max(Comparator.comparingInt(x -> x.duration() - x.time()))
                             .orElse(null);
-                    instance.tick(rules.getInt(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN));
+                    instance.tick(rules.get(GameRuleRegistry.REGEN_HEALTH_FOOD_DRAIN));
                 }
             }
             boolean hunger = !nourished && player.hasEffect(MobEffects.HUNGER);
@@ -188,17 +188,17 @@ public class Diet {
 
             if (drainCheck >= 20) {
                 if (hunger) {
-                    extraDrain += rules.getInt(GameRuleRegistry.HUNGER_FOOD_DRAIN);
+                    extraDrain += rules.get(GameRuleRegistry.HUNGER_FOOD_DRAIN);
                 }
                 if (player.isSprinting()) {
-                    extraDrain += rules.getInt(GameRuleRegistry.SPRINT_FOOD_DRAIN);
+                    extraDrain += rules.get(GameRuleRegistry.SPRINT_FOOD_DRAIN);
                 }
                 drainCheck = 0;
             }
             for (int i = slots.size() - 1; i >= 0; i--) {
                 ConsumableFoodInstance instance = slots.get(i);
 
-                if (rules.getBoolean(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item())) {
+                if (rules.get(GameRuleRegistry.FOOD_ITEM_STACKS) || !ticked.contains(instance.item())) {
                     ticked.add(instance.item());
                     instance.tick(1 + extraDrain);
                     changed = true;
@@ -215,7 +215,7 @@ public class Diet {
     }
 
     private int computeRegenInterval(GameRules rules, boolean nourished) {
-        int base = rules.getInt(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
+        int base = rules.get(GameRuleRegistry.REGEN_HEALTH_TICK_INTERVAL);
         int interval = base;
 
         if (!slots.isEmpty()) {
@@ -228,7 +228,7 @@ public class Diet {
             double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
             interval = Math.max(5, (int) Math.round(base * scale));
         }
-        return nourished ? Math.min(interval, rules.getInt(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL)) : interval;
+        return nourished ? Math.min(interval, rules.get(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL)) : interval;
     }
 
     public static CompoundTag save(Diet diet) {
@@ -244,10 +244,10 @@ public class Diet {
 
     public static Diet load(CompoundTag compoundTag) {
         Diet diet = new Diet();
-        ListTag list = compoundTag.getList("Slots", Tag.TAG_COMPOUND);
-        diet.ticksSinceDamage = compoundTag.getInt("TicksSinceDamage");
-        diet.regen = compoundTag.getInt("Regen");
-        diet.drainCheck = compoundTag.getInt("DrainCheck");
+        ListTag list = compoundTag.getList("Slots").get();
+        diet.ticksSinceDamage = compoundTag.getInt("TicksSinceDamage").orElse(Integer.MAX_VALUE);
+        diet.regen = compoundTag.getInt("Regen").orElse(0);
+        diet.drainCheck = compoundTag.getInt("DrainCheck").orElse(0);
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
         return diet;
     }

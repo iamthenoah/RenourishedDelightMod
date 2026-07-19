@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -44,13 +44,13 @@ public enum EatingOutcome {
     public void consume(ServerPlayer player, Diet diet, Item item) {
         FoodProperties properties = item.components().get(DataComponents.FOOD);
         GameRules rules = player.level().getGameRules();
-        boolean wasFull = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+        boolean wasFull = diet.getSlots().size() >= rules.get(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
 
         switch (this) {
-            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
+            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.level().getServer()));
             case EFFECTS_ONLY -> {
                 if (properties != null) {
-                    properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
+//                    properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
                 }
             }
             case REPLENISH -> {
@@ -60,7 +60,7 @@ public enum EatingOutcome {
                         .orElse(null);
 
                 if (instance != null) {
-                    int refresh = ConsumableFoodInstance.create(item, properties, player.getServer()).duration();
+                    int refresh = ConsumableFoodInstance.create(item, properties, player.level().getServer()).duration();
                     instance.attributes().forEach(bonus -> bonus.tick(-refresh));
                 }
             }
@@ -71,16 +71,16 @@ public enum EatingOutcome {
 
                 if (instance != null) {
                     diet.removeFromSlot(player, instance);
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.level().getServer()));
                 }
             }
         }
         if (nourishable && wasFull) {
-            boolean applyNourishment = rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
+            boolean applyNourishment = rules.get(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
 
             if (applyNourishment) {
                 int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
-                int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
+                int percent = rules.get(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
                 int duration = Math.toIntExact(Math.round(smallest * (percent / 100.0)));
 
                 if (duration > 0) {

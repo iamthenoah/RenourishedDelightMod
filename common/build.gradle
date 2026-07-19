@@ -3,6 +3,6 @@ architectury {
 }
 
 dependencies {
-    modImplementation "dev.architectury:architectury:$architecturyApiVersion"
-    modCompileOnly "me.shedaniel.cloth:cloth-config:$clothConfigVersion"
+    implementation "dev.architectury:architectury:$architecturyApiVersion"
+    compileOnly "me.shedaniel.cloth:cloth-config:$clothConfigVersion"
 }

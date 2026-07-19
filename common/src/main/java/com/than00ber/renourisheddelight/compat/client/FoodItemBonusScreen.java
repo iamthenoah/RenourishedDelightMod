@@ -4,13 +4,13 @@ import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
@@ -60,7 +60,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
 
     private static @Nullable Item resolveItem(String id) {
         try {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
             return item != Items.AIR ? item : null;
         } catch (Exception exception) {
             return null;
@@ -343,13 +343,13 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         return mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16;
     }
 
-    private void renderFieldTooltip(GuiGraphics graphics, EditBox box, @Nullable Component text, int mouseX, int mouseY) {
+    private void renderFieldTooltip(GuiGraphicsExtractor graphics, EditBox box, @Nullable Component text, int mouseX, int mouseY) {
         if (text != null && isHovering(box, mouseX, mouseY)) {
             setTooltipForNextRenderPass(text);
         }
     }
 
-    private void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTooltips(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (BonusRow row : rows) {
             String attributeValue = row.attribute().getValue();
             String operationValue = row.operation().getValue();
@@ -375,7 +375,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         applyValidationColors();
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltips(graphics, mouseX, mouseY);
@@ -389,7 +389,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     @Override
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderHeaderActions(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int centerX = width / 2;
         int subtitleY = 25;
         int subtitleTextY = subtitleY + 4;
@@ -419,7 +419,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     @Override
-    protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderScrollableContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (entry.attributes.isEmpty()) {
             graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.no_bonuses"), width / 2, height / 2, 0xAAAAAA);
         }

@@ -8,7 +8,7 @@ import com.than00ber.renourisheddelight.food.DietHolder;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -114,8 +114,9 @@ public final class HudPositionScreen extends Screen {
         return mouseX >= x - 1 && mouseX <= x + boxWidth + 1 && mouseY >= y - 1 && mouseY <= y + boxHeight + 1;
     }
 
+    
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (Minecraft.getInstance().level == null) {
             graphics.fill(0, 0, width, height, 0xFF101010);
         }
@@ -132,7 +133,7 @@ public final class HudPositionScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     @Override

@@ -9,7 +9,7 @@ import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
@@ -17,7 +17,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -264,7 +264,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private @Nullable Item resolveItem(String id) {
         try {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
             return item != Items.AIR ? item : null;
         } catch (Exception exception) {
             return null;
@@ -287,10 +287,10 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void addItem() {
         String value = newItemField.getValue().trim();
         if (value.isEmpty()) return;
-        ResourceLocation id;
+        Identifier id;
 
         try {
-            id = ResourceLocation.parse(value);
+            id = Identifier.parse(value);
         } catch (Exception exception) {
             return;
         }
@@ -343,7 +343,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     @Override
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderHeaderActions(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         MutableComponent scopeText = server != null
                 ? Component.translatable("config.renourisheddelight.food_items.scope_world")
                 : Component.translatable("config.renourisheddelight.food_items.scope_global");
@@ -351,7 +351,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     @Override
-    protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderScrollableContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         for (IconEntry icon : icons) {
             graphics.renderItem(icon.stack(), icon.x(), icon.y());
         }

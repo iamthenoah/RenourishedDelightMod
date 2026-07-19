@@ -7,6 +7,7 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.net.URL;
 import java.nio.file.Path;
@@ -16,7 +17,7 @@ import java.util.function.Consumer;
 public final class FoodPresetsPackSource implements RepositorySource {
 
     @Override
-    public void loadPacks(Consumer<Pack> consumer) {
+    public void loadPacks(@NonNull Consumer<Pack> consumer) {
         Path root = getPackRoot();
 
         if (root != null) {
@@ -38,12 +39,12 @@ public final class FoodPresetsPackSource implements RepositorySource {
             final PackResources resources = new PathPackResources(info, root);
 
             @Override
-            public @NotNull PackResources openPrimary(PackLocationInfo location) {
+            public @NotNull PackResources openPrimary(@NonNull PackLocationInfo location) {
                 return resources;
             }
 
             @Override
-            public @NotNull PackResources openFull(PackLocationInfo location, Pack.Metadata metadata) {
+            public @NotNull PackResources openFull(@NonNull PackLocationInfo location, Pack.@NonNull Metadata metadata) {
                 return resources;
             }
         };

@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -146,7 +146,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
         PoseStack poseStack = new PoseStack();
         poseStack.pushPose();
-        poseStack.translate(8f, 8f, 150f); // 150 matches GuiGraphics.renderItem z depth
+        poseStack.translate(8f, 8f, 150f); // 150 matches GuiGraphicsExtractor.renderItem z depth
         poseStack.scale(1f, -1f, 1f);      // flip Y to match screen coords
         poseStack.scale(16f, 16f, 16f);    // scale to fill the 16x16 space
 
@@ -331,7 +331,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     private Item getGoldenPaletteItem() {
         try {
             String name = ClientConfiguration.getInstance().goldenPaletteItem;
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
+            Item item = BuiltInRegistries.ITEM.get(Identifier.parse(name));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
         } catch (Exception exception) {
             return Items.GOLDEN_CARROT;

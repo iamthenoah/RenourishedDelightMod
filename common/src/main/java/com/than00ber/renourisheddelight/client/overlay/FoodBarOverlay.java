@@ -12,7 +12,7 @@ import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import dev.architectury.event.events.client.ClientGuiEvent;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -46,7 +46,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     @Override
-    public void renderHud(GuiGraphics graphics, DeltaTracker deltaTracker) {
+    public void renderHud(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
         Player player = Minecraft.getInstance().player;
 
@@ -75,7 +75,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
     }
 
-    public static void renderPreview(GuiGraphics graphics, Point pos, List<ConsumableFoodInstance> slots) {
+    public static void renderPreview(GuiGraphicsExtractor graphics, Point pos, List<ConsumableFoodInstance> slots) {
         TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
 
         if (atlas != null && !slots.isEmpty()) {
@@ -87,7 +87,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return computeShares(merge(slots)).values().stream().mapToInt(Integer::intValue).sum();
     }
 
-    private static void renderSlots(GuiGraphics graphics, TextureAtlas atlas, Point pos, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished) {
+    private static void renderSlots(GuiGraphicsExtractor graphics, TextureAtlas atlas, Point pos, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished) {
         int tick = Minecraft.getInstance().gui.getGuiTicks();
         int globalIndex = 0;
 
@@ -98,7 +98,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private static void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
+    private static void renderFood(GuiGraphicsExtractor graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
         Texture[] textures = atlas.getTextures(instance.item());
 
         if (textures != null) {
