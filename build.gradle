@@ -85,7 +85,7 @@ subprojects {
 
         dependencies {
             required.project 'architectury-api'
-            required.project 'cloth-config'
+            optional.project 'cloth-config'
         }
     }
 

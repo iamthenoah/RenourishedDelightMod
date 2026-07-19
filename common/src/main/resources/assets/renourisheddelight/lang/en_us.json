@@ -71,6 +71,5 @@
   "config.renourisheddelight.food_items.duration": "Duration",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem": "Golden Palette Item",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip": "Item ID to sample for the golden-effect color palette for the %s effect.",
-  "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory",
-  "text.autoconfig.renourisheddelight/client.option.enableAtlasCache": "Enable Atlas Cache"
+  "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory"
 }
