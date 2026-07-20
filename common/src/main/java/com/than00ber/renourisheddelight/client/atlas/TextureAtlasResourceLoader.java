@@ -55,7 +55,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        Minecraft.getInstance().executeBlocking(() -> {
+        Minecraft.getInstance().tell(() -> {
             long startNanos = System.nanoTime();
 
             try {
