@@ -7,14 +7,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -40,14 +41,18 @@ public abstract class ItemStackMixin {
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 
             for (AttributeModifierInstance bonus : instance.attributes()) {
+                AttributeModifier.Operation operation = bonus.modifier().operation();
+                boolean percent = operation == AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+                        || operation == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
                 double rawAmount = bonus.modifier().amount();
-                String amount = String.valueOf(Math.abs(rawAmount));
+                double display = percent ? rawAmount * 100.0 : rawAmount;
+                String key = "attribute.modifier." + (display >= 0 ? "plus" : "take") + "." + operation.id();
+                String amount = ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(Math.abs(display));
                 Component description = Component.translatable(bonus.attribute().value().getDescriptionId());
-                String key = "attribute.modifier." + (rawAmount >= 0 ? "plus" : "take") + "." + bonus.modifier().operation().id();
-                ChatFormatting color = rawAmount >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED;
-                String time = StringUtil.formatTickDuration(bonus.duration(), 20);
-                MutableComponent duration = Component.literal(" (" + time + ")");
-                tooltip.add(Component.literal(" ").append(Component.translatable(key, amount, description)).append(duration).withStyle(color));
+                tooltip.add(Component.literal(" ")
+                        .append(Component.translatable(key, amount, description))
+                        .append(Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")"))
+                        .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
             }
             callback.setReturnValue(tooltip);
         }
