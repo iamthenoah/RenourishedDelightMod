@@ -28,19 +28,51 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Neoforge
-        run: ./gradlew :neoforge:remapJar
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :neoforge:remapJar && break
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Build Neoforge failed (attempt ${attempt}). Retrying in 15 seconds..."
+            sleep 15
+          done
 
       - name: Build Fabric
-        run: ./gradlew :fabric:remapJar
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :fabric:remapJar && break
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Build Fabric failed (attempt ${attempt}). Retrying in 15 seconds..."
+            sleep 15
+          done
 
       - name: Publish Neoforge to Modrinth
-        run: ./gradlew :neoforge:modrinth
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :neoforge:modrinth && break
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Publish Neoforge failed (attempt ${attempt}). Retrying in 15 seconds..."
+            sleep 15
+          done
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CHANGELOG: ${{ github.event.release.body }}
 
       - name: Publish Fabric to Modrinth
-        run: ./gradlew :fabric:modrinth
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew :fabric:modrinth && break
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Publish Fabric failed (attempt ${attempt}). Retrying in 15 seconds..."
+            sleep 15
+          done
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CHANGELOG: ${{ github.event.release.body }}
