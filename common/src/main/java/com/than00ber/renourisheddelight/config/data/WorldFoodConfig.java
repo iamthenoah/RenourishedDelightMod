@@ -20,26 +20,52 @@ import java.util.List;
 public final class WorldFoodConfig extends SavedData {
 
     private static final String ID = "renourisheddelight_food_config";
-    
+
     public static WorldFoodConfig get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(factory(), ID);
+        return server.overworld().getDataStorage().computeIfAbsent(factory(), ID).resync();
     }
 
     private final List<FoodItemEntry> entries = new ArrayList<>();
-    
+    private boolean resynced = false;
+
     public List<FoodItemEntry> getEntries() {
         return entries;
+    }
+
+    private WorldFoodConfig resync() {
+        if (!resynced) {
+            resynced = true;
+            CommonConfiguration common = CommonConfiguration.getInstance();
+            boolean added = false;
+
+            for (Item item : BuiltInRegistries.ITEM) {
+                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+
+                if (entries.stream().noneMatch(x -> id.equals(x.item))) {
+                    if (item.components().get(DataComponents.FOOD) != null || common.hasConfiguredEntry(item)) {
+                        entries.add(new FoodItemEntry(id, common.getAttributes(item)));
+                        added = true;
+                    }
+                }
+            }
+            if (added) {
+                setDirty(true);
+            }
+        }
+        return this;
     }
 
     public List<AttributeBonus> getAttributes(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry existing = entries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
-        if (existing != null) return existing.attributes;
 
-        List<AttributeBonus> attributes = CommonConfiguration.getInstance().getAttributes(item);
-        entries.add(new FoodItemEntry(id, attributes));
-        setDirty(true);
-        return attributes;
+        if (existing == null) {
+            List<AttributeBonus> attributes = CommonConfiguration.getInstance().getAttributes(item);
+            entries.add(new FoodItemEntry(id, attributes));
+            setDirty(true);
+            return attributes;
+        }
+        return existing.attributes;
     }
 
     private static SavedData.Factory<WorldFoodConfig> factory() {
@@ -47,17 +73,7 @@ public final class WorldFoodConfig extends SavedData {
     }
 
     private static WorldFoodConfig createNew() {
-        WorldFoodConfig data = new WorldFoodConfig();
-        CommonConfiguration common = CommonConfiguration.getInstance();
-
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item.components().get(DataComponents.FOOD) != null || common.hasConfiguredEntry(item)) {
-                String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                data.entries.add(new FoodItemEntry(id, common.getAttributes(item)));
-            }
-        }
-        data.setDirty(true);
-        return data;
+        return new WorldFoodConfig();
     }
 
     private static WorldFoodConfig load(CompoundTag tag, HolderLookup.Provider provider) {
