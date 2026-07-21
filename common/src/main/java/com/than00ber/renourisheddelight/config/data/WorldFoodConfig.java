@@ -22,36 +22,32 @@ public final class WorldFoodConfig extends SavedData {
     private static final String ID = "renourisheddelight_food_config";
 
     public static WorldFoodConfig get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(factory(), ID).resync();
+        return server.overworld().getDataStorage().computeIfAbsent(factory(), ID);
+    }
+
+    private static SavedData.Factory<WorldFoodConfig> factory() {
+        return new SavedData.Factory<>(() -> new WorldFoodConfig().populateDefaults(), WorldFoodConfig::load, DataFixTypes.LEVEL);
     }
 
     private final List<FoodItemEntry> entries = new ArrayList<>();
-    private boolean resynced = false;
 
     public List<FoodItemEntry> getEntries() {
         return entries;
     }
 
-    private WorldFoodConfig resync() {
-        if (!resynced) {
-            resynced = true;
-            CommonConfiguration common = CommonConfiguration.getInstance();
-            boolean added = false;
+    private WorldFoodConfig populateDefaults() {
+        CommonConfiguration common = CommonConfiguration.getInstance();
 
-            for (Item item : BuiltInRegistries.ITEM) {
-                String id = BuiltInRegistries.ITEM.getKey(item).toString();
+        for (Item item : BuiltInRegistries.ITEM) {
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
 
-                if (entries.stream().noneMatch(x -> id.equals(x.item))) {
-                    if (item.components().get(DataComponents.FOOD) != null || common.hasConfiguredEntry(item)) {
-                        entries.add(new FoodItemEntry(id, common.getAttributes(item)));
-                        added = true;
-                    }
+            if (entries.stream().noneMatch(x -> id.equals(x.item))) {
+                if (item.components().get(DataComponents.FOOD) != null || common.hasFoodItemEntry(item)) {
+                    entries.add(new FoodItemEntry(id, common.getAttributes(item)));
                 }
             }
-            if (added) {
-                setDirty(true);
-            }
         }
+        setDirty(true);
         return this;
     }
 
@@ -66,37 +62,6 @@ public final class WorldFoodConfig extends SavedData {
             return attributes;
         }
         return existing.attributes;
-    }
-
-    private static SavedData.Factory<WorldFoodConfig> factory() {
-        return new SavedData.Factory<>(WorldFoodConfig::createNew, WorldFoodConfig::load, DataFixTypes.LEVEL);
-    }
-
-    private static WorldFoodConfig createNew() {
-        return new WorldFoodConfig();
-    }
-
-    private static WorldFoodConfig load(CompoundTag tag, HolderLookup.Provider provider) {
-        WorldFoodConfig data = new WorldFoodConfig();
-        ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
-
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag entryTag = list.getCompound(i);
-            List<AttributeBonus> bonuses = new ArrayList<>();
-            ListTag bonusList = entryTag.getList("Attributes", Tag.TAG_COMPOUND);
-
-            for (int j = 0; j < bonusList.size(); j++) {
-                CompoundTag bonusTag = bonusList.getCompound(j);
-                bonuses.add(new AttributeBonus(
-                        bonusTag.getString("Attribute"),
-                        bonusTag.getString("Operation"),
-                        bonusTag.getDouble("Amount"),
-                        bonusTag.getInt("Duration")));
-            }
-            FoodItemEntry entry = new FoodItemEntry(entryTag.getString("Item"), bonuses, entryTag.getBoolean("Override"));
-            data.entries.add(entry);
-        }
-        return data;
     }
 
     @Override
@@ -122,5 +87,28 @@ public final class WorldFoodConfig extends SavedData {
         }
         tag.put("Entries", list);
         return tag;
+    }
+
+    private static WorldFoodConfig load(CompoundTag tag, HolderLookup.Provider provider) {
+        WorldFoodConfig data = new WorldFoodConfig();
+        ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
+
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag entryTag = list.getCompound(i);
+            List<AttributeBonus> bonuses = new ArrayList<>();
+            ListTag bonusList = entryTag.getList("Attributes", Tag.TAG_COMPOUND);
+
+            for (int j = 0; j < bonusList.size(); j++) {
+                CompoundTag bonusTag = bonusList.getCompound(j);
+                bonuses.add(new AttributeBonus(
+                        bonusTag.getString("Attribute"),
+                        bonusTag.getString("Operation"),
+                        bonusTag.getDouble("Amount"),
+                        bonusTag.getInt("Duration")));
+            }
+            FoodItemEntry entry = new FoodItemEntry(entryTag.getString("Item"), bonuses, entryTag.getBoolean("Override"));
+            data.entries.add(entry);
+        }
+        return data;
     }
 }
