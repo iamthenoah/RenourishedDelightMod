@@ -22,6 +22,9 @@ import java.util.Locale;
 
 public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
+    private static final int SIDE_MARGIN = 140;
+    private static final int ATTRIBUTE_WIDTH = 190;
+    private static final int MULTIPLIER_WIDTH = 60;
     private static final int NORMAL_TEXT_COLOR = 0xE0E0E0;
     private static final int INVALID_TEXT_COLOR = 0xFF5555;
     private static final int ORANGE_TEXT_COLOR = 0xFFAA00;
@@ -46,19 +49,19 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         int centerX = width / 2;
         int newRowY = height - 56;
 
-        newAttributeField = new EditBox(font, centerX - 200, newRowY, 260, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
+        newAttributeField = new EditBox(font, centerX - SIDE_MARGIN, newRowY, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
         newAttributeField.setMaxLength(256);
         newAttributeField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.attribute").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newAttributeField);
         suggestFields.add(new SuggestField(newAttributeField, attributeOptions, true));
 
-        newMultiplierField = new EditBox(font, centerX + 70, newRowY, 80, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
+        newMultiplierField = new EditBox(font, centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, newRowY, MULTIPLIER_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
         newMultiplierField.setMaxLength(32);
         newMultiplierField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.multiplier").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newMultiplierField);
 
         addRenderableWidget(Button.builder(Component.literal("+"), button -> addMultiplier())
-                .bounds(centerX + 160, newRowY, 20, 20)
+                .bounds(centerX + SIDE_MARGIN - 20, newRowY, 20, 20)
                 .build());
 
         int buttonsY = height - 28;
@@ -96,7 +99,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         scrollVisibleRows = visibleRows;
         scrollTotalRows = Math.max(1, workingEntries.size());
 
-        scrollTrackX = centerX + 190;
+        scrollTrackX = centerX + SIDE_MARGIN + 10;
         scrollTrackTop = listTop;
         scrollTrackBottom = listBottom;
 
@@ -104,21 +107,21 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
             DurationMultiplierEntry entry = workingEntries.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
 
-            EditBox attributeField = new EditBox(font, centerX - 200, y, 260, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
+            EditBox attributeField = new EditBox(font, centerX - SIDE_MARGIN, y, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
             attributeField.setMaxLength(256);
             attributeField.setValue(entry.attribute != null ? entry.attribute : "");
             attributeField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.attribute").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(attributeField);
             suggestFields.add(new SuggestField(attributeField, attributeOptions));
 
-            EditBox multiplierField = new EditBox(font, centerX + 70, y, 80, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
+            EditBox multiplierField = new EditBox(font, centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, y, MULTIPLIER_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
             multiplierField.setMaxLength(32);
             multiplierField.setValue(String.valueOf(entry.multiplier));
             multiplierField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.multiplier").withStyle(ChatFormatting.DARK_GRAY));
             addRenderableWidget(multiplierField);
 
             Button removeButton = Button.builder(Component.literal("x"), button -> removeMultiplier(entry))
-                    .bounds(centerX + 160, y, 20, 20)
+                    .bounds(centerX + SIDE_MARGIN - 20, y, 20, 20)
                     .build();
             addRenderableWidget(removeButton);
 
@@ -179,6 +182,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
     private void resetMultipliers() {
         workingEntries.clear();
+        CommonConfiguration.getInstance().populateMissingDurationMultipliers();
         saveWorkingEntries();
         scrollOffset = 0;
         rebuildContent();
@@ -269,8 +273,8 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int centerX = width / 2;
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), centerX - 200, 64, 0xFFFFFF);
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), centerX + 70, 64, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), centerX - SIDE_MARGIN, 64, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, 64, 0xFFFFFF);
     }
 
     @Override
