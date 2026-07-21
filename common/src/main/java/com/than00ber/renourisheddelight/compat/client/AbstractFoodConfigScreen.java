@@ -1,17 +1,20 @@
 package com.than00ber.renourisheddelight.compat.client;
 
+import dev.architectury.platform.Platform;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public abstract class AbstractFoodConfigScreen extends Screen {
 
@@ -22,8 +25,10 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected static final int VISIBLE_SUGGESTIONS = 10;
     protected static final float SUGGESTION_Z = 400.0F;
     protected static final int TITLE_Y = 11;
+    protected static final String ALL_MODS = "*";
 
     protected final List<SuggestField> suggestFields = new ArrayList<>();
+    protected @Nullable ModFilterField modFilterField;
 
     protected int scrollOffset = 0;
     protected int scrollTrackX;
@@ -94,6 +99,11 @@ public abstract class AbstractFoodConfigScreen extends Screen {
                     return true;
                 }
             }
+        }
+        if (button == 1 && modFilterField != null && modFilterField.isMouseOver(mouseX, mouseY)) {
+            modFilterField.playDownSound();
+            modFilterField.cycleBackward();
+            return true;
         }
         if (button == 0 && isInsideScrollbar(mouseX, mouseY)) {
             draggingScrollbar = true;
@@ -186,6 +196,85 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
         graphics.fill(0, footerTop, width, footerTop + 1, 0x80000000);
         graphics.fill(0, footerTop + 1, width, footerTop + 2, 0x20FFFFFF);
+    }
+
+    protected static String namespaceOf(String id) {
+        int colon = id.indexOf(':');
+        return colon >= 0 ? id.substring(0, colon) : "minecraft";
+    }
+
+    protected static boolean isModInstalled(String namespace) {
+        return namespace.equals("minecraft") || Platform.isModLoaded(namespace);
+    }
+
+    protected final class ModFilterField {
+        private final Supplier<List<String>> idsSupplier;
+        private final Consumer<String> onChange;
+        private String value = ALL_MODS;
+        private @Nullable CycleButton<String> button;
+
+        protected ModFilterField(Supplier<List<String>> idsSupplier, Consumer<String> onChange) {
+            this.idsSupplier = idsSupplier;
+            this.onChange = onChange;
+        }
+
+        protected String value() {
+            return value;
+        }
+
+        protected boolean matches(String id) {
+            return value.equals(ALL_MODS) || namespaceOf(id).equals(value);
+        }
+
+        protected void rebuild(int x, int y, int width, int height, Component title) {
+            if (button != null) {
+                removeWidget(button);
+            }
+            List<String> namespaces = computeNamespaces();
+            if (!namespaces.contains(value)) {
+                value = ALL_MODS;
+            }
+            button = CycleButton.builder((String namespace) -> namespace.equals(ALL_MODS)
+                            ? Component.translatable("config.renourisheddelight.all_mods")
+                            : Component.literal(namespace).withStyle(isModInstalled(namespace) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
+                    .withValues(namespaces)
+                    .withInitialValue(value)
+                    .withTooltip(namespace -> namespace.equals(ALL_MODS) || isModInstalled(namespace)
+                            ? null
+                            : Tooltip.create(Component.translatable("config.renourisheddelight.mod_not_installed").withStyle(ChatFormatting.RED)))
+                    .create(x, y, width, height, title, (widget, namespace) -> {
+                        value = namespace;
+                        scrollOffset = 0;
+                        onChange.accept(namespace);
+                    });
+            addRenderableWidget(button);
+        }
+
+        private List<String> computeNamespaces() {
+            List<String> namespaces = new ArrayList<>();
+            namespaces.add(ALL_MODS);
+            namespaces.addAll(new TreeSet<>(idsSupplier.get().stream().map(AbstractFoodConfigScreen::namespaceOf).toList()));
+            return namespaces;
+        }
+
+        protected boolean isMouseOver(double mouseX, double mouseY) {
+            return button != null && button.isMouseOver(mouseX, mouseY);
+        }
+
+        private void playDownSound() {
+            if (button != null) {
+                button.playDownSound(Minecraft.getInstance().getSoundManager());
+            }
+        }
+
+        protected void cycleBackward() {
+            List<String> namespaces = computeNamespaces();
+            int index = namespaces.indexOf(value);
+            int previous = index <= 0 ? namespaces.size() - 1 : index - 1;
+            value = namespaces.get(previous);
+            scrollOffset = 0;
+            onChange.accept(value);
+        }
     }
 
     protected record SuggestOption(String value, String name, String searchText) {
