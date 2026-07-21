@@ -1,9 +1,11 @@
 package com.than00ber.renourisheddelight.config;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
@@ -11,8 +13,10 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
@@ -38,6 +42,15 @@ public final class CommonConfiguration implements ConfigData {
     }
 
     private void populateDefaults() {
+        boolean added = populateFoodItemDefaults();
+        added |= populateMissingDurationMultipliers();
+
+        if (added) {
+            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+        }
+    }
+
+    private boolean populateFoodItemDefaults() {
         boolean added = false;
 
         for (Item item : BuiltInRegistries.ITEM) {
@@ -53,9 +66,40 @@ public final class CommonConfiguration implements ConfigData {
                 added = true;
             }
         }
-        if (added) {
-            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+        return added;
+    }
+
+    public boolean populateMissingDurationMultipliers() {
+        boolean added = false;
+
+        for (Attribute attribute : BuiltInRegistries.ATTRIBUTE) {
+            Holder<Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
+            boolean alreadyListed = durationMultipliers.stream().anyMatch(entry -> {
+                Holder<Attribute> candidate = ConsumableFoodInstance.resolveAttribute(entry.attribute);
+                return candidate != null && candidate.value() == holder.value();
+            });
+            if (alreadyListed) continue;
+
+            String id = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
+            durationMultipliers.add(new DurationMultiplierEntry(id, 1.0));
+            added = true;
         }
+        return added;
+    }
+
+    public double getDurationMultiplier(String attributeId) {
+        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(attributeId);
+
+        if (attribute != null) {
+            for (DurationMultiplierEntry entry : durationMultipliers) {
+                Holder<Attribute> candidate = ConsumableFoodInstance.resolveAttribute(entry.attribute);
+
+                if (candidate != null && candidate.value() == attribute.value()) {
+                    return entry.multiplier;
+                }
+            }
+        }
+        return 1.0;
     }
 
     public List<AttributeBonus> getAttributes(Item item) {
@@ -116,4 +160,16 @@ public final class CommonConfiguration implements ConfigData {
     operation can be: add_value, add_multiplied_base, add_multiplied_total
     """)
     public List<FoodItemEntry> foodItemConfigurations = new ArrayList<>();
+
+    @ConfigEntry.Gui.Excluded
+    @Comment("""
+    Per-attribute duration multipliers, applied when a food item's bonus is actually granted (does not modify the stored per-item durations). Each entry maps an attribute id to a multiplier. Example:
+    [
+      {
+        attribute: "minecraft:generic.max_health",
+        multiplier: 1.5,
+      }
+    ]
+    """)
+    public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 }
