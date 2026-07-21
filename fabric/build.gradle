@@ -3,17 +3,6 @@ architectury {
     fabric()
 }
 
-repositories {
-    exclusiveContent {
-        forRepository {
-            maven { url = 'https://api.modrinth.com/maven' }
-        }
-        filter {
-            includeGroup 'maven.modrinth'
-        }
-    }
-}
-
 configurations {
     developmentFabric.extendsFrom common
 }
