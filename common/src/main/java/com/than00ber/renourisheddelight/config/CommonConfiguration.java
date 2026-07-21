@@ -115,8 +115,7 @@ public final class CommonConfiguration implements ConfigData {
         AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         return attributes;
     }
-
-
+    
     public boolean hasFoodItemEntry(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry entry = FoodPresetRegistry.getInstance().get(id);
@@ -171,11 +170,9 @@ public final class CommonConfiguration implements ConfigData {
         for (T value : universe) {
             String id = idOf.apply(value);
 
-            if (!alreadyListed.test(id)) {
-                if (include.test(value)) {
-                    add.accept(id, value);
-                    added = true;
-                }
+            if (!alreadyListed.test(id) && include.test(value)) {
+                add.accept(id, value);
+                added = true;
             }
         }
         return added;
