@@ -4,7 +4,14 @@ architectury {
 }
 
 repositories {
-    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    exclusiveContent {
+        forRepository {
+            maven { url = 'https://api.modrinth.com/maven' }
+        }
+        filter {
+            includeGroup 'maven.modrinth'
+        }
+    }
 }
 
 configurations {
@@ -21,8 +28,8 @@ dependencies {
 
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:$clothConfigVersion"
 
-    modCompileOnly "com.terraformersmc:modmenu:$modMenuVersion"
-    modLocalRuntime "com.terraformersmc:modmenu:$modMenuVersion"
+    modCompileOnly "maven.modrinth:modmenu:$modMenuVersion-fabric"
+    modLocalRuntime "maven.modrinth:modmenu:$modMenuVersion-fabric"
 }
 
 processResources {

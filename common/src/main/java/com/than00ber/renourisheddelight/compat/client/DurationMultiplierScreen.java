@@ -33,6 +33,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     private final List<DurationMultiplierEntry> workingEntries;
     private final List<MultiplierRow> rows = new ArrayList<>();
     private List<SuggestOption> attributeOptions = List.of();
+    private String searchQuery = "";
 
     private EditBox newAttributeField;
     private EditBox newMultiplierField;
@@ -48,6 +49,18 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         attributeOptions = buildAttributeOptions();
         int centerX = width / 2;
         int newRowY = height - 56;
+
+        modFilterField = new ModFilterField(() -> workingEntries.stream().map(entry -> entry.attribute).toList(), namespace -> rebuildContent());
+
+        EditBox searchField = new EditBox(font, centerX - SIDE_MARGIN, 30, 170, 20, Component.translatable("config.renourisheddelight.duration_multipliers.search"));
+        searchField.setMaxLength(256);
+        searchField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.search_hint").withStyle(ChatFormatting.DARK_GRAY));
+        searchField.setResponder(value -> {
+            searchQuery = value.toLowerCase(Locale.ROOT).trim();
+            scrollOffset = 0;
+            rebuildContent();
+        });
+        addRenderableWidget(searchField);
 
         newAttributeField = new EditBox(font, centerX - SIDE_MARGIN, newRowY, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
         newAttributeField.setMaxLength(256);
@@ -94,17 +107,24 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         int listBottom = height - 68;
         int rowGap = ROW_HEIGHT - 20;
         int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
-        scrollMaxOffset = Math.max(0, workingEntries.size() - visibleRows);
+
+        modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
+
+        List<DurationMultiplierEntry> filtered = workingEntries.stream()
+                .filter(entry -> modFilterField.matches(entry.attribute != null ? entry.attribute : ""))
+                .filter(this::matchesSearch)
+                .toList();
+        scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
         scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
         scrollVisibleRows = visibleRows;
-        scrollTotalRows = Math.max(1, workingEntries.size());
+        scrollTotalRows = Math.max(1, filtered.size());
 
         scrollTrackX = centerX + SIDE_MARGIN + 10;
         scrollTrackTop = listTop;
         scrollTrackBottom = listBottom;
 
-        for (int i = 0; i < visibleRows && i + scrollOffset < workingEntries.size(); i++) {
-            DurationMultiplierEntry entry = workingEntries.get(i + scrollOffset);
+        for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
+            DurationMultiplierEntry entry = filtered.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
 
             EditBox attributeField = new EditBox(font, centerX - SIDE_MARGIN, y, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
@@ -127,6 +147,18 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
             rows.add(new MultiplierRow(entry, attributeField, multiplierField, removeButton));
         }
+    }
+
+    private boolean matchesSearch(DurationMultiplierEntry entry) {
+        if (searchQuery.isEmpty()) return true;
+        String id = entry.attribute != null ? entry.attribute.toLowerCase(Locale.ROOT) : "";
+        if (id.contains(searchQuery)) return true;
+
+        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(entry.attribute);
+        if (attribute == null) return false;
+
+        String name = Component.translatable(attribute.value().getDescriptionId()).getString().toLowerCase(Locale.ROOT);
+        return name.contains(searchQuery);
     }
 
     private List<SuggestOption> buildAttributeOptions() {
@@ -281,6 +313,8 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (workingEntries.isEmpty()) {
             graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.duration_multipliers.empty"), width / 2, height / 2, 0xAAAAAA);
+        } else if (rows.isEmpty()) {
+            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.duration_multipliers.no_results"), width / 2, height / 2, 0xAAAAAA);
         }
     }
 

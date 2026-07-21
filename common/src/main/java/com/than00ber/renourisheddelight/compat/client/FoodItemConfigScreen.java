@@ -5,12 +5,14 @@ import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import dev.architectury.platform.Platform;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.*;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -28,11 +30,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 
 public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
-    private static final String ALL_MODS = "*";
     private static final int SIDE_MARGIN = 140;
 
     private final @Nullable Screen parent;
@@ -40,8 +44,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private final List<AbstractWidget> rowWidgets = new ArrayList<>();
 
     private EditBox newItemField;
-    private @Nullable CycleButton<String> modFilterButton;
-    private String modFilter = ALL_MODS;
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
@@ -70,6 +72,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         List<SuggestOption> itemOptions = buildItemOptions();
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
+
+        modFilterField = new ModFilterField(() -> workingEntries.stream().map(entry -> entry.item).toList(), namespace -> rebuildContent());
 
         EditBox searchField = new EditBox(font, left, 30, 170, 20, Component.translatable("config.renourisheddelight.food_items.search"));
         searchField.setMaxLength(256);
@@ -112,36 +116,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         rowWidgets.clear();
         icons.clear();
 
-        if (modFilterButton != null) {
-            removeWidget(modFilterButton);
-        }
-
         int centerX = width / 2;
         List<FoodItemEntry> entries = workingEntries;
         noItemsConfigured = entries.isEmpty();
-        List<String> namespaces = computeNamespaces();
 
-        if (!namespaces.contains(modFilter)) {
-            modFilter = ALL_MODS;
-        }
-        modFilterButton = CycleButton.builder((String value) -> value.equals(ALL_MODS)
-                        ? Component.translatable("config.renourisheddelight.food_items.all_mods")
-                        : Component.literal(value).withStyle(isModInstalled(value) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
-                .withValues(namespaces)
-                .withInitialValue(modFilter)
-                .withTooltip(value -> value.equals(ALL_MODS) || isModInstalled(value)
-                        ? null
-                        : Tooltip.create(Component.translatable("config.renourisheddelight.food_items.mod_not_installed").withStyle(ChatFormatting.RED)))
-                .create(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.food_items.filter"), (button, value) -> {
-                    modFilter = value;
-                    scrollOffset = 0;
-                    rebuildContent();
-                });
-        addRenderableWidget(modFilterButton);
-        rowWidgets.add(modFilterButton);
+        modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
         List<FoodItemEntry> filtered = entries.stream()
-                .filter(entry -> modFilter.equals(ALL_MODS) || namespaceOf(entry).equals(modFilter))
+                .filter(entry -> modFilterField.matches(entry.item))
                 .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
                 .toList();
 
@@ -185,32 +167,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             addRenderableWidget(removeButton);
             rowWidgets.add(removeButton);
         }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 1 && modFilterButton != null && modFilterButton.isMouseOver(mouseX, mouseY)) {
-            modFilterButton.playDownSound(Minecraft.getInstance().getSoundManager());
-            cycleModFilterBackward();
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    private void cycleModFilterBackward() {
-        List<String> namespaces = computeNamespaces();
-        int index = namespaces.indexOf(modFilter);
-        int previous = index <= 0 ? namespaces.size() - 1 : index - 1;
-        modFilter = namespaces.get(previous);
-        scrollOffset = 0;
-        rebuildContent();
-    }
-
-    private List<String> computeNamespaces() {
-        List<String> namespaces = new ArrayList<>();
-        namespaces.add(ALL_MODS);
-        namespaces.addAll(new TreeSet<>(workingEntries.stream().map(this::namespaceOf).toList()));
-        return namespaces;
     }
 
     private Tooltip buildAttributesTooltip(FoodItemEntry entry) {
@@ -262,15 +218,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             if (operation.getSerializedName().equals(value)) return operation;
         }
         return AttributeModifier.Operation.ADD_VALUE;
-    }
-
-    private String namespaceOf(FoodItemEntry entry) {
-        int colon = entry.item.indexOf(':');
-        return colon >= 0 ? entry.item.substring(0, colon) : "minecraft";
-    }
-
-    private boolean isModInstalled(String namespace) {
-        return namespace.equals("minecraft") || Platform.isModLoaded(namespace);
     }
 
     private @Nullable Item resolveItem(String id) {
