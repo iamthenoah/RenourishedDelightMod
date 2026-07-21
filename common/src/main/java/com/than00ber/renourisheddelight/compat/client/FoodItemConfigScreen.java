@@ -236,13 +236,24 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         boolean percent = operation == AttributeModifier.Operation.ADD_MULTIPLIED_BASE
                 || operation == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
         double display = percent ? bonus.amount * 100.0 : bonus.amount;
+
+        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(bonus.attribute);
         String durationText = StringUtil.formatTickDuration(bonus.duration, 20);
+        Component durationComponent;
+
+        if (multiplier != 1.0) {
+            int finalDuration = Math.max(1, (int) Math.round(bonus.duration * multiplier));
+            String finalDurationText = StringUtil.formatTickDuration(finalDuration, 20);
+            durationComponent = Component.literal(durationText + " -> " + finalDurationText).withStyle(ChatFormatting.GOLD);
+        } else {
+            durationComponent = Component.literal(durationText);
+        }
 
         Component amountLine = display >= 0
                 ? Component.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(display), name)
                 : Component.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(-display), name);
 
-        return Component.empty().append(amountLine).append(" (" + durationText + ")");
+        return Component.empty().append(amountLine).append(" (").append(durationComponent).append(")");
     }
 
     private AttributeModifier.Operation resolveOperation(@Nullable String raw) {
