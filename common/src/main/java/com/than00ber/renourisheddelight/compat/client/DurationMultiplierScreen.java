@@ -182,7 +182,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
     private void resetMultipliers() {
         workingEntries.clear();
-        CommonConfiguration.getInstance().populateMissingDurationMultipliers();
+        CommonConfiguration.getInstance().populateDurationMultiplierDefaults();
         saveWorkingEntries();
         scrollOffset = 0;
         rebuildContent();
