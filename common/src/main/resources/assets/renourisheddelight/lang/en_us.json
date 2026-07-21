@@ -69,6 +69,11 @@
   "config.renourisheddelight.food_items.modifier": "Modifier",
   "config.renourisheddelight.food_items.amount": "Amount",
   "config.renourisheddelight.food_items.duration": "Duration",
+  "config.renourisheddelight.duration_multipliers": "Duration Multipliers",
+  "config.renourisheddelight.duration_multipliers.attribute": "Attribute",
+  "config.renourisheddelight.duration_multipliers.multiplier": "Multiplier",
+  "config.renourisheddelight.duration_multipliers.multiplier_invalid": "Multiplier must be a positive number",
+  "config.renourisheddelight.duration_multipliers.empty": "No duration multipliers configured",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem": "Golden Palette Item",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip": "Item ID to sample for the golden-effect color palette for the %s effect.",
   "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory"

@@ -40,7 +40,7 @@ public final class ConfigMenuScreen extends Screen {
 
         int centerX = width / 2;
         int left = centerX - TOTAL_WIDTH / 2;
-        top = height / 2 - (ROW_HEIGHT * 5) / 2;
+        top = height / 2 - (ROW_HEIGHT * 6) / 2;
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.client.hud_position"), button -> minecraft.setScreen(new HudPositionScreen(this)))
                 .bounds(left, top, FIELD_WIDTH, 20)
@@ -71,9 +71,13 @@ public final class ConfigMenuScreen extends Screen {
                         button -> minecraft.setScreen(new FoodItemConfigScreen(this)))
                 .bounds(left, top + ROW_HEIGHT * 3, TOTAL_WIDTH, 20)
                 .build());
+        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.duration_multipliers"),
+                        button -> minecraft.setScreen(new DurationMultiplierScreen(this)))
+                .bounds(left, top + ROW_HEIGHT * 4, TOTAL_WIDTH, 20)
+                .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),
                         button -> onClose())
-                .bounds(left, top + ROW_HEIGHT * 4 + DONE_BUTTON_GAP, TOTAL_WIDTH, 20)
+                .bounds(left, top + ROW_HEIGHT * 5 + DONE_BUTTON_GAP, TOTAL_WIDTH, 20)
                 .build());
     }
 
