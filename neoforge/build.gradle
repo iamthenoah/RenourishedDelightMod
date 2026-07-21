@@ -9,14 +9,6 @@ configurations {
 
 repositories {
     maven { url = 'https://maven.neoforged.net/releases/' }
-    exclusiveContent {
-        forRepository {
-            maven { url = 'https://api.modrinth.com/maven' }
-        }
-        filter {
-            includeGroup 'maven.modrinth'
-        }
-    }
 }
 
 dependencies {

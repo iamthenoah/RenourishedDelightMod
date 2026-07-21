@@ -35,6 +35,17 @@ subprojects {
         }
     }
 
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven { url = 'https://api.modrinth.com/maven' }
+            }
+            filter {
+                includeGroup 'maven.modrinth'
+            }
+        }
+    }
+
     base {
         archivesName = modId
     }
