@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
-public abstract class GuiHeartMixin {
+public abstract class GuiMixin {
 
     @Unique private static final int HEART_SIZE = 9;
 
@@ -22,7 +22,7 @@ public abstract class GuiHeartMixin {
     @Unique private int renourisheddelight$clipY;
 
     @Inject(method = "renderHearts", at = @At("HEAD"))
-    private void renourisheddelight$captureOddMaxHealthHeart(GuiGraphics guiGraphics, Player player, int left, int top, int rowHeight, int regenIndex, float maxHealth, int health, int displayHealth, int absorptionAmount, boolean highlight, CallbackInfo callback) {
+    private void renourisheddelight$renderHearts(GuiGraphics guiGraphics, Player player, int left, int top, int rowHeight, int regenIndex, float maxHealth, int health, int displayHealth, int absorptionAmount, boolean highlight, CallbackInfo callback) {
         renourisheddelight$clipActive = false;
 
         if (ClientConfiguration.getInstance().clipOddMaxHealthHeart && Mth.ceil(maxHealth) % 2 != 0) {
@@ -37,14 +37,14 @@ public abstract class GuiHeartMixin {
     }
 
     @Inject(method = "renderHeart", at = @At("HEAD"))
-    private void renourisheddelight$clipHeartStart(GuiGraphics guiGraphics, @Coerce Object heartType, int x, int y, boolean hardcore, boolean blinking, boolean half, CallbackInfo callback) {
+    private void renourisheddelight$renderHeartStart(GuiGraphics guiGraphics, @Coerce Object heartType, int x, int y, boolean hardcore, boolean blinking, boolean half, CallbackInfo callback) {
         if (renourisheddelight$matchesClipTarget(x, y)) {
             guiGraphics.enableScissor(x, y, x + (HEART_SIZE + 1) / 2, y + HEART_SIZE);
         }
     }
 
     @Inject(method = "renderHeart", at = @At("RETURN"))
-    private void renourisheddelight$clipHeartEnd(GuiGraphics guiGraphics, @Coerce Object heartType, int x, int y, boolean hardcore, boolean blinking, boolean half, CallbackInfo callback) {
+    private void renourisheddelight$renderHeartEnd(GuiGraphics guiGraphics, @Coerce Object heartType, int x, int y, boolean hardcore, boolean blinking, boolean half, CallbackInfo callback) {
         if (renourisheddelight$matchesClipTarget(x, y)) {
             guiGraphics.disableScissor();
             int edge = x + HEART_SIZE / 2;
