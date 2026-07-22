@@ -64,6 +64,7 @@ The configs are also available as config files:
 | `foodBarOffsetY` | 0 | Vertical pixel offset for the food display UI |
 | `goldenPaletteItem` | `minecraft:golden_carrot` | Item ID used to sample the color palette for the golden-effect tint |
 | `showFoodDisplayInInventory` | false | Whether to render the active food items panel next to the inventory screen |
+| `clipOddMaxHealthHeart` | true | Whether to clip the last heart's unfillable half when max health is odd, instead of showing a half heart that can never fill |
 
 </details>
 

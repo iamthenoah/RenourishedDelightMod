@@ -79,5 +79,6 @@
   "config.renourisheddelight.duration_multipliers.no_results": "No attributes match your search",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem": "Golden Palette Item",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip": "Item ID to sample for the golden-effect color palette for the %s effect.",
-  "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory"
+  "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory",
+  "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart": "Clip Unfillable Heart"
 }
