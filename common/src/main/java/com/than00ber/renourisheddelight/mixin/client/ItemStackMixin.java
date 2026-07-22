@@ -32,7 +32,7 @@ public abstract class ItemStackMixin {
         ItemStack stack = (ItemStack) (Object) this;
         FoodProperties properties = stack.get(DataComponents.FOOD);
 
-        if (properties != null || CommonConfiguration.getInstance().hasConfiguredEntry(stack.getItem())) {
+        if (properties != null || CommonConfiguration.getInstance().hasFoodItemEntry(stack.getItem())) {
             MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
             ConsumableFoodInstance instance = server != null
                     ? ConsumableFoodInstance.create(stack.getItem(), properties, server)

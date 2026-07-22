@@ -73,6 +73,7 @@ The configs are also available as config files:
 | Option | Default | Description |
 | --- | --- | --- |
 | `foodItemConfigurations` | `[]` | Per-item attribute bonuses (auto-populated on first launch, editable from the in-game config screen) |
+| `durationMultipliers` | `[]` | Per-attribute duration multipliers applied when a bonus is granted, editable from the in-game config screen; stored per-item durations are unaffected |
 
 </details>
 

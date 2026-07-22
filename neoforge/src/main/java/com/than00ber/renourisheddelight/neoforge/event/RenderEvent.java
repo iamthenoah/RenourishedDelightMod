@@ -9,11 +9,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
-@EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 public final class RenderEvent {
 
     @SubscribeEvent
-    public static void onRenderGuiLayerPre(RenderGuiLayerEvent.Pre event) {
+    public static void onRenderGuiLayerEventPre(RenderGuiLayerEvent.Pre event) {
         if (event.getName().equals(VanillaGuiLayers.FOOD_LEVEL)) {
             event.setCanceled(true);
             Player player = Minecraft.getInstance().player;

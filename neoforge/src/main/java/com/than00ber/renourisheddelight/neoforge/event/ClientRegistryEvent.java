@@ -12,12 +12,12 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 public final class ClientRegistryEvent {
 
     @SubscribeEvent
-    public static void onClientSetup(FMLClientSetupEvent event) {
+    public static void onFMLClientSetupEvent(FMLClientSetupEvent event) {
         RenourishedDelightMod.initClient();
     }
 
     @SubscribeEvent
-    public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
+    public static void onRegisterClientReloadListenersEvent(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(TextureAtlasResourceLoader.getInstance());
     }
 }

@@ -8,7 +8,6 @@ import com.than00ber.renourisheddelight.config.data.FoodConfigDataLoader;
 import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
-import dev.architectury.event.events.common.LifecycleEvent;
 import org.slf4j.Logger;
 
 public final class RenourishedDelightMod {
@@ -22,7 +21,6 @@ public final class RenourishedDelightMod {
         CommonConfiguration.init();
         GameRuleRegistry.init();
         FoodConfigDataLoader.init();
-        LifecycleEvent.SERVER_STOPPED.register(x -> FoodPresetRegistry.init());
     }
 
     public static void initClient() {

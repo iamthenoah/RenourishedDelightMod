@@ -60,7 +60,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
             try {
                 List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
-                        .filter(item -> item.components().has(DataComponents.FOOD))
+                        .filter(x -> x.components().has(DataComponents.FOOD))
                         .toList());
                 BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
 
@@ -274,7 +274,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
         int width = image.getWidth();
         int height = image.getHeight();
-        List<Integer> opaquePixels = new ArrayList<>();
+        List<Integer> pixels = new ArrayList<>();
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -282,16 +282,16 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 int a = (pixel >> 24) & 0xFF;
                 
                 if (a != 0) {
-                    opaquePixels.add(pixel);
+                    pixels.add(pixel);
                 }
             }
         }
-        if (opaquePixels.isEmpty()) return null;
-        opaquePixels.sort(Comparator.comparingInt(TextureAtlasResourceLoader::luminance));
-        int[] palette = new int[opaquePixels.size()];
+        if (pixels.isEmpty()) return null;
+        pixels.sort(Comparator.comparingInt(TextureAtlasResourceLoader::luminance));
+        int[] palette = new int[pixels.size()];
 
         for (int i = 0; i < palette.length; i++) {
-            palette[i] = opaquePixels.get(i);
+            palette[i] = pixels.get(i);
         }
         return palette;
     }

@@ -82,7 +82,8 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        int duration = Math.max(1, bonus.duration);
+        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(bonus.attribute);
+        int duration = Math.max(1, (int) Math.round(bonus.duration * multiplier));
         AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
         return new AttributeModifierInstance(attribute, modifier, duration, 0);
     }

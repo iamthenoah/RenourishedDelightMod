@@ -11,15 +11,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 
 public final class RenourishedDelightModFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        RenourishedDelightMod.init();
+        
         EntityDataSerializers.registerSerializer(Diet.DATA_SERIALIZER);
         EffectRegistry.NOURISHMENT = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(Registry.register(
                 BuiltInRegistries.MOB_EFFECT,
@@ -28,8 +28,7 @@ public final class RenourishedDelightModFabric implements ModInitializer {
         PotionRegistry.NOURISHMENT = BuiltInRegistries.POTION.wrapAsHolder(Registry.register(
                 BuiltInRegistries.POTION,
                 ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "nourishment"),
-                new Potion(new MobEffectInstance(EffectRegistry.NOURISHMENT, 9600, 0))));
+                NourishmentMobEffect.createPotion()));
         FabricBrewingRecipeRegistryBuilder.BUILD.register(x -> x.addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.NOURISHMENT));
-        RenourishedDelightMod.init();
     }
 }
