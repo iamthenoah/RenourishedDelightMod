@@ -9,6 +9,7 @@
   "client": [
     "client.EffectRenderingInventoryScreenMixin",
     "client.GameRendererMixin",
+    "client.GuiHeartMixin",
     "client.ItemStackMixin",
     "client.LocalPlayerMixin"
   ],
