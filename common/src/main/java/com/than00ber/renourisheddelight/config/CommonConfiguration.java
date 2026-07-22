@@ -38,16 +38,22 @@ public final class CommonConfiguration implements ConfigData {
     }
 
     private void populateDefaults() {
-        if (foodItemConfigurations.isEmpty()) {
-            for (Item item : BuiltInRegistries.ITEM) {
-                String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                boolean isFood = item.components().get(DataComponents.FOOD) != null;
-                boolean hasPreset = FoodPresetRegistry.getInstance().get(id) != null;
+        boolean added = false;
 
-                if (isFood || hasPreset) {
-                    foodItemConfigurations.add(new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item)));
-                }
+        for (Item item : BuiltInRegistries.ITEM) {
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            boolean alreadyListed = foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+            if (alreadyListed) continue;
+
+            boolean isFood = item.components().get(DataComponents.FOOD) != null;
+            boolean hasPreset = FoodPresetRegistry.getInstance().get(id) != null;
+
+            if (isFood || hasPreset) {
+                foodItemConfigurations.add(new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item)));
+                added = true;
             }
+        }
+        if (added) {
             AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         }
     }
