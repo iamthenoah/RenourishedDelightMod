@@ -21,10 +21,10 @@ public final class RenourishedDelightMod {
         CommonConfiguration.init();
         GameRuleRegistry.init();
         FoodConfigDataLoader.init();
+        SuppressHurtFlashPayload.init();
     }
 
     public static void initClient() {
         FoodBarOverlay.init();
-        SuppressHurtFlashPayload.init();
     }
 }
