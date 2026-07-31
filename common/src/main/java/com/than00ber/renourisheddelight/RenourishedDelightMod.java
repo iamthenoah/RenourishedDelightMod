@@ -7,7 +7,9 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfigDataLoader;
 import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
+import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import com.than00ber.renourisheddelight.registry.PotionRegistry;
 import org.slf4j.Logger;
 
 public final class RenourishedDelightMod {
@@ -16,6 +18,8 @@ public final class RenourishedDelightMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static void init() {
+        EffectRegistry.init();
+        PotionRegistry.init();
         FoodPresetRegistry.init();
         ClientConfiguration.init();
         CommonConfiguration.init();
