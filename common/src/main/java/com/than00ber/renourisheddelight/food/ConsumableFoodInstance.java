@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import net.minecraft.core.Holder;
@@ -12,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,10 +43,8 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, new ArrayList<>(attributes));
     }
 
-    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, List<FoodItemEntry> config) {
+    public static ConsumableFoodInstance create(Item item, List<FoodItemEntry> config) {
         FoodItemEntry entry = FoodItemEntry.find(config, item);
-        int nutrition = properties != null ? properties.nutrition() : 2;
-        float saturation = properties != null ? properties.saturation() : 0.0F;
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
         if (entry != null) {

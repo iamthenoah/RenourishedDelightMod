@@ -9,6 +9,7 @@ import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.networking.NetworkManager;
 import dev.architectury.registry.ReloadListenerRegistry;
 import dev.architectury.utils.GameInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -62,7 +63,8 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
             FoodConfigSavedData config = FoodConfigSavedData.get(server);
 
             if (config.applyPresets(entries)) {
-                FoodConfigSyncPayload.broadcast(server, config.getFoodConfig());
+                FoodConfigSyncPayload message = new FoodConfigSyncPayload(List.copyOf(config.getFoodConfig()));
+                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), message);
             }
         }
     }

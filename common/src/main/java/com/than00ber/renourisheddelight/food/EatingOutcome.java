@@ -53,7 +53,7 @@ public enum EatingOutcome {
                 MinecraftServer server = player.getServer();
                 
                 if (server != null) {
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server).getFoodConfig()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()));
                 }
             }
             case EFFECTS_ONLY -> {
@@ -69,8 +69,8 @@ public enum EatingOutcome {
                         .orElse(null);
 
                 if (server != null && instance != null) {
-                    int refresh = ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server).getFoodConfig()).duration();
-                    instance.attributes().forEach(bonus -> bonus.tick(-refresh));
+                    int refresh = ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()).duration();
+                    instance.attributes().forEach(x -> x.tick(-refresh));
                 }
             }
             case REPLACE_LOW -> {
@@ -81,21 +81,17 @@ public enum EatingOutcome {
 
                 if (server != null && instance != null) {
                     diet.removeFromSlot(player, instance);
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server).getFoodConfig()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()));
                 }
             }
         }
-        if (nourishable && wasFull) {
-            boolean applyNourishment = rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL);
+        if (nourishable && wasFull && rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL)) {
+            int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
+            int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
+            int duration = Math.toIntExact(Math.round(smallest * (percent / 100.0)));
 
-            if (applyNourishment) {
-                int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
-                int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
-                int duration = Math.toIntExact(Math.round(smallest * (percent / 100.0)));
-
-                if (duration > 0) {
-                    player.addEffect(new MobEffectInstance(EffectRegistry.NOURISHMENT, duration, 0, false, false, true));
-                }
+            if (duration > 0) {
+                player.addEffect(new MobEffectInstance(EffectRegistry.NOURISHMENT, duration, 0, false, false, true));
             }
         }
     }

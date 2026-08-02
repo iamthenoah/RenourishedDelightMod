@@ -6,7 +6,6 @@ import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -31,7 +30,7 @@ public abstract class ItemStackMixin {
         ItemStack stack = (ItemStack) (Object) this;
 
         if (Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && FoodItemEntry.find(holder.getFoodConfig(), stack.getItem()) != null) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), stack.get(DataComponents.FOOD), holder.getFoodConfig());
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), holder.getFoodConfig());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 

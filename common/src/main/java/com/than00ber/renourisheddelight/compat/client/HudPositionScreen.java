@@ -11,10 +11,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -72,8 +70,7 @@ public final class HudPositionScreen extends Screen {
 
         for (int i = 0; i < Math.min(count, pool.size()); i++) {
             Item item = pool.get(i);
-            FoodProperties properties = item.components().get(DataComponents.FOOD);
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, properties, CommonConfiguration.getInstance().foodItemConfigurations);
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, CommonConfiguration.getInstance().foodItemConfigurations);
             instance.tick(random.nextInt(Math.max(1, instance.duration())));
             slots.add(instance);
         }

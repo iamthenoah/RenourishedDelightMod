@@ -36,9 +36,7 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries) implements Cust
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<FoodItemEntry>> ENTRIES_CODEC = ENTRY_CODEC.apply(ByteBufCodecs.list());
     private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfigSyncPayload> CODEC = StreamCodec.composite(ENTRIES_CODEC, FoodConfigSyncPayload::entries, FoodConfigSyncPayload::new);
-    private static final StreamCodec<RegistryFriendlyByteBuf, Edit> EDIT_CODEC = StreamCodec.composite(ENTRIES_CODEC, Edit::entries, Edit::new);
     private static final Type<FoodConfigSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_config_sync"));
-    private static final Type<Edit> EDIT_TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_config_edit"));
 
     public static void init() {
         NetworkManager.registerReceiver(NetworkManager.s2c(), TYPE, CODEC, (payload, context) -> context.queue(() -> {
@@ -51,15 +49,15 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries) implements Cust
                 screen.refresh();
             }
         }));
-
-        NetworkManager.registerReceiver(NetworkManager.c2s(), EDIT_TYPE, EDIT_CODEC, (payload, context) -> context.queue(() -> {
+        NetworkManager.registerReceiver(NetworkManager.c2s(), Edit.TYPE, Edit.CODEC, (payload, context) -> context.queue(() -> {
             if (context.getPlayer() instanceof ServerPlayer player && player.hasPermissions(2)) {
                 MinecraftServer server = player.getServer();
 
                 if (server != null) {
                     FoodConfigSavedData config = FoodConfigSavedData.get(server);
                     config.setFoodConfig(payload.entries());
-                    broadcast(server, config.getFoodConfig());
+                    FoodConfigSyncPayload message = new FoodConfigSyncPayload(List.copyOf(config.getFoodConfig()));
+                    NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), message);
                 }
             }
         }));
@@ -68,17 +66,10 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries) implements Cust
             MinecraftServer server = player.getServer();
 
             if (server != null) {
-                NetworkManager.sendToPlayer(player, new FoodConfigSyncPayload(List.copyOf(FoodConfigSavedData.get(server).getFoodConfig())));
+                List<FoodItemEntry> entries = List.copyOf(FoodConfigSavedData.get(server).getFoodConfig());
+                NetworkManager.sendToPlayer(player, new FoodConfigSyncPayload(entries));
             }
         });
-    }
-
-    public static void broadcast(MinecraftServer server, List<FoodItemEntry> entries) {
-        NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), new FoodConfigSyncPayload(List.copyOf(entries)));
-    }
-
-    public static void sendToServer(List<FoodItemEntry> entries) {
-        NetworkManager.sendToServer(new Edit(List.copyOf(entries)));
     }
 
     @Override
@@ -88,9 +79,12 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries) implements Cust
 
     public record Edit(List<FoodItemEntry> entries) implements CustomPacketPayload {
 
+        private static final StreamCodec<RegistryFriendlyByteBuf, Edit> CODEC = StreamCodec.composite(ENTRIES_CODEC, Edit::entries, Edit::new);
+        private static final Type<Edit> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_config_edit"));
+        
         @Override
         public @NotNull Type<? extends CustomPacketPayload> type() {
-            return EDIT_TYPE;
+            return TYPE;
         }
     }
 }

@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -71,7 +72,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         if (!editable) return;
 
         if (inWorld) {
-            FoodConfigSyncPayload.sendToServer(workingEntries);
+            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(List.copyOf(workingEntries)));
         } else {
             CommonConfiguration.save();
         }
