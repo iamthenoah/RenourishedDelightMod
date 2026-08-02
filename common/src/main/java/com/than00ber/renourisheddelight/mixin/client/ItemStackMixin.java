@@ -1,9 +1,11 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
@@ -28,8 +30,8 @@ public abstract class ItemStackMixin {
     private void renourisheddelight$getTooltipLines(Item.TooltipContext context, Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> callback) {
         ItemStack stack = (ItemStack) (Object) this;
 
-        if (player.level() instanceof FoodConfigHolder holder && holder.hasFoodItemEntry(stack.getItem())) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), stack.get(DataComponents.FOOD), holder);
+        if (Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && FoodItemEntry.find(holder.getFoodConfig(), stack.getItem()) != null) {
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), stack.get(DataComponents.FOOD), holder.getFoodConfig());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 

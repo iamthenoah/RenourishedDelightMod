@@ -1,10 +1,9 @@
 package com.than00ber.renourisheddelight.config;
 
+import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
-import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -20,7 +19,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;
@@ -32,7 +30,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Config(name = RenourishedDelightMod.MOD_ID + "/common")
-public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
+public final class CommonConfiguration implements ConfigData {
 
     public static void init() {
         AutoConfig.register(CommonConfiguration.class, JanksonConfigSerializer::new);
@@ -46,9 +44,13 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
         return AutoConfig.getConfigHolder(CommonConfiguration.class).getConfig();
     }
 
+    public static void save() {
+        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+    }
+
     @ConfigEntry.Gui.Excluded
     @Comment("""
-    Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
+    Per-item attribute bonuses used as the starting point for newly created worlds. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
     [
       {
         item: "minecraft:golden_apple",
@@ -69,6 +71,7 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
       }
     ]
     operation can be: add_value, add_multiplied_base, add_multiplied_total
+    Editing this has no effect on worlds that already exist; use the in-game config screen for those.
     """)
     public List<FoodItemEntry> foodItemConfigurations = new ArrayList<>();
 
@@ -83,65 +86,6 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
     ]
     """)
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
-
-    @Override
-    public List<FoodItemEntry> getFoodConfig() {
-        return foodItemConfigurations;
-    }
-
-    @Override
-    public void setFoodConfig(List<FoodItemEntry> entries) {
-        foodItemConfigurations.clear();
-        foodItemConfigurations.addAll(entries);
-        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-    }
-
-    @Override
-    public FoodItemEntry getFoodItemEntry(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-
-        if (preset == null || !preset.override || preset.attributes.isEmpty()) {
-            FoodItemEntry match = foodItemConfigurations.stream()
-                    .filter(x -> id.equals(x.item))
-                    .findFirst()
-                    .orElse(null);
-
-            if (preset != null && !preset.attributes.isEmpty()) {
-                List<AttributeBonus> merged = new ArrayList<>();
-                if (match != null) merged.addAll(match.attributes);
-
-                for (AttributeBonus bonus : preset.attributes) {
-                    if (merged.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
-                        merged.add(bonus);
-                    }
-                }
-                return new FoodItemEntry(id, merged, match != null && match.override);
-            } else if (match == null || match.attributes.isEmpty()) {
-                List<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
-                FoodItemEntry entry;
-
-                if (match != null) {
-                    match.attributes = attributes;
-                    entry = match;
-                } else {
-                    entry = new FoodItemEntry(id, attributes);
-                    foodItemConfigurations.add(entry);
-                }
-                AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-                return entry;
-            }
-            return match;
-        }
-        return preset;
-    }
-    
-    @Override
-    public boolean hasFoodItemEntry(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry entry = FoodPresetRegistry.getInstance().get(id);
-        return entry != null || foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
-    }
 
     public double getDurationMultiplier(String attributeId) {
         DurationMultiplierEntry entry = findDurationMultiplierEntry(attributeId);
@@ -165,16 +109,16 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
 
     private void populateDefaults() {
         if (populateFoodItemDefaults() || populateDurationMultiplierDefaults()) {
-            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+            save();
         }
     }
-    
+
     private boolean populateFoodItemDefaults() {
         return populateMissing(BuiltInRegistries.ITEM,
                 x -> BuiltInRegistries.ITEM.getKey(x).toString(),
-                id -> foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item)),
-                x -> x.components().get(DataComponents.FOOD) != null || FoodPresetRegistry.getInstance().get(BuiltInRegistries.ITEM.getKey(x).toString()) != null,
-                (id, x) -> foodItemConfigurations.add(new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(x))));
+                id -> FoodItemEntry.find(foodItemConfigurations, id) != null,
+                x -> x.components().get(DataComponents.FOOD) != null,
+                (id, x) -> foodItemConfigurations.add(new FoodItemEntry(id, Lists.newArrayList(AttributeBonus.defaultMaxHealth(x)))));
     }
 
     public boolean populateDurationMultiplierDefaults() {
@@ -185,7 +129,7 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
                 (id, x) -> durationMultipliers.add(new DurationMultiplierEntry(id, 1.0)));
     }
 
-    private static  <T> boolean populateMissing(Iterable<T> universe, Function<T, String> idOf, Predicate<String> alreadyListed, Predicate<T> include, BiConsumer<String, T> add) {
+    private static <T> boolean populateMissing(Iterable<T> universe, Function<T, String> idOf, Predicate<String> alreadyListed, Predicate<T> include, BiConsumer<String, T> add) {
         boolean added = false;
 
         for (T value : universe) {

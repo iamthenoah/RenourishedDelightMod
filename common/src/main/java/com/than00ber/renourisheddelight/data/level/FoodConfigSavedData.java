@@ -3,104 +3,89 @@ package com.than00ber.renourisheddelight.data.level;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public final class FoodConfigSavedData extends SavedData {
+public final class FoodConfigSavedData extends SavedData implements FoodConfigHolder {
 
     private static final String ID = "renourisheddelight_food_config";
 
-    private final ServerLevel level;
+    private final List<FoodItemEntry> entries;
 
-    private FoodConfigSavedData(ServerLevel level) {
-        this.level = level;
+    private FoodConfigSavedData(List<FoodItemEntry> entries) {
+        this.entries = entries;
     }
 
-    public static FoodConfigHolder get(MinecraftServer server) {
-        ServerLevel level = server.overworld();
-        storage(level);
-        return (FoodConfigHolder) level;
-    }
-
-    public static void markDirty(MinecraftServer server) {
-        storage(server.overworld()).setDirty();
-    }
-    
-    private static FoodConfigSavedData storage(ServerLevel level) {
+    public static FoodConfigSavedData get(MinecraftServer server) {
         SavedData.Factory<FoodConfigSavedData> factory = new SavedData.Factory<>(
-                () -> populateDefaults(level),
-                (tag, provider) -> load(tag, level),
-                DataFixTypes.LEVEL
-        );
-        return level.getDataStorage().computeIfAbsent(factory, ID);
+                FoodConfigSavedData::create,
+                (tag, provider) -> load(tag),
+                DataFixTypes.LEVEL);
+        return server.overworld().getDataStorage().computeIfAbsent(factory, ID);
     }
 
-    public static boolean refreshFromPresets(MinecraftServer server) {
-        FoodConfigHolder holder = get(server);
-        Map<String, FoodItemEntry> byId = new HashMap<>();
-        for (FoodItemEntry entry : holder.getFoodConfig()) {
-            byId.put(entry.item, entry);
-        }
-        CommonConfiguration common = CommonConfiguration.getInstance();
+    @Override
+    public List<FoodItemEntry> getFoodConfig() {
+        return entries;
+    }
+
+    @Override
+    public void setFoodConfig(List<FoodItemEntry> updated) {
+        entries.clear();
+        updated.forEach(x -> entries.add(x.copy()));
+        setDirty();
+    }
+
+    public boolean applyPresets(List<FoodItemEntry> presets) {
         boolean changed = false;
 
-        for (Item item : BuiltInRegistries.ITEM) {
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
-            FoodItemEntry existing = byId.get(id);
+        for (FoodItemEntry preset : presets) {
+            FoodItemEntry entry = FoodItemEntry.find(entries, preset.item);
 
-            if (existing == null) {
-                if (item.components().get(DataComponents.FOOD) != null || common.hasFoodItemEntry(item)) {
-                    holder.getFoodConfig().add(new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item)));
-                    changed = true;
-                }
-            } else if (!existing.override) {
-                existing.attributes = AttributeBonus.computeDefaultBonuses(item);
+            if (entry == null) {
+                entries.add(preset.copy());
                 changed = true;
+            } else if (preset.override) {
+                entry.attributes = preset.copy().attributes;
+                entry.override = true;
+                changed = true;
+            } else {
+                for (AttributeBonus bonus : preset.attributes) {
+                    if (entry.attributes.stream().noneMatch(x -> bonus.attribute.equals(x.attribute))) {
+                        entry.attributes.add(bonus.copy());
+                        changed = true;
+                    }
+                }
             }
         }
-        if (changed) {
-            markDirty(server);
-        }
+        if (changed) setDirty();
         return changed;
     }
 
-    private static FoodConfigSavedData populateDefaults(ServerLevel level) {
-        FoodConfigSavedData storage = new FoodConfigSavedData(level);
-        FoodConfigHolder holder = (FoodConfigHolder) level;
-        CommonConfiguration common = CommonConfiguration.getInstance();
-        List<FoodItemEntry> entries = holder.getFoodConfig();
-
-        for (Item item : BuiltInRegistries.ITEM) {
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
-
-            if (entries.stream().noneMatch(x -> id.equals(x.item))) {
-                if (item.components().get(DataComponents.FOOD) != null || common.hasFoodItemEntry(item)) {
-                    entries.add(new FoodItemEntry(id, common.getFoodItemEntry(item).attributes));
-                }
-            }
-        }
-        storage.setDirty();
-        return storage;
+    private static FoodConfigSavedData create() {
+        List<FoodItemEntry> entries = new ArrayList<>();
+        CommonConfiguration.getInstance().foodItemConfigurations.forEach(x -> entries.add(x.copy()));
+        return withPresets(entries);
     }
 
-    private static FoodConfigSavedData load(CompoundTag tag, ServerLevel level) {
-        FoodConfigSavedData storage = new FoodConfigSavedData(level);
+    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries) {
+        FoodConfigSavedData data = new FoodConfigSavedData(entries);
+        data.applyPresets(FoodConfigReloadListener.presets());
+        return data;
+    }
+
+    private static FoodConfigSavedData load(CompoundTag tag) {
         List<FoodItemEntry> entries = new ArrayList<>();
         ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
 
@@ -119,15 +104,14 @@ public final class FoodConfigSavedData extends SavedData {
             }
             entries.add(new FoodItemEntry(entryTag.getString("Item"), bonuses, entryTag.getBoolean("Override")));
         }
-        ((FoodConfigHolder) level).setFoodConfig(entries);
-        return storage;
+        return withPresets(entries);
     }
 
     @Override
     public @NotNull CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         ListTag list = new ListTag();
 
-        for (FoodItemEntry entry : ((FoodConfigHolder) level).getFoodConfig()) {
+        for (FoodItemEntry entry : entries) {
             CompoundTag entryTag = new CompoundTag();
             entryTag.putString("Item", entry.item);
             entryTag.putBoolean("Override", entry.override);

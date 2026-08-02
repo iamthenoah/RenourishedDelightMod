@@ -1,15 +1,12 @@
 package com.than00ber.renourisheddelight.compat.client;
 
+import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import com.than00ber.renourisheddelight.network.FoodConfigEditPayload;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
-import dev.architectury.networking.NetworkManager;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,7 +21,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -51,8 +47,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
-    private final @Nullable MinecraftServer server;
-    private final boolean remoteMultiplayer;
+    private final boolean inWorld;
     private final boolean editable;
     private final List<FoodItemEntry> workingEntries;
 
@@ -61,11 +56,11 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         this.parent = parent;
 
         Minecraft minecraft = Minecraft.getInstance();
-        this.server = minecraft.getSingleplayerServer();
-        this.remoteMultiplayer = server == null && minecraft.level != null;
-        this.editable = !remoteMultiplayer || (minecraft.player != null && minecraft.player.hasPermissions(2));
+        FoodConfigHolder holder = minecraft.getConnection() instanceof FoodConfigHolder x ? x : null;
 
-        this.workingEntries = minecraft.level instanceof FoodConfigHolder holder ? holder.getFoodConfig() : CommonConfiguration.getInstance().getFoodConfig();
+        this.inWorld = holder != null;
+        this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
+        this.workingEntries = holder != null ? holder.getFoodConfig() : CommonConfiguration.getInstance().foodItemConfigurations;
     }
 
     public void refresh() {
@@ -73,15 +68,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private void saveWorkingEntries() {
-        if (server != null) {
-            FoodConfigSavedData.markDirty(server);
-            FoodConfigSyncPayload.broadcast(server, workingEntries);
-        } else if (remoteMultiplayer) {
-            if (editable) {
-                NetworkManager.sendToServer(new FoodConfigEditPayload(List.copyOf(workingEntries)));
-            }
+        if (!editable) return;
+
+        if (inWorld) {
+            FoodConfigSyncPayload.sendToServer(workingEntries);
         } else {
-            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+            CommonConfiguration.save();
         }
     }
 
@@ -289,7 +281,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         FoodItemEntry existing = workingEntries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
         if (existing != null) return existing;
 
-        FoodItemEntry entry = new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item));
+        List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
+        FoodItemEntry entry = new FoodItemEntry(id, bonuses);
         workingEntries.add(entry);
         saveWorkingEntries();
         return entry;
@@ -308,7 +301,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         for (Item item : BuiltInRegistries.ITEM) {
             if (item.components().get(DataComponents.FOOD) != null) {
                 String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                List<AttributeBonus> bonuses = AttributeBonus.computeDefaultBonuses(item);
+                List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
                 workingEntries.add(new FoodItemEntry(id, bonuses));
             }
         }
@@ -329,7 +322,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        MutableComponent scopeText = server != null || remoteMultiplayer
+        MutableComponent scopeText = inWorld
                 ? Component.translatable("config.renourisheddelight.food_items.scope_world")
                 : Component.translatable("config.renourisheddelight.food_items.scope_global");
         graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);

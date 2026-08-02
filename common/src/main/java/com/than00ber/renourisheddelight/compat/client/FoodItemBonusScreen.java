@@ -18,7 +18,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 
 public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
 
@@ -211,7 +214,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.addAll(AttributeBonus.computeDefaultBonuses(icon));
+            entry.attributes.add(AttributeBonus.defaultMaxHealth(icon));
         }
         scrollOffset = 0;
         rebuildContent();
@@ -381,28 +384,8 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
-        entry.override = icon == null || !matchesDefaultBonuses();
         saveAction.run();
         minecraft.setScreen(parent);
-    }
-
-    private boolean matchesDefaultBonuses() {
-        List<AttributeBonus> defaults = AttributeBonus.computeDefaultBonuses(icon);
-        if (defaults.size() != entry.attributes.size()) {
-            return false;
-        }
-        for (int i = 0; i < defaults.size(); i++) {
-            AttributeBonus expected = defaults.get(i);
-            AttributeBonus actual = entry.attributes.get(i);
-
-            if (!Objects.equals(expected.attribute, actual.attribute)
-                    || !Objects.equals(expected.operation, actual.operation)
-                    || expected.amount != actual.amount
-                    || expected.duration != actual.duration) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override

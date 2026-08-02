@@ -1,10 +1,9 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -21,8 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
-
-    private static final int SIXTY_SECONDS = 20 * 60;
 
     public int duration() {
         return attributes.stream().mapToInt(AttributeModifierInstance::duration)
@@ -49,28 +46,26 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, new ArrayList<>(attributes));
     }
 
-    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, FoodConfigHolder source) {
-        List<AttributeBonus> bonuses = source.getFoodItemEntry(item).attributes;
+    public static ConsumableFoodInstance create(Item item, @Nullable FoodProperties properties, List<FoodItemEntry> config) {
+        FoodItemEntry entry = FoodItemEntry.find(config, item);
         int nutrition = properties != null ? properties.nutrition() : 2;
         float saturation = properties != null ? properties.saturation() : 0.0F;
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
-        for (AttributeBonus bonus : bonuses) {
-            AttributeModifierInstance instance = resolveBonus(bonus);
-            if (instance != null) attributes.add(instance);
+        if (entry != null) {
+            for (AttributeBonus bonus : entry.attributes) {
+                AttributeModifierInstance instance = resolveBonus(bonus);
+                if (instance != null) attributes.add(instance);
+            }
         }
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-        boolean overridden = preset != null && preset.override && !preset.attributes.isEmpty();
+        boolean overridden = entry != null && entry.override;
 
         if (!overridden && attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
-            AttributeBonus maxHealth = new AttributeBonus(
-                    Attributes.MAX_HEALTH.getRegisteredName(),
-                    AttributeModifier.Operation.ADD_VALUE.getSerializedName(),
-                    Math.max(1, toHearts(nutrition, saturation)),
-                    toDuration(nutrition, saturation));
-            AttributeModifierInstance health = resolveBonus(maxHealth);
-            if (health != null) attributes.addFirst(health);
+            AttributeModifierInstance health = resolveBonus(AttributeBonus.defaultMaxHealth(item));
+
+            if (health != null) {
+                attributes.addFirst(health);
+            }
         }
         return new ConsumableFoodInstance(item, attributes);
     }
@@ -117,17 +112,6 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         }
     }
 
-    public static int toHearts(int nutrition, float saturation) {
-        float score = (nutrition - 4) * 0.4F + saturation * 0.6F;
-        return (int) Math.max(0, Math.floor(score / 2));
-    }
-
-    public static int toDuration(int nutrition, float saturation) {
-        double product = Math.max(0.0D, nutrition * (double) saturation);
-        double seconds = product > 0 ? 135.0D * Math.pow(product, 0.527D) : 0.0D;
-        long minutes = Math.round(seconds / 60.0D);
-        return (int) Math.max(SIXTY_SECONDS, minutes * SIXTY_SECONDS);
-    }
 
     public static CompoundTag save(ConsumableFoodInstance instance) {
         CompoundTag compoundTag = new CompoundTag();
