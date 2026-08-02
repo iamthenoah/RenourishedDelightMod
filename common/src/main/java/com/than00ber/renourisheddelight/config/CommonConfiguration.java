@@ -12,7 +12,6 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
-import me.shedaniel.autoconfig.util.Utils;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -21,7 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,10 +32,7 @@ public final class CommonConfiguration implements ConfigData {
 
     public static void init() {
         AutoConfig.register(CommonConfiguration.class, JanksonConfigSerializer::new);
-
-        if (!Files.exists(Utils.getConfigFolder().resolve(RenourishedDelightMod.MOD_ID + "/common.json5"))) {
-            LifecycleEvent.SETUP.register(getInstance()::populateDefaults);
-        }
+        LifecycleEvent.SETUP.register(getInstance()::populateDefaults);
     }
 
     public static CommonConfiguration getInstance() {
@@ -88,8 +83,7 @@ public final class CommonConfiguration implements ConfigData {
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 
     public double getDurationMultiplier(String attributeId) {
-        DurationMultiplierEntry entry = findDurationMultiplierEntry(attributeId);
-        return entry != null ? entry.multiplier : 1.0;
+        return Optional.ofNullable(findDurationMultiplierEntry(attributeId)).map(x -> x.multiplier).orElse(1.0);
     }
 
     private @Nullable DurationMultiplierEntry findDurationMultiplierEntry(String attributeId) {
@@ -108,7 +102,7 @@ public final class CommonConfiguration implements ConfigData {
     }
 
     private void populateDefaults() {
-        if (populateFoodItemDefaults() || populateDurationMultiplierDefaults()) save();
+        if (populateFoodItemDefaults() | populateDurationMultiplierDefaults()) save();
     }
 
     private boolean populateFoodItemDefaults() {
