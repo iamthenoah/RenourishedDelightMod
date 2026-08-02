@@ -26,16 +26,13 @@ import java.util.Map;
 
 public final class FoodConfigReloadListener extends SimpleJsonResourceReloadListener {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
-
-    private static volatile List<FoodItemEntry> PRESETS = List.of();
+    public static volatile List<FoodItemEntry> PRESETS = List.of();
 
     public static void init() {
-        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigReloadListener(), ID);
-    }
-
-    public static List<FoodItemEntry> presets() {
-        return PRESETS;
+        ReloadListenerRegistry.register(
+                PackType.SERVER_DATA,
+                new FoodConfigReloadListener(),
+                ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets"));
     }
 
     public FoodConfigReloadListener() {

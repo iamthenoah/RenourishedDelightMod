@@ -79,12 +79,6 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
         return withPresets(entries);
     }
 
-    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries) {
-        FoodConfigSavedData data = new FoodConfigSavedData(entries);
-        data.applyPresets(FoodConfigReloadListener.presets());
-        return data;
-    }
-
     private static FoodConfigSavedData load(CompoundTag tag) {
         List<FoodItemEntry> entries = new ArrayList<>();
         ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
@@ -105,6 +99,12 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
             entries.add(new FoodItemEntry(entryTag.getString("Item"), bonuses, entryTag.getBoolean("Override")));
         }
         return withPresets(entries);
+    }
+
+    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries) {
+        FoodConfigSavedData data = new FoodConfigSavedData(entries);
+        data.applyPresets(FoodConfigReloadListener.PRESETS);
+        return data;
     }
 
     @Override
