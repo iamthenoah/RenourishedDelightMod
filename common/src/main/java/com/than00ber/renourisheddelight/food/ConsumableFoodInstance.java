@@ -2,7 +2,6 @@ package com.than00ber.renourisheddelight.food;
 
 import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -75,10 +74,8 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(bonus.attribute);
-        int duration = Math.max(1, (int) Math.round(bonus.duration * multiplier));
         AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
-        return new AttributeModifierInstance(attribute, modifier, duration, 0);
+        return new AttributeModifierInstance(attribute, modifier, bonus.effectiveDuration(), 0);
     }
 
     public static @Nullable Holder<Attribute> resolveAttribute(String id) {

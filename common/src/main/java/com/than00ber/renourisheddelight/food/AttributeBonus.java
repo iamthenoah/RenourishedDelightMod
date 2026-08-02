@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -30,6 +31,11 @@ public final class AttributeBonus {
 
     public AttributeBonus copy() {
         return new AttributeBonus(attribute, operation, amount, duration);
+    }
+
+    public int effectiveDuration() {
+        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(attribute);
+        return Math.max(1, (int) Math.round(duration * multiplier));
     }
 
     public static AttributeBonus defaultMaxHealth(Item item) {

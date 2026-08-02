@@ -108,9 +108,7 @@ public final class CommonConfiguration implements ConfigData {
     }
 
     private void populateDefaults() {
-        if (populateFoodItemDefaults() || populateDurationMultiplierDefaults()) {
-            save();
-        }
+        if (populateFoodItemDefaults() || populateDurationMultiplierDefaults()) save();
     }
 
     private boolean populateFoodItemDefaults() {
