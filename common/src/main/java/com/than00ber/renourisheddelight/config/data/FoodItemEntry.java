@@ -35,11 +35,11 @@ public final class FoodItemEntry {
         return new FoodItemEntry(item, bonuses, override);
     }
 
-    public static @Nullable FoodItemEntry find(List<FoodItemEntry> entries, Item item) {
-        return find(entries, BuiltInRegistries.ITEM.getKey(item).toString());
+    public static @Nullable FoodItemEntry get(List<FoodItemEntry> entries, Item item) {
+        return get(entries, BuiltInRegistries.ITEM.getKey(item).toString());
     }
 
-    public static @Nullable FoodItemEntry find(List<FoodItemEntry> entries, String id) {
+    public static @Nullable FoodItemEntry get(List<FoodItemEntry> entries, String id) {
         return entries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
     }
 }

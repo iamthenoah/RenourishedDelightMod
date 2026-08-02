@@ -108,7 +108,7 @@ public final class CommonConfiguration implements ConfigData {
     private boolean populateFoodItemDefaults() {
         return populateMissing(BuiltInRegistries.ITEM,
                 x -> BuiltInRegistries.ITEM.getKey(x).toString(),
-                id -> FoodItemEntry.find(foodItemConfigurations, id) != null,
+                id -> FoodItemEntry.get(foodItemConfigurations, id) != null,
                 x -> x.components().get(DataComponents.FOOD) != null,
                 (id, x) -> foodItemConfigurations.add(new FoodItemEntry(id, Lists.newArrayList(AttributeBonus.defaultMaxHealth(x)))));
     }

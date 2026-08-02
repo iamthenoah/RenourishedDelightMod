@@ -44,7 +44,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance create(Item item, List<FoodItemEntry> config) {
-        FoodItemEntry entry = FoodItemEntry.find(config, item);
+        FoodItemEntry entry = FoodItemEntry.get(config, item);
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
         if (entry != null) {

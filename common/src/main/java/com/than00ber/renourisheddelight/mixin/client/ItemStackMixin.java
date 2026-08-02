@@ -29,7 +29,7 @@ public abstract class ItemStackMixin {
     private void renourisheddelight$getTooltipLines(Item.TooltipContext context, Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> callback) {
         ItemStack stack = (ItemStack) (Object) this;
 
-        if (Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && FoodItemEntry.find(holder.getFoodConfig(), stack.getItem()) != null) {
+        if (Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && FoodItemEntry.get(holder.getFoodConfig(), stack.getItem()) != null) {
             ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), holder.getFoodConfig());
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));

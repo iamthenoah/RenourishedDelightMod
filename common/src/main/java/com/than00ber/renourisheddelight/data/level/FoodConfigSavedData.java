@@ -51,7 +51,7 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
         boolean changed = false;
 
         for (FoodItemEntry preset : presets) {
-            FoodItemEntry entry = FoodItemEntry.find(entries, preset.item);
+            FoodItemEntry entry = FoodItemEntry.get(entries, preset.item);
 
             if (entry == null) {
                 entries.add(preset.copy());
