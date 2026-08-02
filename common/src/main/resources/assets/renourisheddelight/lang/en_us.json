@@ -53,6 +53,7 @@
   "config.renourisheddelight.food_items": "Food Item Settings",
   "config.renourisheddelight.food_items.scope_world": "Editing this world's food config",
   "config.renourisheddelight.food_items.scope_global": "Editing global defaults (used for new worlds)",
+  "config.renourisheddelight.food_items.read_only": "Requires operator permission to edit",
   "config.renourisheddelight.food_items.bonus_title": "Item Bonus Settings",
   "config.renourisheddelight.food_items.new_item": "Item ID",
   "config.renourisheddelight.filter": "Mod",

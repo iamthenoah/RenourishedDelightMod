@@ -1,11 +1,15 @@
-package com.than00ber.renourisheddelight.config.data;
+package com.than00ber.renourisheddelight.data;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.event.events.common.TickEvent;
 import dev.architectury.registry.ReloadListenerRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
@@ -22,15 +26,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
+public final class FoodConfigReloadListener extends SimpleJsonResourceReloadListener {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
 
+    private static volatile boolean DIRTY = false;
+
     public static void init() {
-        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigDataLoader(), FoodConfigDataLoader.ID);
+        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigReloadListener(), FoodConfigReloadListener.ID);
+
+        TickEvent.SERVER_POST.register(server -> {
+            if (DIRTY) {
+                DIRTY = false;
+
+                if (FoodConfigSavedData.refreshFromPresets(server)) {
+                    FoodConfigSyncPayload.broadcast(server, FoodConfigSavedData.get(server).getFoodConfig());
+                }
+            }
+        });
     }
 
-    public FoodConfigDataLoader() {
+    public FoodConfigReloadListener() {
         super(new Gson(), "presets");
     }
 
@@ -49,13 +65,14 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
         }
         FoodPresetRegistry.getInstance().set(entries);
         RenourishedDelightMod.LOGGER.info("Loaded {} preset food entries from {} data file(s)", entries.size(), resources.size());
+        DIRTY = true;
     }
 
 
     public static List<FoodItemEntry> loadBuiltinPresets() {
         List<FoodItemEntry> entries = new ArrayList<>();
 
-        try (InputStream stream = FoodConfigDataLoader.class.getResourceAsStream("/data/renourisheddelight/presets/minecraft.json")) {
+        try (InputStream stream = FoodConfigReloadListener.class.getResourceAsStream("/data/renourisheddelight/presets/minecraft.json")) {
             if (stream == null) return entries;
             JsonElement root = new Gson().fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), JsonElement.class);
 

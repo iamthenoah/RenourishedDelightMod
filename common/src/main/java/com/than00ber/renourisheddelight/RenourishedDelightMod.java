@@ -4,8 +4,10 @@ import com.mojang.logging.LogUtils;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.data.FoodConfigDataLoader;
-import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
+import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.network.FoodConfigEditPayload;
+import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
@@ -24,8 +26,10 @@ public final class RenourishedDelightMod {
         ClientConfiguration.init();
         CommonConfiguration.init();
         GameRuleRegistry.init();
-        FoodConfigDataLoader.init();
+        FoodConfigReloadListener.init();
         SuppressHurtFlashPayload.init();
+        FoodConfigSyncPayload.init();
+        FoodConfigEditPayload.init();
     }
 
     public static void initClient() {
