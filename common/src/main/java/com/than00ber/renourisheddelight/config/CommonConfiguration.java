@@ -2,8 +2,9 @@ package com.than00ber.renourisheddelight.config;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
+import com.than00ber.renourisheddelight.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -31,7 +32,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Config(name = RenourishedDelightMod.MOD_ID + "/common")
-public final class CommonConfiguration implements ConfigData {
+public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
 
     public static void init() {
         AutoConfig.register(CommonConfiguration.class, JanksonConfigSerializer::new);
@@ -83,39 +84,59 @@ public final class CommonConfiguration implements ConfigData {
     """)
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 
-    public List<AttributeBonus> getAttributes(Item item) {
+    @Override
+    public List<FoodItemEntry> getFoodConfig() {
+        return foodItemConfigurations;
+    }
+
+    @Override
+    public void setFoodConfig(List<FoodItemEntry> entries) {
+        foodItemConfigurations.clear();
+        foodItemConfigurations.addAll(entries);
+        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+    }
+
+    @Override
+    public FoodItemEntry getFoodItemEntry(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-        FoodItemEntry match = foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
 
-        if (preset != null && preset.override && !preset.attributes.isEmpty()) {
-            return preset.attributes;
-        }
-        if (preset != null && !preset.attributes.isEmpty()) {
-            List<AttributeBonus> merged = new ArrayList<>();
-            if (match != null) merged.addAll(match.attributes);
+        if (preset == null || !preset.override || preset.attributes.isEmpty()) {
+            FoodItemEntry match = foodItemConfigurations.stream()
+                    .filter(x -> id.equals(x.item))
+                    .findFirst()
+                    .orElse(null);
 
-            for (AttributeBonus bonus : preset.attributes) {
-                if (merged.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
-                    merged.add(bonus);
+            if (preset != null && !preset.attributes.isEmpty()) {
+                List<AttributeBonus> merged = new ArrayList<>();
+                if (match != null) merged.addAll(match.attributes);
+
+                for (AttributeBonus bonus : preset.attributes) {
+                    if (merged.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
+                        merged.add(bonus);
+                    }
                 }
-            }
-            return merged;
-        }
-        if (match != null && !match.attributes.isEmpty()) {
-            return match.attributes;
-        }
-        List<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
+                return new FoodItemEntry(id, merged, match != null && match.override);
+            } else if (match == null || match.attributes.isEmpty()) {
+                List<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
+                FoodItemEntry entry;
 
-        if (match != null) {
-            match.attributes = attributes;
-        } else {
-            foodItemConfigurations.add(new FoodItemEntry(id, attributes));
+                if (match != null) {
+                    match.attributes = attributes;
+                    entry = match;
+                } else {
+                    entry = new FoodItemEntry(id, attributes);
+                    foodItemConfigurations.add(entry);
+                }
+                AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+                return entry;
+            }
+            return match;
         }
-        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-        return attributes;
+        return preset;
     }
     
+    @Override
     public boolean hasFoodItemEntry(Item item) {
         String id = BuiltInRegistries.ITEM.getKey(item).toString();
         FoodItemEntry entry = FoodPresetRegistry.getInstance().get(id);

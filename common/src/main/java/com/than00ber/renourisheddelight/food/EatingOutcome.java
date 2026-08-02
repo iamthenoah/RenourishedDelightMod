@@ -1,10 +1,12 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
@@ -47,31 +49,39 @@ public enum EatingOutcome {
         boolean wasFull = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
 
         switch (this) {
-            case CONSUME -> diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
+            case CONSUME -> {
+                MinecraftServer server = player.getServer();
+                
+                if (server != null) {
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server)));
+                }
+            }
             case EFFECTS_ONLY -> {
                 if (properties != null) {
                     properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
                 }
             }
             case REPLENISH -> {
+                MinecraftServer server = player.getServer();
                 ConsumableFoodInstance instance = diet.getSlots().stream()
                         .filter(x -> x.item() == item)
                         .findFirst()
                         .orElse(null);
 
-                if (instance != null) {
-                    int refresh = ConsumableFoodInstance.create(item, properties, player.getServer()).duration();
+                if (server != null && instance != null) {
+                    int refresh = ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server)).duration();
                     instance.attributes().forEach(bonus -> bonus.tick(-refresh));
                 }
             }
             case REPLACE_LOW -> {
+                MinecraftServer server = player.getServer();
                 ConsumableFoodInstance instance = diet.getSlots().stream()
                         .min(Comparator.comparingInt(x -> x.duration() - x.time()))
                         .orElse(null);
 
-                if (instance != null) {
+                if (server != null && instance != null) {
                     diet.removeFromSlot(player, instance);
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, player.getServer()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, properties, FoodConfigSavedData.get(server)));
                 }
             }
         }

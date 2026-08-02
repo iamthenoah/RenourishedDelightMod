@@ -1,10 +1,14 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
+import com.than00ber.renourisheddelight.network.FoodConfigEditPayload;
+import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.networking.NetworkManager;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -48,20 +52,34 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private boolean noItemsConfigured;
 
     private final @Nullable MinecraftServer server;
+    private final boolean remoteMultiplayer;
+    private final boolean editable;
     private final List<FoodItemEntry> workingEntries;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-        this.server = Minecraft.getInstance().getSingleplayerServer();
-        this.workingEntries = server != null
-                ? WorldFoodConfig.get(server).getEntries()
-                : CommonConfiguration.getInstance().foodItemConfigurations;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        this.server = minecraft.getSingleplayerServer();
+        this.remoteMultiplayer = server == null && minecraft.level != null;
+        this.editable = !remoteMultiplayer || (minecraft.player != null && minecraft.player.hasPermissions(2));
+
+        this.workingEntries = minecraft.level instanceof FoodConfigHolder holder ? holder.getFoodConfig() : CommonConfiguration.getInstance().getFoodConfig();
+    }
+
+    public void refresh() {
+        rebuildContent();
     }
 
     private void saveWorkingEntries() {
         if (server != null) {
-            WorldFoodConfig.get(server).setDirty();
+            FoodConfigSavedData.markDirty(server);
+            FoodConfigSyncPayload.broadcast(server, workingEntries);
+        } else if (remoteMultiplayer) {
+            if (editable) {
+                NetworkManager.sendToServer(new FoodConfigEditPayload(List.copyOf(workingEntries)));
+            }
         } else {
             AutoConfig.getConfigHolder(CommonConfiguration.class).save();
         }
@@ -88,12 +106,15 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
         newItemField.setMaxLength(256);
         newItemField.setHint(Component.literal("minecraft:bread").withStyle(ChatFormatting.DARK_GRAY));
+        newItemField.setEditable(editable);
         addRenderableWidget(newItemField);
         suggestFields.add(new SuggestField(newItemField, itemOptions, true));
 
-        addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
+        Button addButton = Button.builder(Component.literal("+"), button -> addItem())
                 .bounds(centerX + 125, height - 56, 20, 20)
-                .build());
+                .build();
+        addButton.active = editable;
+        addRenderableWidget(addButton);
 
         int buttonsY = height - 28;
         int buttonsWidth = 200;
@@ -104,7 +125,9 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
-        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
+        Button resetButton = createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList);
+        resetButton.active = editable;
+        addRenderableWidget(resetButton);
         rebuildContent();
     }
 
@@ -164,6 +187,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             Button removeButton = Button.builder(Component.literal("x"), button -> removeItem(entry))
                     .bounds(removeX, y, 20, 20)
                     .build();
+            removeButton.active = editable;
             addRenderableWidget(removeButton);
             rowWidgets.add(removeButton);
         }
@@ -243,6 +267,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private void addItem() {
+        if (!editable) return;
         String value = newItemField.getValue().trim();
         if (value.isEmpty()) return;
         ResourceLocation id;
@@ -271,12 +296,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private void removeItem(FoodItemEntry entry) {
+        if (!editable) return;
         workingEntries.remove(entry);
         saveWorkingEntries();
         rebuildContent();
     }
 
     private void resetList() {
+        if (!editable) return;
         workingEntries.clear();
         for (Item item : BuiltInRegistries.ITEM) {
             if (item.components().get(DataComponents.FOOD) != null) {
@@ -302,10 +329,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        MutableComponent scopeText = server != null
+        MutableComponent scopeText = server != null || remoteMultiplayer
                 ? Component.translatable("config.renourisheddelight.food_items.scope_world")
                 : Component.translatable("config.renourisheddelight.food_items.scope_global");
         graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
+
+        if (!editable) {
+            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED), width / 2, 72, 0xFFFFFF);
+        }
     }
 
     @Override

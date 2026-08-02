@@ -3,6 +3,7 @@ package com.than00ber.renourisheddelight.compat.client;
 import com.mojang.blaze3d.platform.Window;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import me.shedaniel.autoconfig.AutoConfig;
@@ -72,7 +73,7 @@ public final class HudPositionScreen extends Screen {
         for (int i = 0; i < Math.min(count, pool.size()); i++) {
             Item item = pool.get(i);
             FoodProperties properties = item.components().get(DataComponents.FOOD);
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, properties);
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, properties, CommonConfiguration.getInstance());
             instance.tick(random.nextInt(Math.max(1, instance.duration())));
             slots.add(instance);
         }

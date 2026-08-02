@@ -17,6 +17,7 @@
     "FoodDataMixin",
     "ItemMixin",
     "ItemStackMixin",
+    "LevelMixin",
     "LivingEntityMixin",
     "PlayerMixin"
   ]

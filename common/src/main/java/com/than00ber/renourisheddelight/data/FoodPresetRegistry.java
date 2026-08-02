@@ -1,5 +1,6 @@
-package com.than00ber.renourisheddelight.config.data;
+package com.than00ber.renourisheddelight.data;
 
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import dev.architectury.event.events.common.LifecycleEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +14,7 @@ public final class FoodPresetRegistry {
     private static final FoodPresetRegistry INSTANCE = new FoodPresetRegistry();
 
     public static void init() {
-        getInstance().set(FoodConfigDataLoader.loadBuiltinPresets());
+        getInstance().set(FoodConfigReloadListener.loadBuiltinPresets());
         LifecycleEvent.SERVER_STOPPED.register(x -> FoodPresetRegistry.init());
     }
 

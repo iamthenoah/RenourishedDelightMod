@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.fabric.mixin;
 
-import com.than00ber.renourisheddelight.config.datapack.FoodPresetsPackSource;
+import com.than00ber.renourisheddelight.data.datapack.FoodPresetsPackSource;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.repository.ServerPacksSource;
