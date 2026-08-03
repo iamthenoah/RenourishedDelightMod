@@ -209,6 +209,9 @@ public class Diet {
                     slots.remove(i);
                 }
             }
+            if (slots.isEmpty() && nourished) {
+                player.removeEffect(EffectRegistry.NOURISHMENT);
+            }
             return changed;
         }
         return false;

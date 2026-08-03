@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -46,7 +47,6 @@ public enum EatingOutcome {
     public void consume(ServerPlayer player, Diet diet, Item item) {
         FoodProperties properties = item.components().get(DataComponents.FOOD);
         GameRules rules = player.level().getGameRules();
-        boolean wasFull = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
 
         switch (this) {
             case CONSUME -> {
@@ -85,7 +85,11 @@ public enum EatingOutcome {
                 }
             }
         }
-        if (nourishable && wasFull && rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL)) {
+        boolean full = diet.getSlots().size() >= rules.getInt(GameRuleRegistry.MAX_CONSUMABLE_FOOD);
+        boolean harmful = properties != null && properties.effects().stream()
+                .anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
+
+        if (nourishable && full && !harmful && rules.getBoolean(GameRuleRegistry.APPLY_NOURISHMENT_WHEN_FULL)) {
             int smallest = diet.getSlots().stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
             int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
             int duration = Math.toIntExact(Math.round(smallest * (percent / 100.0)));
