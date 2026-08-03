@@ -203,14 +203,13 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         renderPanelChrome(graphics);
         graphics.drawCenteredString(font, title, width / 2, TITLE_Y, 0xFFFFFF);
 
-        MutableComponent scope = inWorld
-                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
-                : Component.translatable("config.renourisheddelight.food_items.scope_global");
-        graphics.drawCenteredString(font, scope.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
+        MutableComponent scope = !editable
+                ? Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED)
+                : inWorld
+                ? Component.translatable("config.renourisheddelight.food_items.scope_world").withStyle(ChatFormatting.YELLOW)
+                : Component.translatable("config.renourisheddelight.food_items.scope_global").withStyle(ChatFormatting.YELLOW);
+        graphics.drawCenteredString(font, scope, width / 2, 62, 0xFFFFFF);
 
-        if (!editable) {
-            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED), width / 2, 72, 0xFFFFFF);
-        }
         renderHeaderActions(graphics, mouseX, mouseY, partialTick);
         renderScrollableContent(graphics, mouseX, mouseY, partialTick);
 
