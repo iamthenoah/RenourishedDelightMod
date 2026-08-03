@@ -25,8 +25,8 @@ import java.util.Locale;
 
 public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
 
-    private static final int LIST_TOP = 80;
-    private static final int HEADER_LABEL_Y = 64;
+    private static final int LIST_TOP = 92;
+    private static final int HEADER_LABEL_Y = 76;
     private static final int NORMAL_TEXT_COLOR = 0xE0E0E0;
     private static final int INVALID_TEXT_COLOR = 0xFF5555;
     private static final int ORANGE_TEXT_COLOR = 0xFFAA00;
@@ -214,7 +214,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.addAll(AttributeBonus.computeDefaultBonuses(icon));
+            entry.attributes.add(AttributeBonus.defaultMaxHealth(icon));
         }
         scrollOffset = 0;
         rebuildContent();

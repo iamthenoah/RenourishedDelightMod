@@ -1,9 +1,7 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -25,6 +23,8 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     private static final int SIDE_MARGIN = 140;
     private static final int ATTRIBUTE_WIDTH = 190;
     private static final int MULTIPLIER_WIDTH = 60;
+    private static final int HEADER_LABEL_Y = 76;
+    private static final int LIST_TOP = 92;
     private static final int NORMAL_TEXT_COLOR = 0xE0E0E0;
     private static final int INVALID_TEXT_COLOR = 0xFF5555;
     private static final int ORANGE_TEXT_COLOR = 0xFFAA00;
@@ -41,7 +41,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     public DurationMultiplierScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.duration_multipliers"));
         this.parent = parent;
-        this.workingEntries = CommonConfiguration.getInstance().durationMultipliers;
+        this.workingEntries = config.getMultiplierConfig();
     }
 
     @Override
@@ -60,7 +60,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
             scrollOffset = 0;
             rebuildContent();
         });
-        addRenderableWidget(searchField);
+        addViewWidget(searchField);
 
         newAttributeField = new EditBox(font, centerX - SIDE_MARGIN, newRowY, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
         newAttributeField.setMaxLength(256);
@@ -83,7 +83,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         int gap = 5;
         int halfWidth = (buttonsWidth - gap) / 2;
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
+        addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
         addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetMultipliers));
@@ -103,10 +103,9 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         suggestFields.removeIf(field -> field.box != newAttributeField);
 
         int centerX = width / 2;
-        int listTop = 80;
         int listBottom = height - 68;
         int rowGap = ROW_HEIGHT - 20;
-        int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
+        int visibleRows = Math.max(1, (listBottom - LIST_TOP + rowGap) / ROW_HEIGHT);
 
         modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
@@ -120,12 +119,12 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         scrollTotalRows = Math.max(1, filtered.size());
 
         scrollTrackX = centerX + SIDE_MARGIN + 10;
-        scrollTrackTop = listTop;
+        scrollTrackTop = LIST_TOP;
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
             DurationMultiplierEntry entry = filtered.get(i + scrollOffset);
-            int y = listTop + i * ROW_HEIGHT;
+            int y = LIST_TOP + i * ROW_HEIGHT;
 
             EditBox attributeField = new EditBox(font, centerX - SIDE_MARGIN, y, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
             attributeField.setMaxLength(256);
@@ -174,11 +173,12 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     }
 
     private void addMultiplier() {
+        if (!editable) return;
         String attribute = newAttributeField.getValue().trim();
         double multiplier = parseDouble(newMultiplierField.getValue(), 1.0);
         if (attribute.isEmpty()) return;
 
-        DurationMultiplierEntry existing = findEntry(attribute);
+        DurationMultiplierEntry existing = DurationMultiplierEntry.get(workingEntries, attribute);
         if (existing != null) {
             existing.multiplier = multiplier;
         } else {
@@ -189,46 +189,37 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         newAttributeField.setValue("");
         newMultiplierField.setValue("");
 
-        saveWorkingEntries();
+        save();
         rebuildContent();
     }
 
-    private @Nullable DurationMultiplierEntry findEntry(String attribute) {
-        Holder<Attribute> resolved = ConsumableFoodInstance.resolveAttribute(attribute);
-        if (resolved == null) return null;
-
-        for (DurationMultiplierEntry entry : workingEntries) {
-            Holder<Attribute> candidate = ConsumableFoodInstance.resolveAttribute(entry.attribute);
-            if (candidate != null && candidate.value() == resolved.value()) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
     private void removeMultiplier(DurationMultiplierEntry entry) {
+        if (!editable) return;
         workingEntries.remove(entry);
-        saveWorkingEntries();
+        save();
         rebuildContent();
     }
 
     private void resetMultipliers() {
+        if (!editable) return;
         workingEntries.clear();
-        CommonConfiguration.getInstance().populateDurationMultiplierDefaults();
-        saveWorkingEntries();
+
+        for (Attribute attribute : BuiltInRegistries.ATTRIBUTE) {
+            String id = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
+            workingEntries.add(new DurationMultiplierEntry(id, 1.0));
+        }
+        save();
         scrollOffset = 0;
         rebuildContent();
     }
 
     private void applyRows() {
+        if (!editable) return;
+
         for (MultiplierRow row : rows) {
             row.entry().attribute = row.attribute().getValue().trim();
             row.entry().multiplier = parseDouble(row.multiplier().getValue(), row.entry().multiplier);
         }
-    }
-
-    private void saveWorkingEntries() {
-        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
     }
 
     private double parseDouble(String value, double fallback) {
@@ -298,15 +289,15 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
-        saveWorkingEntries();
+        save();
         minecraft.setScreen(parent);
     }
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int centerX = width / 2;
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), centerX - SIDE_MARGIN, 64, 0xFFFFFF);
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, 64, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), centerX - SIDE_MARGIN, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, HEADER_LABEL_Y, 0xFFFFFF);
     }
 
     @Override

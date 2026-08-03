@@ -1,42 +1,47 @@
-package com.than00ber.renourisheddelight.config.data;
+package com.than00ber.renourisheddelight.data;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.networking.NetworkManager;
 import dev.architectury.registry.ReloadListenerRegistry;
+import dev.architectury.utils.GameInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener {
+public final class FoodConfigReloadListener extends SimpleJsonResourceReloadListener {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets");
+    public static volatile List<FoodItemEntry> PRESETS = List.of();
 
     public static void init() {
-        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigDataLoader(), FoodConfigDataLoader.ID);
+        ReloadListenerRegistry.register(
+                PackType.SERVER_DATA,
+                new FoodConfigReloadListener(),
+                ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets"));
     }
 
-    public FoodConfigDataLoader() {
+    public FoodConfigReloadListener() {
         super(new Gson(), "presets");
     }
 
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager resourceManager, ProfilerFiller profiler) {
-        List<FoodItemEntry> entries = new ArrayList<>(loadBuiltinPresets());
+        List<FoodItemEntry> entries = new ArrayList<>();
 
         for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
             if (!resource.getValue().isJsonArray()) continue;
@@ -47,29 +52,19 @@ public final class FoodConfigDataLoader extends SimpleJsonResourceReloadListener
                 }
             }
         }
-        FoodPresetRegistry.getInstance().set(entries);
+        PRESETS = entries;
         RenourishedDelightMod.LOGGER.info("Loaded {} preset food entries from {} data file(s)", entries.size(), resources.size());
-    }
+        MinecraftServer server = GameInstance.getServer();
 
+        if (server != null) {
+            FoodConfigSavedData config = FoodConfigSavedData.get(server);
 
-    public static List<FoodItemEntry> loadBuiltinPresets() {
-        List<FoodItemEntry> entries = new ArrayList<>();
-
-        try (InputStream stream = FoodConfigDataLoader.class.getResourceAsStream("/data/renourisheddelight/presets/minecraft.json")) {
-            if (stream == null) return entries;
-            JsonElement root = new Gson().fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), JsonElement.class);
-
-            if (root != null && root.isJsonArray()) {
-                for (JsonElement element : root.getAsJsonArray()) {
-                    if (element.isJsonObject()) entries.add(toFoodItemEntry(element.getAsJsonObject()));
-                }
+            if (config.applyPresets(entries)) {
+                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), FoodConfigSyncPayload.of(config));
             }
-        } catch (IOException exception) {
-            RenourishedDelightMod.LOGGER.warn("Failed to load built-in food presets", exception);
         }
-        return entries;
     }
-    
+
     private static FoodItemEntry toFoodItemEntry(JsonObject object) {
         FoodItemEntry entry = new FoodItemEntry(
                 GsonHelper.getAsString(object, "item", ""),

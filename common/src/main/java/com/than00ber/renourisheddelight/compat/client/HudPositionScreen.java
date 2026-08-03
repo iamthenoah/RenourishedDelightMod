@@ -3,6 +3,7 @@ package com.than00ber.renourisheddelight.compat.client;
 import com.mojang.blaze3d.platform.Window;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import me.shedaniel.autoconfig.AutoConfig;
@@ -10,10 +11,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -71,8 +70,7 @@ public final class HudPositionScreen extends Screen {
 
         for (int i = 0; i < Math.min(count, pool.size()); i++) {
             Item item = pool.get(i);
-            FoodProperties properties = item.components().get(DataComponents.FOOD);
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, properties);
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, CommonConfiguration.getInstance());
             instance.tick(random.nextInt(Math.max(1, instance.duration())));
             slots.add(instance);
         }

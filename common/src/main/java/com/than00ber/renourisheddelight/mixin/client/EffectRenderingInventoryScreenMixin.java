@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -64,12 +65,17 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                 Font font = Minecraft.getInstance().font;
                 TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getLargeAtlas();
                 int k = topPos;
+                ConsumableFoodInstance hovered = null;
 
                 for (ConsumableFoodInstance slot : slots) {
                     if (large) {
                         guiGraphics.blitSprite(EFFECT_BACKGROUND_LARGE_SPRITE, x, k, 120, 32);
                     } else {
                         guiGraphics.blitSprite(EFFECT_BACKGROUND_SMALL_SPRITE, x, k, 32, 32);
+
+                        if (mouseX >= x && mouseX < x + 32 && mouseY >= k && mouseY < k + 32) {
+                            hovered = slot;
+                        }
                     }
                     if (atlas != null) {
                         Texture[] textures = atlas.getTextures(slot.item());
@@ -101,6 +107,13 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
                 }
                 savedTopPos = topPos;
                 topPos += rowHeight * slots.size();
+
+                if (hovered != null) {
+                    Component name = hovered.item().getDescription();
+                    int remainingTicks = hovered.duration() - hovered.time();
+                    Component time = Component.literal(StringUtil.formatTickDuration(remainingTicks, 20)).withStyle(ChatFormatting.GRAY);
+                    guiGraphics.renderComponentTooltip(font, List.of(name, time), mouseX, mouseY);
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.neoforge.event;
 
-import com.than00ber.renourisheddelight.config.datapack.FoodPresetsPackSource;
+import com.than00ber.renourisheddelight.data.datapack.FoodPresetsPackSource;
 import com.than00ber.renourisheddelight.registry.PotionRegistry;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.Items;

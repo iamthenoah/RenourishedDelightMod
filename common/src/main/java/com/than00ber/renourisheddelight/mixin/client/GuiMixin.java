@@ -21,6 +21,7 @@ public abstract class GuiMixin {
     @Unique private boolean renourisheddelight$clipBlinking;
     @Unique private int renourisheddelight$clipX;
     @Unique private int renourisheddelight$clipY;
+    @Unique private int renourisheddelight$clipDrawY;
 
     @Inject(method = "renderHearts", at = @At("HEAD"))
     private void renourisheddelight$renderHeartsStart(GuiGraphics guiGraphics, Player player, int left, int top, int rowHeight, int regenIndex, float maxHealth, int health, int displayHealth, int absorptionAmount, boolean highlight, CallbackInfo callback) {
@@ -34,6 +35,7 @@ public abstract class GuiMixin {
 
             renourisheddelight$clipX = left + col * 8;
             renourisheddelight$clipY = top - row * rowHeight;
+            renourisheddelight$clipDrawY = renourisheddelight$clipY;
             renourisheddelight$clipActive = true;
         }
     }
@@ -43,13 +45,14 @@ public abstract class GuiMixin {
         if (renourisheddelight$clipActive) {
             int edge = renourisheddelight$clipX + HEART_SIZE / 2;
             int color = renourisheddelight$clipBlinking ? 0xFFFFFFFF : 0xFF000000;
-            guiGraphics.fill(edge + 1, renourisheddelight$clipY + 2, edge + 2, renourisheddelight$clipY + HEART_SIZE - 1, color);
+            guiGraphics.fill(edge + 1, renourisheddelight$clipDrawY + 2, edge + 2, renourisheddelight$clipDrawY + HEART_SIZE - 1, color);
         }
     }
 
     @Inject(method = "renderHeart", at = @At("HEAD"))
     private void renourisheddelight$renderHeartStart(GuiGraphics guiGraphics, @Coerce Object heartType, int x, int y, boolean hardcore, boolean blinking, boolean half, CallbackInfo callback) {
         if (renourisheddelight$matchesClipTarget(x, y)) {
+            renourisheddelight$clipDrawY = y;
             guiGraphics.enableScissor(x, y, x + (HEART_SIZE + 1) / 2, y + HEART_SIZE);
         }
     }

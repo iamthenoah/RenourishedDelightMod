@@ -1,4 +1,4 @@
-package com.than00ber.renourisheddelight.config.datapack;
+package com.than00ber.renourisheddelight.data.datapack;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import net.minecraft.network.chat.Component;

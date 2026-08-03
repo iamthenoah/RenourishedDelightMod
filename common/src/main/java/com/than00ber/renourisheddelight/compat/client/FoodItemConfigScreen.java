@@ -1,13 +1,10 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.WorldFoodConfig;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -20,7 +17,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -47,24 +43,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
-    private final @Nullable MinecraftServer server;
     private final List<FoodItemEntry> workingEntries;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-        this.server = Minecraft.getInstance().getSingleplayerServer();
-        this.workingEntries = server != null
-                ? WorldFoodConfig.get(server).getEntries()
-                : CommonConfiguration.getInstance().foodItemConfigurations;
-    }
-
-    private void saveWorkingEntries() {
-        if (server != null) {
-            WorldFoodConfig.get(server).setDirty();
-        } else {
-            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-        }
+        this.workingEntries = config.getFoodConfig();
     }
 
     @Override
@@ -83,7 +67,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             scrollOffset = 0;
             rebuildContent();
         });
-        addRenderableWidget(searchField);
+        addViewWidget(searchField);
 
         newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
         newItemField.setMaxLength(256);
@@ -101,7 +85,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         int gap = 5;
         int halfWidth = (buttonsWidth - gap) / 2;
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
+        addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
         addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
@@ -189,31 +173,22 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
                 : Component.literal(bonus.attribute);
 
         AttributeModifier.Operation operation = resolveOperation(bonus.operation);
-        boolean percent = operation == AttributeModifier.Operation.ADD_MULTIPLIED_BASE
-                || operation == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
-        double display = percent ? bonus.amount * 100.0 : bonus.amount;
-
-        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(bonus.attribute);
+        double display = operation != AttributeModifier.Operation.ADD_VALUE ? bonus.amount * 100.0 : bonus.amount;
+        int effective = bonus.effectiveDuration(config.getMultiplierConfig());
         String durationText = StringUtil.formatTickDuration(bonus.duration, 20);
-        Component durationComponent;
 
-        if (multiplier != 1.0) {
-            int finalDuration = Math.max(1, (int) Math.round(bonus.duration * multiplier));
-            String finalDurationText = StringUtil.formatTickDuration(finalDuration, 20);
-            durationComponent = Component.literal(durationText + " -> " + finalDurationText).withStyle(ChatFormatting.GOLD);
-        } else {
-            durationComponent = Component.literal(durationText);
-        }
-
+        Component durationComponent = effective != bonus.duration
+                ? Component.literal(durationText + " -> " + StringUtil.formatTickDuration(effective, 20)).withStyle(ChatFormatting.GOLD)
+                : Component.literal(durationText);
         Component amountLine = display >= 0
                 ? Component.translatable("attribute.modifier.plus." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(display), name)
                 : Component.translatable("attribute.modifier.take." + operation.id(), ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(-display), name);
-
         return Component.empty().append(amountLine).append(" (").append(durationComponent).append(")");
     }
 
     private AttributeModifier.Operation resolveOperation(@Nullable String raw) {
         String value = raw != null ? raw.trim().toLowerCase(Locale.ROOT) : "";
+
         for (AttributeModifier.Operation operation : AttributeModifier.Operation.values()) {
             if (operation.getSerializedName().equals(value)) return operation;
         }
@@ -243,6 +218,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private void addItem() {
+        if (!editable) return;
         String value = newItemField.getValue().trim();
         if (value.isEmpty()) return;
         ResourceLocation id;
@@ -264,48 +240,43 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         FoodItemEntry existing = workingEntries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
         if (existing != null) return existing;
 
-        FoodItemEntry entry = new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(item));
+        List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
+        FoodItemEntry entry = new FoodItemEntry(id, bonuses);
         workingEntries.add(entry);
-        saveWorkingEntries();
+        save();
         return entry;
     }
 
     private void removeItem(FoodItemEntry entry) {
+        if (!editable) return;
         workingEntries.remove(entry);
-        saveWorkingEntries();
+        save();
         rebuildContent();
     }
 
     private void resetList() {
+        if (!editable) return;
         workingEntries.clear();
         for (Item item : BuiltInRegistries.ITEM) {
             if (item.components().get(DataComponents.FOOD) != null) {
                 String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                List<AttributeBonus> bonuses = AttributeBonus.computeDefaultBonuses(item);
+                List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
                 workingEntries.add(new FoodItemEntry(id, bonuses));
             }
         }
-        saveWorkingEntries();
+        save();
         scrollOffset = 0;
         rebuildContent();
     }
 
     private void openBonuses(FoodItemEntry entry) {
-        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::saveWorkingEntries));
+        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::save));
     }
 
     @Override
     protected void onDone() {
-        saveWorkingEntries();
+        save();
         minecraft.setScreen(parent);
-    }
-
-    @Override
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        MutableComponent scopeText = server != null
-                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
-                : Component.translatable("config.renourisheddelight.food_items.scope_global");
-        graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
     }
 
     @Override

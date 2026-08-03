@@ -31,6 +31,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Unique private static final int NIGHT_DURATION_TICKS = 10917;
 
     @Unique private long sleepStartDayTime = -1L;
+    @Unique private long sleepStartGameTime = -1L;
 
     protected PlayerMixin(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);
@@ -86,6 +87,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
         if ((Object) this instanceof ServerPlayer player) {
             sleepStartDayTime = player.level().getDayTime();
+            sleepStartGameTime = player.level().getGameTime();
         }
     }
 
@@ -93,11 +95,13 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     private void renourisheddelight$stopSleepInBed(boolean something, boolean another, CallbackInfo callback) {
         if ((Object) this instanceof ServerPlayer player) {
             if (player.gameMode.isSurvival() && sleepStartDayTime != -1L) {
-                long elapsed = player.level().getDayTime() - sleepStartDayTime;
+                long slept = player.level().getGameTime() - sleepStartGameTime;
+                long skipped = (player.level().getDayTime() - sleepStartDayTime) - slept;
                 sleepStartDayTime = -1L;
-    
-                if (elapsed > 0) {
-                    double fraction = Math.min(1.0, elapsed / (double) NIGHT_DURATION_TICKS);
+                sleepStartGameTime = -1L;
+
+                if (skipped > 0) {
+                    double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
                     int sleepFoodDrain = player.level().getGameRules().getInt(GameRuleRegistry.SLEEP_FOOD_DRAIN);
                     int drain = (int) Math.round(sleepFoodDrain * fraction);
     

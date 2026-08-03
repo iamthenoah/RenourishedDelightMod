@@ -1,28 +1,22 @@
 package com.than00ber.renourisheddelight.config;
 
+import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.FoodPresetRegistry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
-import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
-import me.shedaniel.autoconfig.util.Utils;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
-import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.item.Item;
-import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,23 +25,24 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Config(name = RenourishedDelightMod.MOD_ID + "/common")
-public final class CommonConfiguration implements ConfigData {
+public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
 
     public static void init() {
         AutoConfig.register(CommonConfiguration.class, JanksonConfigSerializer::new);
-
-        if (!Files.exists(Utils.getConfigFolder().resolve(RenourishedDelightMod.MOD_ID + "/common.json5"))) {
-            LifecycleEvent.SETUP.register(getInstance()::populateDefaults);
-        }
+        LifecycleEvent.SETUP.register(getInstance()::populateDefaults);
     }
 
     public static CommonConfiguration getInstance() {
         return AutoConfig.getConfigHolder(CommonConfiguration.class).getConfig();
     }
 
+    public static void save() {
+        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
+    }
+
     @ConfigEntry.Gui.Excluded
     @Comment("""
-    Per-item attribute bonuses. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
+    Per-item attribute bonuses used as the starting point for newly created worlds. Each entry is an item id plus a list of bonuses, and each bonus has its own duration (in ticks, 20 = 1 second). Example:
     [
       {
         item: "minecraft:golden_apple",
@@ -68,6 +63,7 @@ public final class CommonConfiguration implements ConfigData {
       }
     ]
     operation can be: add_value, add_multiplied_base, add_multiplied_total
+    Editing this has no effect on worlds that already exist; use the in-game config screen for those.
     """)
     public List<FoodItemEntry> foodItemConfigurations = new ArrayList<>();
 
@@ -83,88 +79,46 @@ public final class CommonConfiguration implements ConfigData {
     """)
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 
-    public List<AttributeBonus> getAttributes(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry preset = FoodPresetRegistry.getInstance().get(id);
-        FoodItemEntry match = foodItemConfigurations.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
-
-        if (preset != null && preset.override && !preset.attributes.isEmpty()) {
-            return preset.attributes;
-        }
-        if (preset != null && !preset.attributes.isEmpty()) {
-            List<AttributeBonus> merged = new ArrayList<>();
-            if (match != null) merged.addAll(match.attributes);
-
-            for (AttributeBonus bonus : preset.attributes) {
-                if (merged.stream().noneMatch(x -> x.attribute.equals(bonus.attribute))) {
-                    merged.add(bonus);
-                }
-            }
-            return merged;
-        }
-        if (match != null && !match.attributes.isEmpty()) {
-            return match.attributes;
-        }
-        List<AttributeBonus> attributes = new ArrayList<>(List.of(AttributeBonus.computeGenericDefault(item)));
-
-        if (match != null) {
-            match.attributes = attributes;
-        } else {
-            foodItemConfigurations.add(new FoodItemEntry(id, attributes));
-        }
-        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-        return attributes;
-    }
-    
-    public boolean hasFoodItemEntry(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry entry = FoodPresetRegistry.getInstance().get(id);
-        return entry != null || foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item));
+    @Override
+    public List<FoodItemEntry> getFoodConfig() {
+        return foodItemConfigurations;
     }
 
-    public double getDurationMultiplier(String attributeId) {
-        DurationMultiplierEntry entry = findDurationMultiplierEntry(attributeId);
-        return entry != null ? entry.multiplier : 1.0;
+    @Override
+    public List<DurationMultiplierEntry> getMultiplierConfig() {
+        return durationMultipliers;
     }
 
-    private @Nullable DurationMultiplierEntry findDurationMultiplierEntry(String attributeId) {
-        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(attributeId);
-
-        if (attribute != null) {
-            for (DurationMultiplierEntry entry : durationMultipliers) {
-                Holder<Attribute> candidate = ConsumableFoodInstance.resolveAttribute(entry.attribute);
-
-                if (candidate != null && candidate.value() == attribute.value()) {
-                    return entry;
-                }
-            }
-        }
-        return null;
+    @Override
+    public void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
+        foodItemConfigurations.clear();
+        entries.forEach(x -> foodItemConfigurations.add(x.copy()));
+        durationMultipliers.clear();
+        multipliers.forEach(x -> durationMultipliers.add(x.copy()));
+        save();
     }
 
     private void populateDefaults() {
-        if (populateFoodItemDefaults() || populateDurationMultiplierDefaults()) {
-            AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-        }
+        if (populateFoodItemDefaults() | populateDurationMultiplierDefaults()) save();
     }
-    
+
     private boolean populateFoodItemDefaults() {
         return populateMissing(BuiltInRegistries.ITEM,
                 x -> BuiltInRegistries.ITEM.getKey(x).toString(),
-                id -> foodItemConfigurations.stream().anyMatch(x -> id.equals(x.item)),
-                x -> x.components().get(DataComponents.FOOD) != null || FoodPresetRegistry.getInstance().get(BuiltInRegistries.ITEM.getKey(x).toString()) != null,
-                (id, x) -> foodItemConfigurations.add(new FoodItemEntry(id, AttributeBonus.computeDefaultBonuses(x))));
+                id -> FoodItemEntry.get(foodItemConfigurations, id) != null,
+                x -> x.components().get(DataComponents.FOOD) != null,
+                (id, x) -> foodItemConfigurations.add(new FoodItemEntry(id, Lists.newArrayList(AttributeBonus.defaultMaxHealth(x)))));
     }
 
     public boolean populateDurationMultiplierDefaults() {
         return populateMissing(BuiltInRegistries.ATTRIBUTE,
                 x -> Optional.ofNullable(BuiltInRegistries.ATTRIBUTE.getKey(x)).map(ResourceLocation::toString).orElse(""),
-                id -> findDurationMultiplierEntry(id) != null,
+                id -> DurationMultiplierEntry.get(durationMultipliers, id) != null,
                 x -> true,
                 (id, x) -> durationMultipliers.add(new DurationMultiplierEntry(id, 1.0)));
     }
 
-    private static  <T> boolean populateMissing(Iterable<T> universe, Function<T, String> idOf, Predicate<String> alreadyListed, Predicate<T> include, BiConsumer<String, T> add) {
+    private static <T> boolean populateMissing(Iterable<T> universe, Function<T, String> idOf, Predicate<String> alreadyListed, Predicate<T> include, BiConsumer<String, T> add) {
         boolean added = false;
 
         for (T value : universe) {
