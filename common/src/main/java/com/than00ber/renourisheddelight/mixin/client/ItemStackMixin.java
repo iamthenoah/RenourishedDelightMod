@@ -30,7 +30,7 @@ public abstract class ItemStackMixin {
         ItemStack stack = (ItemStack) (Object) this;
 
         if (Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && FoodItemEntry.get(holder.getFoodConfig(), stack.getItem()) != null) {
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), holder.getFoodConfig());
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), holder);
             List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
             tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
 

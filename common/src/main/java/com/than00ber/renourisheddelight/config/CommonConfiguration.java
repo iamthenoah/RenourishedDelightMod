@@ -3,9 +3,9 @@ package com.than00ber.renourisheddelight.config;
 import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
-import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
@@ -13,12 +13,9 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
-import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +25,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Config(name = RenourishedDelightMod.MOD_ID + "/common")
-public final class CommonConfiguration implements ConfigData {
+public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
 
     public static void init() {
         AutoConfig.register(CommonConfiguration.class, JanksonConfigSerializer::new);
@@ -82,23 +79,23 @@ public final class CommonConfiguration implements ConfigData {
     """)
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 
-    public double getDurationMultiplier(String attributeId) {
-        return Optional.ofNullable(findDurationMultiplierEntry(attributeId)).map(x -> x.multiplier).orElse(1.0);
+    @Override
+    public List<FoodItemEntry> getFoodConfig() {
+        return foodItemConfigurations;
     }
 
-    private @Nullable DurationMultiplierEntry findDurationMultiplierEntry(String attributeId) {
-        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(attributeId);
+    @Override
+    public List<DurationMultiplierEntry> getMultiplierConfig() {
+        return durationMultipliers;
+    }
 
-        if (attribute != null) {
-            for (DurationMultiplierEntry entry : durationMultipliers) {
-                Holder<Attribute> candidate = ConsumableFoodInstance.resolveAttribute(entry.attribute);
-
-                if (candidate != null && candidate.value() == attribute.value()) {
-                    return entry;
-                }
-            }
-        }
-        return null;
+    @Override
+    public void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
+        foodItemConfigurations.clear();
+        entries.forEach(x -> foodItemConfigurations.add(x.copy()));
+        durationMultipliers.clear();
+        multipliers.forEach(x -> durationMultipliers.add(x.copy()));
+        save();
     }
 
     private void populateDefaults() {
@@ -116,7 +113,7 @@ public final class CommonConfiguration implements ConfigData {
     public boolean populateDurationMultiplierDefaults() {
         return populateMissing(BuiltInRegistries.ATTRIBUTE,
                 x -> Optional.ofNullable(BuiltInRegistries.ATTRIBUTE.getKey(x)).map(ResourceLocation::toString).orElse(""),
-                id -> findDurationMultiplierEntry(id) != null,
+                id -> DurationMultiplierEntry.get(durationMultipliers, id) != null,
                 x -> true,
                 (id, x) -> durationMultipliers.add(new DurationMultiplierEntry(id, 1.0)));
     }

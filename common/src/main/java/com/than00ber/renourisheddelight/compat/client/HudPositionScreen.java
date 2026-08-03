@@ -70,7 +70,7 @@ public final class HudPositionScreen extends Screen {
 
         for (int i = 0; i < Math.min(count, pool.size()); i++) {
             Item item = pool.get(i);
-            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, CommonConfiguration.getInstance().foodItemConfigurations);
+            ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, CommonConfiguration.getInstance());
             instance.tick(random.nextInt(Math.max(1, instance.duration())));
             slots.add(instance);
         }

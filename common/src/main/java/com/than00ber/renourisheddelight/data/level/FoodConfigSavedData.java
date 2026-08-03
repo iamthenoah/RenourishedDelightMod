@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.data.level;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
@@ -22,9 +23,11 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
     private static final String ID = "renourisheddelight_food_config";
 
     private final List<FoodItemEntry> entries;
+    private final List<DurationMultiplierEntry> multipliers;
 
-    private FoodConfigSavedData(List<FoodItemEntry> entries) {
+    private FoodConfigSavedData(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
         this.entries = entries;
+        this.multipliers = multipliers;
     }
 
     public static FoodConfigSavedData get(MinecraftServer server) {
@@ -41,9 +44,16 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
     }
 
     @Override
-    public void setFoodConfig(List<FoodItemEntry> updated) {
+    public List<DurationMultiplierEntry> getMultiplierConfig() {
+        return multipliers;
+    }
+
+    @Override
+    public void update(List<FoodItemEntry> updatedEntries, List<DurationMultiplierEntry> updatedMultipliers) {
         entries.clear();
-        updated.forEach(x -> entries.add(x.copy()));
+        multipliers.clear();
+        updatedEntries.forEach(x -> entries.add(x.copy()));
+        updatedMultipliers.forEach(x -> multipliers.add(x.copy()));
         setDirty();
     }
 
@@ -74,13 +84,17 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
     }
 
     private static FoodConfigSavedData create() {
+        CommonConfiguration common = CommonConfiguration.getInstance();
         List<FoodItemEntry> entries = new ArrayList<>();
-        CommonConfiguration.getInstance().foodItemConfigurations.forEach(x -> entries.add(x.copy()));
-        return withPresets(entries);
+        List<DurationMultiplierEntry> multipliers = new ArrayList<>();
+        common.foodItemConfigurations.forEach(x -> entries.add(x.copy()));
+        common.durationMultipliers.forEach(x -> multipliers.add(x.copy()));
+        return withPresets(entries, multipliers);
     }
 
     private static FoodConfigSavedData load(CompoundTag tag) {
         List<FoodItemEntry> entries = new ArrayList<>();
+        List<DurationMultiplierEntry> multipliers = new ArrayList<>();
         ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
 
         for (int i = 0; i < list.size(); i++) {
@@ -98,11 +112,19 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
             }
             entries.add(new FoodItemEntry(entryTag.getString("Item"), bonuses, entryTag.getBoolean("Override")));
         }
-        return withPresets(entries);
+        ListTag multiplierList = tag.getList("Multipliers", Tag.TAG_COMPOUND);
+
+        for (int i = 0; i < multiplierList.size(); i++) {
+            CompoundTag multiplierTag = multiplierList.getCompound(i);
+            multipliers.add(new DurationMultiplierEntry(
+                    multiplierTag.getString("Attribute"),
+                    multiplierTag.getDouble("Multiplier")));
+        }
+        return withPresets(entries, multipliers);
     }
 
-    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries) {
-        FoodConfigSavedData data = new FoodConfigSavedData(entries);
+    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
+        FoodConfigSavedData data = new FoodConfigSavedData(entries, multipliers);
         data.applyPresets(FoodConfigReloadListener.PRESETS);
         return data;
     }
@@ -129,6 +151,15 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
             list.add(entryTag);
         }
         tag.put("Entries", list);
+        ListTag multiplierList = new ListTag();
+
+        for (DurationMultiplierEntry multiplier : multipliers) {
+            CompoundTag multiplierTag = new CompoundTag();
+            multiplierTag.putString("Attribute", multiplier.attribute);
+            multiplierTag.putDouble("Multiplier", multiplier.multiplier);
+            multiplierList.add(multiplierTag);
+        }
+        tag.put("Multipliers", multiplierList);
         return tag;
     }
 }

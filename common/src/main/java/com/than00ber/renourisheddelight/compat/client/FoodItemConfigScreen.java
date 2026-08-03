@@ -1,15 +1,10 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.google.common.collect.Lists;
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
-import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -48,34 +43,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private String searchQuery = "";
     private boolean noItemsConfigured;
 
-    private final boolean inWorld;
-    private final boolean editable;
     private final List<FoodItemEntry> workingEntries;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-
-        Minecraft minecraft = Minecraft.getInstance();
-        FoodConfigHolder holder = minecraft.getConnection() instanceof FoodConfigHolder x ? x : null;
-
-        this.inWorld = holder != null;
-        this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
-        this.workingEntries = holder != null ? holder.getFoodConfig() : CommonConfiguration.getInstance().foodItemConfigurations;
-    }
-
-    public void refresh() {
-        rebuildContent();
-    }
-
-    private void saveWorkingEntries() {
-        if (!editable) return;
-
-        if (inWorld) {
-            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(List.copyOf(workingEntries)));
-        } else {
-            CommonConfiguration.save();
-        }
+        this.workingEntries = config.getFoodConfig();
     }
 
     @Override
@@ -94,20 +67,17 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             scrollOffset = 0;
             rebuildContent();
         });
-        addRenderableWidget(searchField);
+        addViewWidget(searchField);
 
         newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
         newItemField.setMaxLength(256);
         newItemField.setHint(Component.literal("minecraft:bread").withStyle(ChatFormatting.DARK_GRAY));
-        newItemField.setEditable(editable);
         addRenderableWidget(newItemField);
         suggestFields.add(new SuggestField(newItemField, itemOptions, true));
 
-        Button addButton = Button.builder(Component.literal("+"), button -> addItem())
+        addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
                 .bounds(centerX + 125, height - 56, 20, 20)
-                .build();
-        addButton.active = editable;
-        addRenderableWidget(addButton);
+                .build());
 
         int buttonsY = height - 28;
         int buttonsWidth = 200;
@@ -115,12 +85,10 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         int gap = 5;
         int halfWidth = (buttonsWidth - gap) / 2;
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
+        addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
-        Button resetButton = createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList);
-        resetButton.active = editable;
-        addRenderableWidget(resetButton);
+        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
         rebuildContent();
     }
 
@@ -180,7 +148,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             Button removeButton = Button.builder(Component.literal("x"), button -> removeItem(entry))
                     .bounds(removeX, y, 20, 20)
                     .build();
-            removeButton.active = editable;
             addRenderableWidget(removeButton);
             rowWidgets.add(removeButton);
         }
@@ -207,7 +174,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
         AttributeModifier.Operation operation = resolveOperation(bonus.operation);
         double display = operation != AttributeModifier.Operation.ADD_VALUE ? bonus.amount * 100.0 : bonus.amount;
-        int effective = bonus.effectiveDuration();
+        int effective = bonus.effectiveDuration(config.getMultiplierConfig());
         String durationText = StringUtil.formatTickDuration(bonus.duration, 20);
 
         Component durationComponent = effective != bonus.duration
@@ -276,14 +243,14 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
         FoodItemEntry entry = new FoodItemEntry(id, bonuses);
         workingEntries.add(entry);
-        saveWorkingEntries();
+        save();
         return entry;
     }
 
     private void removeItem(FoodItemEntry entry) {
         if (!editable) return;
         workingEntries.remove(entry);
-        saveWorkingEntries();
+        save();
         rebuildContent();
     }
 
@@ -297,31 +264,19 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
                 workingEntries.add(new FoodItemEntry(id, bonuses));
             }
         }
-        saveWorkingEntries();
+        save();
         scrollOffset = 0;
         rebuildContent();
     }
 
     private void openBonuses(FoodItemEntry entry) {
-        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::saveWorkingEntries));
+        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::save));
     }
 
     @Override
     protected void onDone() {
-        saveWorkingEntries();
+        save();
         minecraft.setScreen(parent);
-    }
-
-    @Override
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        MutableComponent scopeText = inWorld
-                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
-                : Component.translatable("config.renourisheddelight.food_items.scope_global");
-        graphics.drawCenteredString(font, scopeText.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
-
-        if (!editable) {
-            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED), width / 2, 72, 0xFFFFFF);
-        }
     }
 
     @Override

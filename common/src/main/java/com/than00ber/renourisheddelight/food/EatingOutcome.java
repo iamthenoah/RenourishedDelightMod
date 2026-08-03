@@ -53,7 +53,7 @@ public enum EatingOutcome {
                 MinecraftServer server = player.getServer();
                 
                 if (server != null) {
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server)));
                 }
             }
             case EFFECTS_ONLY -> {
@@ -69,7 +69,7 @@ public enum EatingOutcome {
                         .orElse(null);
 
                 if (server != null && instance != null) {
-                    int refresh = ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()).duration();
+                    int refresh = ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server)).duration();
                     instance.attributes().forEach(x -> x.tick(-refresh));
                 }
             }
@@ -81,7 +81,7 @@ public enum EatingOutcome {
 
                 if (server != null && instance != null) {
                     diet.removeFromSlot(player, instance);
-                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server).getFoodConfig()));
+                    diet.addToSlot(player, ConsumableFoodInstance.create(item, FoodConfigSavedData.get(server)));
                 }
             }
         }

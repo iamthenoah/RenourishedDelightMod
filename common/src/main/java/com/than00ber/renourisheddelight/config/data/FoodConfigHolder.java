@@ -6,5 +6,7 @@ public interface FoodConfigHolder {
 
     List<FoodItemEntry> getFoodConfig();
 
-    void setFoodConfig(List<FoodItemEntry> entries);
+    List<DurationMultiplierEntry> getMultiplierConfig();
+
+    void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers);
 }

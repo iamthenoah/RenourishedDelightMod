@@ -1,6 +1,8 @@
 package com.than00ber.renourisheddelight.food;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -43,20 +45,21 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, new ArrayList<>(attributes));
     }
 
-    public static ConsumableFoodInstance create(Item item, List<FoodItemEntry> config) {
-        FoodItemEntry entry = FoodItemEntry.get(config, item);
+    public static ConsumableFoodInstance create(Item item, FoodConfigHolder config) {
+        FoodItemEntry entry = FoodItemEntry.get(config.getFoodConfig(), item);
+        List<DurationMultiplierEntry> multipliers = config.getMultiplierConfig();
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
         if (entry != null) {
             for (AttributeBonus bonus : entry.attributes) {
-                AttributeModifierInstance instance = resolveBonus(bonus);
+                AttributeModifierInstance instance = resolveBonus(bonus, multipliers);
                 if (instance != null) attributes.add(instance);
             }
         }
         boolean overridden = entry != null && entry.override;
 
         if (!overridden && attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
-            AttributeModifierInstance health = resolveBonus(AttributeBonus.defaultMaxHealth(item));
+            AttributeModifierInstance health = resolveBonus(AttributeBonus.defaultMaxHealth(item), multipliers);
 
             if (health != null) {
                 attributes.addFirst(health);
@@ -65,13 +68,13 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus) {
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, List<DurationMultiplierEntry> multipliers) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
         if (attribute == null) return null;
         AttributeModifier.Operation operation = parseOperation(bonus.operation);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
         AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
-        return new AttributeModifierInstance(attribute, modifier, bonus.effectiveDuration(), 0);
+        return new AttributeModifierInstance(attribute, modifier, bonus.effectiveDuration(multipliers), 0);
     }
 
     public static @Nullable Holder<Attribute> resolveAttribute(String id) {

@@ -1,15 +1,21 @@
 package com.than00ber.renourisheddelight.compat.client;
 
+import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import dev.architectury.networking.NetworkManager;
 import dev.architectury.platform.Platform;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.*;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -30,6 +36,10 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected final List<SuggestField> suggestFields = new ArrayList<>();
     protected @Nullable ModFilterField modFilterField;
 
+    protected final FoodConfigHolder config;
+    protected final boolean inWorld;
+    protected final boolean editable;
+
     protected int scrollOffset = 0;
     protected int scrollTrackX;
     protected int scrollTrackTop;
@@ -41,11 +51,49 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected AbstractFoodConfigScreen(Component title) {
         super(title);
+        Minecraft minecraft = Minecraft.getInstance();
+        FoodConfigHolder holder = minecraft.getConnection() instanceof FoodConfigHolder x ? x : null;
+
+        this.inWorld = holder != null;
+        this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
+        this.config = holder != null ? holder : CommonConfiguration.getInstance();
     }
 
     protected abstract void rebuildContent();
 
     protected abstract void onDone();
+
+    public void refresh() {
+        rebuildContent();
+    }
+
+    protected void save() {
+        if (!editable) return;
+
+        if (inWorld) {
+            List<FoodItemEntry> entries = List.copyOf(config.getFoodConfig());
+            List<DurationMultiplierEntry> multipliers = List.copyOf(config.getMultiplierConfig());
+            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(entries, multipliers));
+        } else {
+            CommonConfiguration.save();
+        }
+    }
+
+    @Override
+    protected <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T widget) {
+        if (!editable) {
+            if (widget instanceof EditBox box) {
+                box.setEditable(false);
+            } else if (widget instanceof AbstractWidget button) {
+                button.active = false;
+            }
+        }
+        return super.addRenderableWidget(widget);
+    }
+
+    protected <T extends GuiEventListener & Renderable & NarratableEntry> T addViewWidget(T widget) {
+        return super.addRenderableWidget(widget);
+    }
 
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     }
@@ -155,6 +203,14 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         renderPanelChrome(graphics);
         graphics.drawCenteredString(font, title, width / 2, TITLE_Y, 0xFFFFFF);
 
+        MutableComponent scope = inWorld
+                ? Component.translatable("config.renourisheddelight.food_items.scope_world")
+                : Component.translatable("config.renourisheddelight.food_items.scope_global");
+        graphics.drawCenteredString(font, scope.withStyle(ChatFormatting.YELLOW), width / 2, 62, 0xFFFFFF);
+
+        if (!editable) {
+            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED), width / 2, 72, 0xFFFFFF);
+        }
         renderHeaderActions(graphics, mouseX, mouseY, partialTick);
         renderScrollableContent(graphics, mouseX, mouseY, partialTick);
 
@@ -247,7 +303,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
                         scrollOffset = 0;
                         onChange.accept(namespace);
                     });
-            addRenderableWidget(button);
+            addViewWidget(button);
         }
 
         private List<String> computeNamespaces() {

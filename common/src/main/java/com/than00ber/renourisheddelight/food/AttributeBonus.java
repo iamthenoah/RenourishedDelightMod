@@ -1,11 +1,13 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+
+import java.util.List;
 
 
 public final class AttributeBonus {
@@ -33,8 +35,9 @@ public final class AttributeBonus {
         return new AttributeBonus(attribute, operation, amount, duration);
     }
 
-    public int effectiveDuration() {
-        double multiplier = CommonConfiguration.getInstance().getDurationMultiplier(attribute);
+    public int effectiveDuration(List<DurationMultiplierEntry> multipliers) {
+        DurationMultiplierEntry entry = DurationMultiplierEntry.get(multipliers, attribute);
+        double multiplier = entry != null ? entry.multiplier : 1.0;
         return Math.max(1, (int) Math.round(duration * multiplier));
     }
 

@@ -60,8 +60,7 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
             FoodConfigSavedData config = FoodConfigSavedData.get(server);
 
             if (config.applyPresets(entries)) {
-                FoodConfigSyncPayload message = new FoodConfigSyncPayload(List.copyOf(config.getFoodConfig()));
-                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), message);
+                NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), FoodConfigSyncPayload.of(config));
             }
         }
     }
