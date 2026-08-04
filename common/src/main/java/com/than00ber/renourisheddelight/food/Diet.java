@@ -6,12 +6,14 @@ import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.server.MinecraftServer;
@@ -226,11 +228,14 @@ public class Diet {
     private void starve(ServerPlayer player) {
         MinecraftServer server = player.getServer();
 
-        if (slots.isEmpty() && server != null) {
+        if (slots.isEmpty() && server != null && player.level().getGameRules().getBoolean(GameRuleRegistry.DO_STARVATION)) {
             starving++;
             List<StarvationEntry> reached = StarvationEntry.reached(FoodConfigSavedData.get(server).getStarvationConfig(), starving);
 
             if (!reached.isEmpty()) {
+                if (starving % 40 == 0) {
+                    player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
+                }
                 for (int i = 0; i < reached.size(); i++) {
                     StarvationEntry entry = reached.get(i);
                     Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
