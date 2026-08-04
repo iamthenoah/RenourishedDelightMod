@@ -5,6 +5,7 @@ import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.event.events.common.LifecycleEvent;
 import me.shedaniel.autoconfig.AutoConfig;
@@ -79,6 +80,22 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
     """)
     public List<DurationMultiplierEntry> durationMultipliers = new ArrayList<>();
 
+    @ConfigEntry.Gui.Excluded
+    @Comment("""
+    Effects applied while a player has gone without food. Each entry adds an effect once the player has been starving for its "after" duration (in ticks, 20 = 1 second).
+    Every time a later stage is reached, the effects from earlier stages gain one level, up to their own "max". A new effect starts at "amplifier" (1 = level I). Example:
+    [
+      {
+        effect: "minecraft:slowness",
+        after: 3600,
+        amplifier: 1,
+        max: 3,
+      }
+    ]
+    Leave this list empty to disable starvation effects entirely.
+    """)
+    public List<StarvationEntry> starvationEffects = new ArrayList<>();
+
     @Override
     public List<FoodItemEntry> getFoodConfig() {
         return foodItemConfigurations;
@@ -90,16 +107,32 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
     }
 
     @Override
-    public void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
+    public List<StarvationEntry> getStarvationConfig() {
+        return starvationEffects;
+    }
+
+    @Override
+    public void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) {
         foodItemConfigurations.clear();
-        entries.forEach(x -> foodItemConfigurations.add(x.copy()));
         durationMultipliers.clear();
+        starvationEffects.clear();
+        entries.forEach(x -> foodItemConfigurations.add(x.copy()));
         multipliers.forEach(x -> durationMultipliers.add(x.copy()));
+        starvation.forEach(x -> starvationEffects.add(x.copy()));
         save();
     }
 
     private void populateDefaults() {
-        if (populateFoodItemDefaults() | populateDurationMultiplierDefaults()) save();
+        boolean fresh = foodItemConfigurations.isEmpty();
+
+        if (populateFoodItemDefaults() | populateDurationMultiplierDefaults() | (fresh && populateStarvationDefaults())) save();
+    }
+
+    private boolean populateStarvationDefaults() {
+        starvationEffects.add(new StarvationEntry("minecraft:slowness", 3600, 1, 3));
+        starvationEffects.add(new StarvationEntry("minecraft:mining_fatigue", 7200, 1, 3));
+        starvationEffects.add(new StarvationEntry("minecraft:weakness", 10800, 1, 2));
+        return true;
     }
 
     private boolean populateFoodItemDefaults() {

@@ -1,9 +1,12 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.config.data.StarvationEntry;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -11,7 +14,10 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -44,12 +50,11 @@ public class Diet {
         }
     };
 
-    private static final double MIN_REGEN_SCALE = 0.5;
-
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
     private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
     private int drainCheck;
+    private int starving;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -212,9 +217,33 @@ public class Diet {
             if (slots.isEmpty() && nourished) {
                 player.removeEffect(EffectRegistry.NOURISHMENT);
             }
+            starve(player);
             return changed;
         }
         return false;
+    }
+
+    private void starve(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+
+        if (slots.isEmpty() && server != null) {
+            starving++;
+            List<StarvationEntry> reached = StarvationEntry.reached(FoodConfigSavedData.get(server).getStarvationConfig(), starving);
+
+            if (!reached.isEmpty()) {
+                for (int i = 0; i < reached.size(); i++) {
+                    StarvationEntry entry = reached.get(i);
+                    Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
+
+                    if (effect != null) {
+                        int level = entry.levelAt(reached.size() - 1 - i);
+                        player.addEffect(new MobEffectInstance(effect, 2, level - 1, true, false, true));
+                    }
+                }
+            }
+        } else {
+            starving = 0;
+        }
     }
 
     private int computeRegenInterval(GameRules rules, boolean nourished) {
@@ -228,7 +257,7 @@ public class Diet {
                             .orElse(0.0F))
                     .average()
                     .orElse(0.0F);
-            double scale = Math.max(MIN_REGEN_SCALE, 1.0 / (1.0 + avgSaturation * 0.08));
+            double scale = Math.max(0.5, 1.0 / (1.0 + avgSaturation * 0.08));
             interval = Math.max(5, (int) Math.round(base * scale));
         }
         return nourished ? Math.min(interval, rules.getInt(GameRuleRegistry.NOURISHMENT_REGEN_TICK_INTERVAL)) : interval;
@@ -242,6 +271,7 @@ public class Diet {
         compoundTag.putInt("TicksSinceDamage", diet.ticksSinceDamage);
         compoundTag.putInt("Regen", diet.regen);
         compoundTag.putInt("DrainCheck", diet.drainCheck);
+        compoundTag.putInt("Starving", diet.starving);
         return compoundTag;
     }
 
@@ -251,6 +281,7 @@ public class Diet {
         diet.ticksSinceDamage = compoundTag.getInt("TicksSinceDamage");
         diet.regen = compoundTag.getInt("Regen");
         diet.drainCheck = compoundTag.getInt("DrainCheck");
+        diet.starving = compoundTag.getInt("Starving");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
         return diet;
     }
