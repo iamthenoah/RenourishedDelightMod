@@ -129,9 +129,7 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
     }
 
     private boolean populateStarvationDefaults() {
-        starvationEffects.add(new StarvationEntry("minecraft:slowness", 3600, 1, 3));
-        starvationEffects.add(new StarvationEntry("minecraft:mining_fatigue", 7200, 1, 3));
-        starvationEffects.add(new StarvationEntry("minecraft:weakness", 10800, 1, 2));
+        starvationEffects.addAll(StarvationEntry.defaults());
         return true;
     }
 

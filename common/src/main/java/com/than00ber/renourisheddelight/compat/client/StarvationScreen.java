@@ -209,9 +209,7 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
     private void resetStages() {
         if (!editable) return;
         workingEntries.clear();
-        workingEntries.add(new StarvationEntry("minecraft:slowness", 3600, 1, 3));
-        workingEntries.add(new StarvationEntry("minecraft:mining_fatigue", 7200, 1, 3));
-        workingEntries.add(new StarvationEntry("minecraft:weakness", 10800, 1, 2));
+        workingEntries.addAll(StarvationEntry.defaults());
         save();
         scrollOffset = 0;
         rebuildContent();

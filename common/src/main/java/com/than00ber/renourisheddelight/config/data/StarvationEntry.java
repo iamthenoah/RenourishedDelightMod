@@ -37,6 +37,14 @@ public final class StarvationEntry {
         return Math.clamp(Math.max(1, amplifier) + stagesSince, 1, Math.max(Math.max(1, amplifier), max));
     }
 
+    public static List<StarvationEntry> defaults() {
+        List<StarvationEntry> entries = new ArrayList<>();
+        entries.add(new StarvationEntry("minecraft:slowness", 3600, 1, 3));
+        entries.add(new StarvationEntry("minecraft:mining_fatigue", 7200, 1, 3));
+        entries.add(new StarvationEntry("minecraft:weakness", 10800, 1, 2));
+        return entries;
+    }
+
     public static @Nullable Holder<MobEffect> resolveEffect(String id) {
         try {
             MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.parse(id));
