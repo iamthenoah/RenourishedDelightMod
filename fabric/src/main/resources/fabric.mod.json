@@ -32,6 +32,7 @@
     "fabric-api": "*",
     "fabricloader": ">=${fabricLoaderVersion}",
     "architectury": ">=${architecturyApiVersion}",
+    "cloth-config2": ">=${clothConfigVersion}",
     "minecraft": "~${minecraftVersion}"
   },
   "suggests": {
