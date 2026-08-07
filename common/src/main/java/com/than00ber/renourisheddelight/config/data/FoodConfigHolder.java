@@ -8,5 +8,7 @@ public interface FoodConfigHolder {
 
     List<DurationMultiplierEntry> getMultiplierConfig();
 
-    void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers);
+    List<StarvationEntry> getStarvationConfig();
+
+    void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation);
 }

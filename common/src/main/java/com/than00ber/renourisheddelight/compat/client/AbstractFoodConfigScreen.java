@@ -4,6 +4,7 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.platform.Platform;
@@ -73,7 +74,8 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         if (inWorld) {
             List<FoodItemEntry> entries = List.copyOf(config.getFoodConfig());
             List<DurationMultiplierEntry> multipliers = List.copyOf(config.getMultiplierConfig());
-            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(entries, multipliers));
+            List<StarvationEntry> starvation = List.copyOf(config.getStarvationConfig());
+            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(entries, multipliers, starvation));
         } else {
             CommonConfiguration.save();
         }

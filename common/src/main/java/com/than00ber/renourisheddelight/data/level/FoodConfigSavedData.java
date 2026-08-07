@@ -4,6 +4,7 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import net.minecraft.core.HolderLookup;
@@ -24,10 +25,12 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
 
     private final List<FoodItemEntry> entries;
     private final List<DurationMultiplierEntry> multipliers;
+    private final List<StarvationEntry> starvation;
 
-    private FoodConfigSavedData(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
+    private FoodConfigSavedData(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) {
         this.entries = entries;
         this.multipliers = multipliers;
+        this.starvation = starvation;
     }
 
     public static FoodConfigSavedData get(MinecraftServer server) {
@@ -49,11 +52,18 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
     }
 
     @Override
-    public void update(List<FoodItemEntry> updatedEntries, List<DurationMultiplierEntry> updatedMultipliers) {
+    public List<StarvationEntry> getStarvationConfig() {
+        return starvation;
+    }
+
+    @Override
+    public void update(List<FoodItemEntry> updatedEntries, List<DurationMultiplierEntry> updatedMultipliers, List<StarvationEntry> updatedStarvation) {
         entries.clear();
         multipliers.clear();
+        starvation.clear();
         updatedEntries.forEach(x -> entries.add(x.copy()));
         updatedMultipliers.forEach(x -> multipliers.add(x.copy()));
+        updatedStarvation.forEach(x -> starvation.add(x.copy()));
         setDirty();
     }
 
@@ -87,14 +97,17 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
         CommonConfiguration common = CommonConfiguration.getInstance();
         List<FoodItemEntry> entries = new ArrayList<>();
         List<DurationMultiplierEntry> multipliers = new ArrayList<>();
+        List<StarvationEntry> starvation = new ArrayList<>();
         common.foodItemConfigurations.forEach(x -> entries.add(x.copy()));
         common.durationMultipliers.forEach(x -> multipliers.add(x.copy()));
-        return withPresets(entries, multipliers);
+        common.starvationEffects.forEach(x -> starvation.add(x.copy()));
+        return withPresets(entries, multipliers, starvation);
     }
 
     private static FoodConfigSavedData load(CompoundTag tag) {
         List<FoodItemEntry> entries = new ArrayList<>();
         List<DurationMultiplierEntry> multipliers = new ArrayList<>();
+        List<StarvationEntry> starvation = new ArrayList<>();
         ListTag list = tag.getList("Entries", Tag.TAG_COMPOUND);
 
         for (int i = 0; i < list.size(); i++) {
@@ -120,11 +133,21 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
                     multiplierTag.getString("Attribute"),
                     multiplierTag.getDouble("Multiplier")));
         }
-        return withPresets(entries, multipliers);
+        ListTag starvationList = tag.getList("Starvation", Tag.TAG_COMPOUND);
+
+        for (int i = 0; i < starvationList.size(); i++) {
+            CompoundTag starvationTag = starvationList.getCompound(i);
+            starvation.add(new StarvationEntry(
+                    starvationTag.getString("Effect"),
+                    starvationTag.getInt("After"),
+                    starvationTag.getInt("Amplifier"),
+                    starvationTag.getInt("Max")));
+        }
+        return withPresets(entries, multipliers, starvation);
     }
 
-    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers) {
-        FoodConfigSavedData data = new FoodConfigSavedData(entries, multipliers);
+    private static FoodConfigSavedData withPresets(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) {
+        FoodConfigSavedData data = new FoodConfigSavedData(entries, multipliers, starvation);
         data.applyPresets(FoodConfigReloadListener.PRESETS);
         return data;
     }
@@ -160,6 +183,17 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
             multiplierList.add(multiplierTag);
         }
         tag.put("Multipliers", multiplierList);
+        ListTag starvationList = new ListTag();
+
+        for (StarvationEntry entry : starvation) {
+            CompoundTag starvationTag = new CompoundTag();
+            starvationTag.putString("Effect", entry.effect);
+            starvationTag.putInt("After", entry.after);
+            starvationTag.putInt("Amplifier", entry.amplifier);
+            starvationTag.putInt("Max", entry.max);
+            starvationList.add(starvationTag);
+        }
+        tag.put("Starvation", starvationList);
         return tag;
     }
 }
