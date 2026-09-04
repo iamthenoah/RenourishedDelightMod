@@ -15,7 +15,7 @@ public final class RegistryEvent {
 
     @SubscribeEvent
     public static void onRegisterBrewingRecipesEvent(RegisterBrewingRecipesEvent event) {
-        event.getBuilder().addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.NOURISHMENT);
+        event.getBuilder().addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.nourishment());
     }
 
     @SubscribeEvent

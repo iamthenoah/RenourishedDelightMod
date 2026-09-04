@@ -1,10 +1,8 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
-import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
-import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.platform.Platform;
@@ -37,7 +35,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected final List<SuggestField> suggestFields = new ArrayList<>();
     protected @Nullable ModFilterField modFilterField;
 
-    protected final FoodConfigHolder config;
+    protected final FoodConfig config;
     protected final boolean inWorld;
     protected final boolean editable;
 
@@ -57,7 +55,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
         this.inWorld = holder != null;
         this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
-        this.config = holder != null ? holder : CommonConfiguration.getInstance();
+        this.config = holder != null ? holder.getFoodConfig() : CommonConfiguration.getInstance().getFoodConfig();
     }
 
     protected abstract void rebuildContent();
@@ -72,10 +70,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         if (!editable) return;
 
         if (inWorld) {
-            List<FoodItemEntry> entries = List.copyOf(config.getFoodConfig());
-            List<DurationMultiplierEntry> multipliers = List.copyOf(config.getMultiplierConfig());
-            List<StarvationEntry> starvation = List.copyOf(config.getStarvationConfig());
-            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(entries, multipliers, starvation));
+            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(config));
         } else {
             CommonConfiguration.save();
         }

@@ -214,7 +214,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.add(AttributeBonus.defaultMaxHealth(icon));
+            entry.attributes.addAll(AttributeBonus.defaults(icon));
         }
         scrollOffset = 0;
         rebuildContent();

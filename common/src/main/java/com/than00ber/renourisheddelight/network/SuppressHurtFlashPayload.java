@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 public record SuppressHurtFlashPayload() implements CustomPacketPayload {
 
-    private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "suppress_hurt_flash"));
+    private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(RenourishedDelightMod.key("suppress_hurt_flash"));
     private static final StreamCodec<RegistryFriendlyByteBuf, SuppressHurtFlashPayload> CODEC = StreamCodec.unit(new SuppressHurtFlashPayload());
 
     private static long shrinkTimestamp = -1L;

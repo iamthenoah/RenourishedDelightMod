@@ -2,10 +2,7 @@ package com.than00ber.renourisheddelight.network;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.compat.client.AbstractFoodConfigScreen;
-import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
-import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
-import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.config.data.StarvationEntry;
+import com.than00ber.renourisheddelight.config.data.*;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import dev.architectury.event.events.common.PlayerEvent;
@@ -20,11 +17,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+public record FoodConfigSyncPayload(FoodConfig config) implements CustomPacketPayload {
 
-public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) implements CustomPacketPayload {
-
-    private static final Type<FoodConfigSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_config_sync"));
+    private static final Type<FoodConfigSyncPayload> TYPE = new Type<>(RenourishedDelightMod.key("food_config_sync"));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, AttributeBonus> BONUS_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, x -> x.attribute,
@@ -35,7 +30,6 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
     private static final StreamCodec<RegistryFriendlyByteBuf, FoodItemEntry> ENTRY_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, x -> x.item,
             BONUS_CODEC.apply(ByteBufCodecs.list()), x -> x.attributes,
-            ByteBufCodecs.BOOL, x -> x.override,
             FoodItemEntry::new);
     private static final StreamCodec<RegistryFriendlyByteBuf, DurationMultiplierEntry> MULTIPLIER_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, x -> x.attribute,
@@ -47,17 +41,12 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
             ByteBufCodecs.VAR_INT, x -> x.amplifier,
             ByteBufCodecs.VAR_INT, x -> x.max,
             StarvationEntry::new);
-    private static final StreamCodec<RegistryFriendlyByteBuf, List<FoodItemEntry>> ENTRIES_CODEC = ENTRY_CODEC.apply(
-            ByteBufCodecs.list());
-    private static final StreamCodec<RegistryFriendlyByteBuf, List<DurationMultiplierEntry>> MULTIPLIERS_CODEC = MULTIPLIER_CODEC.apply(
-            ByteBufCodecs.list());
-    private static final StreamCodec<RegistryFriendlyByteBuf, List<StarvationEntry>> STARVATIONS_CODEC = STARVATION_CODEC.apply(
-            ByteBufCodecs.list());
-    private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfigSyncPayload> CODEC = StreamCodec.composite(
-            ENTRIES_CODEC, FoodConfigSyncPayload::entries,
-            MULTIPLIERS_CODEC, FoodConfigSyncPayload::multipliers,
-            STARVATIONS_CODEC, FoodConfigSyncPayload::starvation,
-            FoodConfigSyncPayload::new);
+    private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfig> CONFIG_CODEC = StreamCodec.composite(
+            ENTRY_CODEC.apply(ByteBufCodecs.list()), x -> x.foods,
+            MULTIPLIER_CODEC.apply(ByteBufCodecs.list()), x -> x.multipliers,
+            STARVATION_CODEC.apply(ByteBufCodecs.list()), x -> x.starvation,
+            FoodConfig::new);
+    private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfigSyncPayload> CODEC = CONFIG_CODEC.map(FoodConfigSyncPayload::new, FoodConfigSyncPayload::config);
 
     public static void init() {
         Edit.init();
@@ -65,7 +54,7 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
             Minecraft minecraft = Minecraft.getInstance();
 
             if (minecraft.getConnection() instanceof FoodConfigHolder holder) {
-                holder.update(payload.entries(), payload.multipliers(), payload.starvation());
+                holder.setFoodConfig(payload.config());
             }
             if (minecraft.screen instanceof AbstractFoodConfigScreen screen) {
                 screen.refresh();
@@ -81,11 +70,8 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
         });
     }
 
-    public static FoodConfigSyncPayload of(FoodConfigHolder config) {
-        return new FoodConfigSyncPayload(
-                List.copyOf(config.getFoodConfig()),
-                List.copyOf(config.getMultiplierConfig()),
-                List.copyOf(config.getStarvationConfig()));
+    public static FoodConfigSyncPayload of(FoodConfigHolder holder) {
+        return new FoodConfigSyncPayload(holder.getFoodConfig());
     }
 
     @Override
@@ -93,14 +79,10 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
         return TYPE;
     }
 
-    public record Edit(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) implements CustomPacketPayload {
+    public record Edit(FoodConfig config) implements CustomPacketPayload {
 
-        private static final Type<Edit> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "food_config_edit"));
-        private static final StreamCodec<RegistryFriendlyByteBuf, Edit> CODEC = StreamCodec.composite(
-                ENTRIES_CODEC, Edit::entries,
-                MULTIPLIERS_CODEC, Edit::multipliers,
-                STARVATIONS_CODEC, Edit::starvation,
-                Edit::new);
+        private static final Type<Edit> TYPE = new Type<>(RenourishedDelightMod.key("food_config_edit"));
+        private static final StreamCodec<RegistryFriendlyByteBuf, Edit> CODEC = CONFIG_CODEC.map(Edit::new, Edit::config);
 
         public static void init() {
             NetworkManager.registerReceiver(NetworkManager.c2s(), Edit.TYPE, Edit.CODEC, (payload, context) -> context.queue(() -> {
@@ -109,7 +91,7 @@ public record FoodConfigSyncPayload(List<FoodItemEntry> entries, List<DurationMu
 
                     if (server != null) {
                         FoodConfigSavedData config = FoodConfigSavedData.get(server);
-                        config.update(payload.entries(), payload.multipliers(), payload.starvation());
+                        config.setFoodConfig(payload.config());
                         NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), of(config));
                     }
                 }

@@ -1,13 +1,10 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
-import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -21,36 +18,28 @@ import java.util.Locale;
 public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
     private static final int SIDE_MARGIN = 140;
-    private static final int ATTRIBUTE_WIDTH = 190;
+    private static final int LABEL_WIDTH = 190;
     private static final int MULTIPLIER_WIDTH = 60;
     private static final int HEADER_LABEL_Y = 76;
     private static final int LIST_TOP = 92;
     private static final int NORMAL_TEXT_COLOR = 0xE0E0E0;
     private static final int INVALID_TEXT_COLOR = 0xFF5555;
-    private static final int ORANGE_TEXT_COLOR = 0xFFAA00;
 
     private final @Nullable Screen parent;
-    private final List<DurationMultiplierEntry> workingEntries;
     private final List<MultiplierRow> rows = new ArrayList<>();
-    private List<SuggestOption> attributeOptions = List.of();
     private String searchQuery = "";
-
-    private EditBox newAttributeField;
-    private EditBox newMultiplierField;
+    private boolean noResults;
 
     public DurationMultiplierScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.duration_multipliers"));
         this.parent = parent;
-        this.workingEntries = config.getMultiplierConfig();
     }
 
     @Override
     protected void init() {
-        attributeOptions = buildAttributeOptions();
         int centerX = width / 2;
-        int newRowY = height - 56;
 
-        modFilterField = new ModFilterField(() -> workingEntries.stream().map(entry -> entry.attribute).toList(), namespace -> rebuildContent());
+        modFilterField = new ModFilterField(() -> listAttributes().stream().map(DurationMultiplierScreen::idOf).toList(), namespace -> rebuildContent());
 
         EditBox searchField = new EditBox(font, centerX - SIDE_MARGIN, 30, 170, 20, Component.translatable("config.renourisheddelight.duration_multipliers.search"));
         searchField.setMaxLength(256);
@@ -62,21 +51,6 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         });
         addViewWidget(searchField);
 
-        newAttributeField = new EditBox(font, centerX - SIDE_MARGIN, newRowY, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
-        newAttributeField.setMaxLength(256);
-        newAttributeField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.attribute").withStyle(ChatFormatting.DARK_GRAY));
-        addRenderableWidget(newAttributeField);
-        suggestFields.add(new SuggestField(newAttributeField, attributeOptions, true));
-
-        newMultiplierField = new EditBox(font, centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, newRowY, MULTIPLIER_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
-        newMultiplierField.setMaxLength(32);
-        newMultiplierField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.multiplier").withStyle(ChatFormatting.DARK_GRAY));
-        addRenderableWidget(newMultiplierField);
-
-        addRenderableWidget(Button.builder(Component.literal("+"), button -> addMultiplier())
-                .bounds(centerX + SIDE_MARGIN - 20, newRowY, 20, 20)
-                .build());
-
         int buttonsY = height - 28;
         int buttonsWidth = 200;
         int buttonsLeft = centerX - buttonsWidth / 2;
@@ -86,7 +60,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
-        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetMultipliers));
+        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetAll));
         rebuildContent();
     }
 
@@ -95,12 +69,9 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         applyRows();
 
         for (MultiplierRow row : rows) {
-            removeWidget(row.attribute());
             removeWidget(row.multiplier());
-            removeWidget(row.remove());
         }
         rows.clear();
-        suggestFields.removeIf(field -> field.box != newAttributeField);
 
         int centerX = width / 2;
         int listBottom = height - 68;
@@ -109,10 +80,11 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
         modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
-        List<DurationMultiplierEntry> filtered = workingEntries.stream()
-                .filter(entry -> modFilterField.matches(entry.attribute != null ? entry.attribute : ""))
+        List<Attribute> filtered = listAttributes().stream()
+                .filter(attribute -> modFilterField.matches(idOf(attribute)))
                 .filter(this::matchesSearch)
                 .toList();
+        noResults = filtered.isEmpty();
         scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
         scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
         scrollVisibleRows = visibleRows;
@@ -123,118 +95,64 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
-            DurationMultiplierEntry entry = filtered.get(i + scrollOffset);
+            Attribute attribute = filtered.get(i + scrollOffset);
             int y = LIST_TOP + i * ROW_HEIGHT;
 
-            EditBox attributeField = new EditBox(font, centerX - SIDE_MARGIN, y, ATTRIBUTE_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"));
-            attributeField.setMaxLength(256);
-            attributeField.setValue(entry.attribute != null ? entry.attribute : "");
-            attributeField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.attribute").withStyle(ChatFormatting.DARK_GRAY));
-            addRenderableWidget(attributeField);
-            suggestFields.add(new SuggestField(attributeField, attributeOptions));
-
-            EditBox multiplierField = new EditBox(font, centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, y, MULTIPLIER_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
+            EditBox multiplierField = new EditBox(font, centerX - SIDE_MARGIN + LABEL_WIDTH + 5, y, MULTIPLIER_WIDTH, 20, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"));
             multiplierField.setMaxLength(32);
-            multiplierField.setValue(String.valueOf(entry.multiplier));
-            multiplierField.setHint(Component.translatable("config.renourisheddelight.duration_multipliers.multiplier").withStyle(ChatFormatting.DARK_GRAY));
+            multiplierField.setValue(String.valueOf(config.multiplier(idOf(attribute))));
             addRenderableWidget(multiplierField);
 
-            Button removeButton = Button.builder(Component.literal("x"), button -> removeMultiplier(entry))
-                    .bounds(centerX + SIDE_MARGIN - 20, y, 20, 20)
-                    .build();
-            addRenderableWidget(removeButton);
-
-            rows.add(new MultiplierRow(entry, attributeField, multiplierField, removeButton));
+            rows.add(new MultiplierRow(idOf(attribute), nameOf(attribute), y, multiplierField));
         }
     }
 
-    private boolean matchesSearch(DurationMultiplierEntry entry) {
+    private List<Attribute> listAttributes() {
+        List<Attribute> attributes = new ArrayList<>();
+        BuiltInRegistries.ATTRIBUTE.forEach(attributes::add);
+        attributes.sort(Comparator.comparing(DurationMultiplierScreen::idOf, String.CASE_INSENSITIVE_ORDER));
+        return attributes;
+    }
+
+    private boolean matchesSearch(Attribute attribute) {
         if (searchQuery.isEmpty()) return true;
-        String id = entry.attribute != null ? entry.attribute.toLowerCase(Locale.ROOT) : "";
-        if (id.contains(searchQuery)) return true;
-
-        Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(entry.attribute);
-        if (attribute == null) return false;
-
-        String name = Component.translatable(attribute.value().getDescriptionId()).getString().toLowerCase(Locale.ROOT);
-        return name.contains(searchQuery);
+        return (idOf(attribute) + " " + nameOf(attribute)).toLowerCase(Locale.ROOT).contains(searchQuery);
     }
 
-    private List<SuggestOption> buildAttributeOptions() {
-        List<SuggestOption> options = new ArrayList<>();
-        BuiltInRegistries.ATTRIBUTE.forEach(attribute -> {
-            String id = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
-            String name = Component.translatable(attribute.getDescriptionId()).getString();
-            String searchText = (id + " " + name).toLowerCase(Locale.ROOT);
-            options.add(new SuggestOption(id, name, searchText));
-        });
-        options.sort(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER));
-        return options;
+    private static String idOf(Attribute attribute) {
+        return BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
     }
 
-    private void addMultiplier() {
-        if (!editable) return;
-        String attribute = newAttributeField.getValue().trim();
-        double multiplier = parseDouble(newMultiplierField.getValue(), 1.0);
-        if (attribute.isEmpty()) return;
-
-        DurationMultiplierEntry existing = DurationMultiplierEntry.get(workingEntries, attribute);
-        if (existing != null) {
-            existing.multiplier = multiplier;
-        } else {
-            workingEntries.add(new DurationMultiplierEntry(attribute, multiplier));
-        }
-        scrollOffset = Integer.MAX_VALUE;
-
-        newAttributeField.setValue("");
-        newMultiplierField.setValue("");
-
-        save();
-        rebuildContent();
-    }
-
-    private void removeMultiplier(DurationMultiplierEntry entry) {
-        if (!editable) return;
-        workingEntries.remove(entry);
-        save();
-        rebuildContent();
-    }
-
-    private void resetMultipliers() {
-        if (!editable) return;
-        workingEntries.clear();
-
-        for (Attribute attribute : BuiltInRegistries.ATTRIBUTE) {
-            String id = BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString();
-            workingEntries.add(new DurationMultiplierEntry(id, 1.0));
-        }
-        save();
-        scrollOffset = 0;
-        rebuildContent();
+    private static String nameOf(Attribute attribute) {
+        return Component.translatable(attribute.getDescriptionId()).getString();
     }
 
     private void applyRows() {
         if (!editable) return;
 
         for (MultiplierRow row : rows) {
-            row.entry().attribute = row.attribute().getValue().trim();
-            row.entry().multiplier = parseDouble(row.multiplier().getValue(), row.entry().multiplier);
+            config.setMultiplier(row.attribute(), parseDouble(row.multiplier().getValue(), 1.0));
         }
+    }
+
+    private void resetAll() {
+        if (!editable) return;
+        config.multipliers.clear();
+        save();
+        scrollOffset = 0;
+        rebuildContent();
     }
 
     private double parseDouble(String value, double fallback) {
         try {
-            return Double.parseDouble(value.trim());
+            double parsed = Double.parseDouble(value.trim());
+            return parsed > 0.0 ? parsed : fallback;
         } catch (Exception exception) {
             return fallback;
         }
     }
 
-    private boolean isValidAttribute(String value) {
-        return ConsumableFoodInstance.resolveAttribute(value.trim()) != null;
-    }
-
-    private boolean isValidMultiplier(String value) {
+    private boolean isValid(String value) {
         try {
             return Double.parseDouble(value.trim()) > 0.0;
         } catch (Exception exception) {
@@ -242,48 +160,12 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         }
     }
 
-    private @Nullable Component attributeTooltip(String value) {
-        return isValidAttribute(value) ? null : Component.translatable("config.renourisheddelight.food_items.attribute_invalid");
-    }
-
-    private @Nullable Component multiplierTooltip(String value) {
-        return isValidMultiplier(value) ? null : Component.translatable("config.renourisheddelight.duration_multipliers.multiplier_invalid");
-    }
-
-    private void applyValidationColors() {
-        for (MultiplierRow row : rows) {
-            row.attribute().setTextColor(isValidAttribute(row.attribute().getValue()) ? NORMAL_TEXT_COLOR : ORANGE_TEXT_COLOR);
-            row.multiplier().setTextColor(isValidMultiplier(row.multiplier().getValue()) ? NORMAL_TEXT_COLOR : INVALID_TEXT_COLOR);
-        }
-        newAttributeField.setTextColor(newAttributeField.getValue().isEmpty() || isValidAttribute(newAttributeField.getValue()) ? NORMAL_TEXT_COLOR : ORANGE_TEXT_COLOR);
-        newMultiplierField.setTextColor(newMultiplierField.getValue().isEmpty() || isValidMultiplier(newMultiplierField.getValue()) ? NORMAL_TEXT_COLOR : INVALID_TEXT_COLOR);
-    }
-
-    private boolean isHovering(EditBox box, int mouseX, int mouseY) {
-        return mouseX >= box.getX() && mouseX < box.getX() + box.getWidth()
-                && mouseY >= box.getY() && mouseY < box.getY() + box.getHeight();
-    }
-
-    private void renderFieldTooltip(EditBox box, @Nullable Component text, int mouseX, int mouseY) {
-        if (text != null && isHovering(box, mouseX, mouseY)) {
-            setTooltipForNextRenderPass(text);
-        }
-    }
-
-    private void renderTooltips(int mouseX, int mouseY) {
-        for (MultiplierRow row : rows) {
-            renderFieldTooltip(row.attribute(), attributeTooltip(row.attribute().getValue()), mouseX, mouseY);
-            renderFieldTooltip(row.multiplier(), multiplierTooltip(row.multiplier().getValue()), mouseX, mouseY);
-        }
-        renderFieldTooltip(newAttributeField, newAttributeField.getValue().isEmpty() ? null : attributeTooltip(newAttributeField.getValue()), mouseX, mouseY);
-        renderFieldTooltip(newMultiplierField, newMultiplierField.getValue().isEmpty() ? null : multiplierTooltip(newMultiplierField.getValue()), mouseX, mouseY);
-    }
-
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        applyValidationColors();
+        for (MultiplierRow row : rows) {
+            row.multiplier().setTextColor(isValid(row.multiplier().getValue()) ? NORMAL_TEXT_COLOR : INVALID_TEXT_COLOR);
+        }
         super.render(graphics, mouseX, mouseY, partialTick);
-        renderTooltips(mouseX, mouseY);
     }
 
     @Override
@@ -295,20 +177,25 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        int centerX = width / 2;
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), centerX - SIDE_MARGIN, HEADER_LABEL_Y, 0xFFFFFF);
-        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), centerX - SIDE_MARGIN + ATTRIBUTE_WIDTH + 5, HEADER_LABEL_Y, 0xFFFFFF);
+        int left = width / 2 - SIDE_MARGIN;
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.attribute"), left, HEADER_LABEL_Y, 0xFFFFFF);
+        graphics.drawString(font, Component.translatable("config.renourisheddelight.duration_multipliers.multiplier"), left + LABEL_WIDTH + 5, HEADER_LABEL_Y, 0xFFFFFF);
     }
 
     @Override
     protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (workingEntries.isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.duration_multipliers.empty"), width / 2, height / 2, 0xAAAAAA);
-        } else if (rows.isEmpty()) {
+        int left = width / 2 - SIDE_MARGIN;
+
+        for (MultiplierRow row : rows) {
+            String label = font.plainSubstrByWidth(row.name(), LABEL_WIDTH - 4);
+            graphics.drawString(font, label, left, row.y() + 6, 0xE0E0E0);
+        }
+        if (noResults) {
             graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.duration_multipliers.no_results"), width / 2, height / 2, 0xAAAAAA);
         }
     }
 
-    private record MultiplierRow(DurationMultiplierEntry entry, EditBox attribute, EditBox multiplier, Button remove) {
+    private record MultiplierRow(String attribute, String name, int y, EditBox multiplier) {
+        // do nothing
     }
 }

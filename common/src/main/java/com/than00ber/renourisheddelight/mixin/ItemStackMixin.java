@@ -1,8 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
-import com.than00ber.renourisheddelight.food.EatingOutcome;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,14 +18,9 @@ public abstract class ItemStackMixin {
     private void renourisheddelight$finishUsingItem(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
         ItemStack stack = (ItemStack) (Object) this;
 
-        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {
-            Diet diet = holder.getDiet();
-            EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
-
-            if (outcome.isSuccess()) {
-                outcome.consume(player, diet, stack.getItem());
-                holder.updateDiet();
-            }
+        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.has(DataComponents.FOOD)) {
+            holder.getDiet().eat(player, stack.getItem());
+            holder.updateDiet();
         }
     }
 }

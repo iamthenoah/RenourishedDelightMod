@@ -12,6 +12,7 @@ import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.registry.ReloadListenerRegistry;
 import dev.architectury.utils.GameInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.PackType;
@@ -19,6 +20,9 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +30,11 @@ import java.util.Map;
 
 public final class FoodConfigReloadListener extends SimpleJsonResourceReloadListener {
 
+    public static final ResourceLocation PRESETS_KEY =  RenourishedDelightMod.key("presets");
     public static volatile List<FoodItemEntry> PRESETS = List.of();
 
     public static void init() {
-        ReloadListenerRegistry.register(
-                PackType.SERVER_DATA,
-                new FoodConfigReloadListener(),
-                ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, "presets"));
+        ReloadListenerRegistry.register(PackType.SERVER_DATA, new FoodConfigReloadListener(), PRESETS_KEY);
     }
 
     public FoodConfigReloadListener() {
@@ -59,29 +61,49 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
         if (server != null) {
             FoodConfigSavedData config = FoodConfigSavedData.get(server);
 
-            if (config.applyPresets(entries)) {
+            if (config.applyPresets()) {
                 NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), FoodConfigSyncPayload.of(config));
             }
         }
     }
 
     private static FoodItemEntry toFoodItemEntry(JsonObject object) {
-        FoodItemEntry entry = new FoodItemEntry(
-                GsonHelper.getAsString(object, "item", ""),
-                new ArrayList<>(),
-                GsonHelper.getAsBoolean(object, "override", false));
+        String id = GsonHelper.getAsString(object, "item", "");
+        List<AttributeBonus> declared = new ArrayList<>();
 
         for (JsonElement element : GsonHelper.getAsJsonArray(object, "attributes", new JsonArray())) {
             if (element.isJsonObject()) {
                 JsonObject bonus = element.getAsJsonObject();
 
-                entry.attributes.add(new AttributeBonus(
+                declared.add(new AttributeBonus(
                         GsonHelper.getAsString(bonus, "attribute", ""),
                         GsonHelper.getAsString(bonus, "operation", "add_value"),
                         GsonHelper.getAsDouble(bonus, "amount", 0.0),
                         GsonHelper.getAsInt(bonus, "duration", 0)));
             }
         }
-        return entry;
+        return new FoodItemEntry(id, withDefaults(id, declared));
+    }
+
+    private static List<AttributeBonus> withDefaults(String id, List<AttributeBonus> declared) {
+        List<AttributeBonus> bonuses = new ArrayList<>();
+        Item item = resolveItem(id);
+
+        if (item != null) {
+            for (AttributeBonus base : AttributeBonus.defaults(item)) {
+                if (declared.stream().noneMatch(x -> x.sameAttribute(base))) bonuses.add(base);
+            }
+        }
+        bonuses.addAll(declared);
+        return bonuses;
+    }
+
+    private static @Nullable Item resolveItem(String id) {
+        try {
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            return item != Items.AIR ? item : null;
+        } catch (Exception exception) {
+            return null;
+        }
     }
 }

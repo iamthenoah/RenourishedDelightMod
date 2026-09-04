@@ -60,7 +60,7 @@ public final class ConfigMenuScreen extends Screen {
         goldenPaletteItemField.setMaxLength(256);
         goldenPaletteItemField.setValue(config.goldenPaletteItem.isBlank() ? DEFAULT_GOLDEN_PALETTE_ITEM : config.goldenPaletteItem);
         goldenPaletteItemField.setHint(Component.translatable("config.renourisheddelight.client.golden_palette_item_hint"));
-        goldenPaletteItemField.setTooltip(Tooltip.create(Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip", EffectRegistry.NOURISHMENT.value().getDisplayName())));
+        goldenPaletteItemField.setTooltip(Tooltip.create(Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip", EffectRegistry.nourishment().value().getDisplayName())));
         addRenderableWidget(goldenPaletteItemField);
 
         addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.reset"),

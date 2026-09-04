@@ -82,7 +82,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
 
                         if (textures != null && textures.length > 0) {
                             boolean hunger = player.hasEffect(MobEffects.HUNGER);
-                            boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+                            boolean nourished = player.hasEffect(EffectRegistry.nourishment());
                             int index = nourished ? 4 : hunger ? 1 : 0;
                             textures[index].render(guiGraphics, x + (large ? 6 : 7), k + 7, 0xFFFFFFFF);
 

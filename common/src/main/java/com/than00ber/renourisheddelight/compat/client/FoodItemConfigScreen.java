@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.compat.client;
 
-import com.google.common.collect.Lists;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
@@ -41,23 +40,19 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private EditBox newItemField;
     private String searchQuery = "";
-    private boolean noItemsConfigured;
-
-    private final List<FoodItemEntry> workingEntries;
+    private boolean noResults;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.food_items"));
         this.parent = parent;
-        this.workingEntries = config.getFoodConfig();
     }
 
     @Override
     protected void init() {
-        List<SuggestOption> itemOptions = buildItemOptions();
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
 
-        modFilterField = new ModFilterField(() -> workingEntries.stream().map(entry -> entry.item).toList(), namespace -> rebuildContent());
+        modFilterField = new ModFilterField(() -> listItems().stream().map(FoodItemConfigScreen::idOf).toList(), namespace -> rebuildContent());
 
         EditBox searchField = new EditBox(font, left, 30, 170, 20, Component.translatable("config.renourisheddelight.food_items.search"));
         searchField.setMaxLength(256);
@@ -71,9 +66,9 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
         newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
         newItemField.setMaxLength(256);
-        newItemField.setHint(Component.literal("minecraft:bread").withStyle(ChatFormatting.DARK_GRAY));
+        newItemField.setHint(Component.literal("minecraft:cake").withStyle(ChatFormatting.DARK_GRAY));
         addRenderableWidget(newItemField);
-        suggestFields.add(new SuggestField(newItemField, itemOptions, true));
+        suggestFields.add(new SuggestField(newItemField, buildItemOptions(), true));
 
         addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
                 .bounds(centerX + 125, height - 56, 20, 20)
@@ -88,7 +83,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
                 .bounds(buttonsLeft, buttonsY, halfWidth, 20)
                 .build());
-        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetList));
+        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetAll));
         rebuildContent();
     }
 
@@ -101,15 +96,13 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         icons.clear();
 
         int centerX = width / 2;
-        List<FoodItemEntry> entries = workingEntries;
-        noItemsConfigured = entries.isEmpty();
-
         modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
-        List<FoodItemEntry> filtered = entries.stream()
-                .filter(entry -> modFilterField.matches(entry.item))
-                .filter(entry -> searchQuery.isEmpty() || entry.item.toLowerCase(Locale.ROOT).contains(searchQuery))
+        List<Item> filtered = listItems().stream()
+                .filter(item -> modFilterField.matches(idOf(item)))
+                .filter(this::matchesSearch)
                 .toList();
+        noResults = filtered.isEmpty();
 
         int listTop = 76;
         int listBottom = height - 68;
@@ -123,45 +116,67 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         int iconX = centerX - SIDE_MARGIN;
         int nameX = iconX + 20;
         int nameWidth = 241;
-        int removeX = centerX + 125;
+        int resetX = centerX + 125;
         scrollTrackX = centerX + 150;
         scrollTrackTop = listTop;
         scrollTrackBottom = listBottom;
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
-            FoodItemEntry entry = filtered.get(i + scrollOffset);
+            Item item = filtered.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
+            boolean customized = config.entry(item) != null;
+            icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
 
-            Item item = resolveItem(entry.item);
-            if (item != null) {
-                icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
-            }
+            MutableComponent label = item.getDescription().copy();
+            if (customized) label = label.withStyle(ChatFormatting.YELLOW);
 
-            Component nameLabel = item != null ? item.getDescription() : Component.literal(entry.item);
-            Button nameButton = Button.builder(nameLabel, button -> openBonuses(entry))
+            Button nameButton = Button.builder(label, button -> openBonuses(item))
                     .bounds(nameX, y, nameWidth, 20)
-                    .tooltip(buildAttributesTooltip(entry))
+                    .tooltip(buildTooltip(item))
                     .build();
             addRenderableWidget(nameButton);
             rowWidgets.add(nameButton);
 
-            Button removeButton = Button.builder(Component.literal("x"), button -> removeItem(entry))
-                    .bounds(removeX, y, 20, 20)
+            Button resetButton = Button.builder(Component.literal("x"), button -> resetItem(item))
+                    .bounds(resetX, y, 20, 20)
+                    .tooltip(Tooltip.create(Component.translatable("config.renourisheddelight.food_items.reset_item")))
                     .build();
-            addRenderableWidget(removeButton);
-            rowWidgets.add(removeButton);
+            resetButton.active = customized && editable;
+            addRenderableWidget(resetButton);
+            rowWidgets.add(resetButton);
         }
     }
 
-    private Tooltip buildAttributesTooltip(FoodItemEntry entry) {
-        if (entry.attributes.isEmpty()) {
+    private List<Item> listItems() {
+        List<Item> items = new ArrayList<>();
+
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (item != Items.AIR && item.components().get(DataComponents.FOOD) != null) items.add(item);
+        }
+        for (FoodItemEntry entry : config.foods) {
+            Item item = resolveItem(entry.item);
+            if (item != null && !items.contains(item)) items.add(item);
+        }
+        items.sort(Comparator.comparing(FoodItemConfigScreen::idOf, String.CASE_INSENSITIVE_ORDER));
+        return items;
+    }
+
+    private boolean matchesSearch(Item item) {
+        if (searchQuery.isEmpty()) return true;
+        return (idOf(item) + " " + item.getDescription().getString()).toLowerCase(Locale.ROOT).contains(searchQuery);
+    }
+
+    private Tooltip buildTooltip(Item item) {
+        List<AttributeBonus> bonuses = config.bonuses(item);
+
+        if (bonuses.isEmpty()) {
             return Tooltip.create(Component.translatable("config.renourisheddelight.food_items.no_bonuses"));
         }
         MutableComponent text = Component.empty();
 
-        for (int i = 0; i < entry.attributes.size(); i++) {
+        for (int i = 0; i < bonuses.size(); i++) {
             if (i > 0) text.append("\n");
-            text.append(formatBonusLine(entry.attributes.get(i)));
+            text.append(formatBonusLine(bonuses.get(i)));
         }
         return Tooltip.create(text);
     }
@@ -174,7 +189,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
         AttributeModifier.Operation operation = resolveOperation(bonus.operation);
         double display = operation != AttributeModifier.Operation.ADD_VALUE ? bonus.amount * 100.0 : bonus.amount;
-        int effective = bonus.effectiveDuration(config.getMultiplierConfig());
+        int effective = config.effectiveDuration(bonus);
         String durationText = StringUtil.formatTickDuration(bonus.duration, 20);
 
         Component durationComponent = effective != bonus.duration
@@ -195,7 +210,11 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         return AttributeModifier.Operation.ADD_VALUE;
     }
 
-    private @Nullable Item resolveItem(String id) {
+    private static String idOf(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item).toString();
+    }
+
+    private static @Nullable Item resolveItem(String id) {
         try {
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
             return item != Items.AIR ? item : null;
@@ -208,10 +227,9 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         List<SuggestOption> options = new ArrayList<>();
         BuiltInRegistries.ITEM.forEach(item -> {
             if (item == Items.AIR) return;
-            String id = BuiltInRegistries.ITEM.getKey(item).toString();
+            String id = idOf(item);
             String name = item.getDescription().getString();
-            String searchText = (id + " " + name).toLowerCase(Locale.ROOT);
-            options.add(new SuggestOption(id, name, searchText));
+            options.add(new SuggestOption(id, name, (id + " " + name).toLowerCase(Locale.ROOT)));
         });
         options.sort(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER));
         return options;
@@ -219,58 +237,33 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private void addItem() {
         if (!editable) return;
-        String value = newItemField.getValue().trim();
-        if (value.isEmpty()) return;
-        ResourceLocation id;
-
-        try {
-            id = ResourceLocation.parse(value);
-        } catch (Exception exception) {
-            return;
-        }
-        Item item = BuiltInRegistries.ITEM.get(id);
-        if (item == Items.AIR) return;
-        FoodItemEntry entry = createEntry(item);
+        Item item = resolveItem(newItemField.getValue().trim());
+        if (item == null) return;
         newItemField.setValue("");
-        openBonuses(entry);
+        openBonuses(item);
     }
 
-    private FoodItemEntry createEntry(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).toString();
-        FoodItemEntry existing = workingEntries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
-        if (existing != null) return existing;
-
-        List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
-        FoodItemEntry entry = new FoodItemEntry(id, bonuses);
-        workingEntries.add(entry);
-        save();
-        return entry;
-    }
-
-    private void removeItem(FoodItemEntry entry) {
+    private void openBonuses(Item item) {
         if (!editable) return;
-        workingEntries.remove(entry);
+        minecraft.setScreen(new FoodItemBonusScreen(this, config.claim(item), () -> {
+            config.prune(item);
+            save();
+        }));
+    }
+
+    private void resetItem(Item item) {
+        if (!editable) return;
+        config.reset(item);
         save();
         rebuildContent();
     }
 
-    private void resetList() {
+    private void resetAll() {
         if (!editable) return;
-        workingEntries.clear();
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item.components().get(DataComponents.FOOD) != null) {
-                String id = BuiltInRegistries.ITEM.getKey(item).toString();
-                List<AttributeBonus> bonuses = Lists.newArrayList(AttributeBonus.defaultMaxHealth(item));
-                workingEntries.add(new FoodItemEntry(id, bonuses));
-            }
-        }
+        config.foods.clear();
         save();
         scrollOffset = 0;
         rebuildContent();
-    }
-
-    private void openBonuses(FoodItemEntry entry) {
-        minecraft.setScreen(new FoodItemBonusScreen(this, entry, this::save));
     }
 
     @Override
@@ -284,12 +277,11 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         for (IconEntry icon : icons) {
             graphics.renderItem(icon.stack(), icon.x(), icon.y());
         }
-        if (noItemsConfigured) {
-            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.empty"), width / 2, height / 2, 0xAAAAAA);
+        if (noResults) {
+            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.no_results"), width / 2, height / 2, 0xAAAAAA);
         }
     }
 
     private record IconEntry(ItemStack stack, int x, int y) {
-        // do nothing
     }
 }

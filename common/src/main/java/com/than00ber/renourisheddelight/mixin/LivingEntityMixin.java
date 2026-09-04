@@ -23,7 +23,7 @@ public abstract class LivingEntityMixin {
             callback.setReturnValue(true);
             LivingEntity self = (LivingEntity) (Object) this;
             self.addEffect(new MobEffectInstance(
-                    EffectRegistry.NOURISHMENT,
+                    EffectRegistry.nourishment(),
                     instance.getDuration(),
                     instance.getAmplifier(),
                     instance.isAmbient(),
