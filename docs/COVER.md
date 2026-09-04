@@ -22,20 +22,25 @@ Once every food slot is full, eating again grants **Nourishment**. It speeds up 
 
 ## Game Rules
 
-The mod adds seven game rules for server-wide customization:
+The mod adds eleven game rules for server-wide customization:
 
-| Game Rule                                       | Default | Description |
-|-------------------------------------------------|---------| --- |
-| `renourisheddelight:playerStartingHearts`       | 20      | Base max health before any food bonuses |
-| `renourisheddelight:maxConsumableFood`          | 3       | Maximum number of foods active at once |
-| `renourisheddelight:foodDrainRate`              | 100     | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
-| `renourisheddelight:regenHealthTickInterval`    | 60      | Ticks between natural health regeneration (three times faster while nourished) |
-| `renourisheddelight:regenDelayAfterDamage`      | 60      | Ticks to wait after taking damage before natural regen can resume |
-| `renourisheddelight:nourishmentDurationPercent` | 10      | Nourishment duration as a % of the shortest active food, 0 disables Nourishment |
-| `renourisheddelight:doNourishment`              | false   | Whether to give the player the Nourishment effect when full |
-| `renourisheddelight:doStarvation`               | true    | Applies the configured starvation effects while a player has no active food |
+| Game Rule | Default | Description |
+| --- | --- | --- |
+| `renourisheddelight:playerStartingHearts` | 20 | Base max health before any food bonuses |
+| `renourisheddelight:maxConsumableFood` | 3 | Maximum number of foods active at once |
+| `renourisheddelight:foodDrainRate` | 100 | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
+| `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration (three times faster while nourished) |
+| `renourisheddelight:regenDelayAfterDamage` | 60 | Ticks to wait after taking damage before natural regen can resume |
+| `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment duration as a % of the shortest active food |
+| `renourisheddelight:doSleepFoodDrain` | true | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
+| `renourisheddelight:doNourishment` | false | Whether eating while full grants the Nourishment effect |
+| `renourisheddelight:doStarvation` | true | Applies the configured starvation effects while a player has no active food |
+| `renourisheddelight:doReplenish` | true | Whether eating a food you already have active tops it back up, once it is at 50% or less remaining |
+| `renourisheddelight:doReplaceLowest` | true | Whether eating a new food while every slot is full replaces the food with the least time left |
 
-Everything else that used to be its own game rule is now either derived from these or a fixed part of the system: the Hunger effect, health regen and sleeping all drain food at a fixed cost scaled by `foodDrainRate`, and natural regen is disabled while a player has no active food.
+Eating resolves in one of three ways: a food you already have active is topped back up (`doReplenish`, once it is at 50% or less remaining), a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left (`doReplaceLowest`). When a rule turns its case off the food cannot be eaten at all, and the player is told why. Food that carries status effects is still edible in that situation, granting its effects but no slot.
+
+The Hunger effect, health regen and sleeping all drain food at a fixed cost scaled by `foodDrainRate`, and natural regen is disabled while a player has no active food.
 
 ## Configuration
 

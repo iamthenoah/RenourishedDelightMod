@@ -15,8 +15,11 @@ public final class GameRuleRegistry {
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_INTERVAL = register("regenHealthTickInterval", GameRules.IntegerValue.create(60));
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_DELAY_AFTER_DAMAGE = register("regenDelayAfterDamage", GameRules.IntegerValue.create(60));
     public static final GameRules.Key<GameRules.IntegerValue> NOURISHMENT_DURATION_PERCENT = register("nourishmentDurationPercent", GameRules.IntegerValue.create(10));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_SLEEP_FOOD_DRAIN = register("doSleepFoodDrain", GameRules.BooleanValue.create(true));
     public static final GameRules.Key<GameRules.BooleanValue> DO_NOURISHMENT = register("doNourishment", GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> DO_STARVATION = register("doStarvation", GameRules.BooleanValue.create(true));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_REPLENISH = register("doReplenish", GameRules.BooleanValue.create(true));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_REPLACE_LOWEST = register("doReplaceLowest", GameRules.BooleanValue.create(true));
 
     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String id, GameRules.Type<T> value) {
         return GameRules.register(RenourishedDelightMod.MOD_ID + ":" + id, GameRules.Category.PLAYER, value);

@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,6 +26,8 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Unique private static final EntityDataAccessor<Diet> DIET_ACCESSOR = SynchedEntityData.defineId(Player.class, Diet.DATA_SERIALIZER);
     @Unique private static final int NIGHT_DURATION_TICKS = 10917;
+
+    @Unique private static long renourisheddelight$lastSleepDrainTime = -1L;
 
     @Unique private long renourisheddelight$sleepStartDayTime = -1L;
     @Unique private long renourisheddelight$sleepStartGameTime = -1L;
@@ -83,17 +86,25 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void renourisheddelight$stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers, CallbackInfo callback) {
         if (!((Object) this instanceof ServerPlayer player)) return;
-        if (!player.gameMode.isSurvival() || renourisheddelight$sleepStartDayTime == -1L) return;
+        if (renourisheddelight$sleepStartDayTime == -1L) return;
         long slept = player.level().getGameTime() - renourisheddelight$sleepStartGameTime;
         long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
+        long gameTime = player.level().getGameTime();
         renourisheddelight$sleepStartDayTime = -1L;
         renourisheddelight$sleepStartGameTime = -1L;
 
-        if (skipped > 0) {
-            double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
+        MinecraftServer server = player.getServer();
+        if (skipped <= 0 || server == null) return;
+        if (!player.level().getGameRules().getBoolean(GameRuleRegistry.DO_SLEEP_FOOD_DRAIN)) return;
+        if (renourisheddelight$lastSleepDrainTime == gameTime) return;
+        renourisheddelight$lastSleepDrainTime = gameTime;
 
-            if (getDiet().drain(player, (int) Math.round(Diet.SLEEP_DRAIN * fraction))) {
-                updateDiet();
+        double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
+        int drain = (int) Math.round(Diet.SLEEP_DRAIN * fraction);
+
+        for (ServerPlayer other : server.getPlayerList().getPlayers()) {
+            if (other.gameMode.isSurvival() && other instanceof DietHolder holder && holder.getDiet().drain(other, drain)) {
+                holder.updateDiet();
             }
         }
     }

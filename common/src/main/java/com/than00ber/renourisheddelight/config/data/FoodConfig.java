@@ -36,12 +36,12 @@ public final class FoodConfig {
     }
 
     private void copyFrom(List<FoodItemEntry> foods, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) {
-        this.foods = new ArrayList<>();
-        this.multipliers = new ArrayList<>();
-        this.starvation = new ArrayList<>();
-        foods.forEach(x -> this.foods.add(x.copy()));
-        multipliers.forEach(x -> this.multipliers.add(x.copy()));
-        starvation.forEach(x -> this.starvation.add(x.copy()));
+        this.foods.clear();
+        this.multipliers.clear();
+        this.starvation.clear();
+        this.foods.addAll(foods.stream().map(FoodItemEntry::copy).toList());
+        this.multipliers.addAll(multipliers.stream().map(DurationMultiplierEntry::copy).toList());
+        this.starvation.addAll(starvation.stream().map(StarvationEntry::copy).toList());
     }
 
     public @Nullable FoodItemEntry entry(Item item) {

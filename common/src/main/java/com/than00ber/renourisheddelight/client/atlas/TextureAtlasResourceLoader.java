@@ -49,6 +49,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
     private boolean pending;
+    private boolean dirty = true;
     private int attempts;
 
     public @Nullable TextureAtlas getMiniAtlas() {
@@ -63,12 +64,13 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         pending = false;
         attempts = 0;
+        dirty = true;
         scheduleBuild();
     }
 
     private void scheduleBuild() {
         if (pending || attempts >= MAX_ATTEMPTS) return;
-        if (miniAtlas != null && largeAtlas != null) return;
+        if (!dirty && miniAtlas != null && largeAtlas != null) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getOverlay() != null) return;
         pending = true;
@@ -86,7 +88,10 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         long startNanos = System.nanoTime();
 
         try {
-            Collection<Item> items = collectItems();
+            Set<Item> items = new LinkedHashSet<>();
+            BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            items.remove(Items.AIR);
             TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
             TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
             int[] colorPalette = getColorPalette(getGoldenPaletteItem());
@@ -118,30 +123,17 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 large.release();
                 throw new IllegalStateException("no item textures could be rendered");
             }
-            releaseAtlases();
+            if (miniAtlas != null) miniAtlas.release();
+            if (largeAtlas != null) largeAtlas.release();
             miniAtlas = mini;
             largeAtlas = large;
+            dirty = false;
             RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
         } catch (Exception exception) {
             RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas, attempt {} of {}", attempts, MAX_ATTEMPTS, exception);
         } finally {
             pending = false;
         }
-    }
-
-    private void releaseAtlases() {
-        if (miniAtlas != null) miniAtlas.release();
-        if (largeAtlas != null) largeAtlas.release();
-        miniAtlas = null;
-        largeAtlas = null;
-    }
-
-    private static Collection<Item> collectItems() {
-        Set<Item> items = new LinkedHashSet<>();
-        BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
-        BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-        items.remove(Items.AIR);
-        return items;
     }
 
     private @Nullable NativeImage itemToNativeImage(Item item, int dimensions) {

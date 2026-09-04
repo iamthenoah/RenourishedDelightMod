@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.food;
 
-import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
@@ -9,6 +8,7 @@ import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -23,6 +23,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +41,7 @@ public class Diet {
     private static final int REGEN_DRAIN = 3;
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
+    private static final int REPLENISH_THRESHOLD_PERCENT = 50;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
         @Override
@@ -76,25 +78,28 @@ public class Diet {
         ticksSinceDamage = 0;
     }
 
-    public void eat(ServerPlayer player, Item item) {
-        MinecraftServer server = player.getServer();
-        if (server == null) return;
-
-        FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
+    public EatingOutcome toOutcome(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
-        boolean full = slots.size() >= Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        int maxFoods = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        boolean canReplenish = rules.getBoolean(GameRuleRegistry.DO_REPLENISH);
+        boolean canReplaceLowest = rules.getBoolean(GameRuleRegistry.DO_REPLACE_LOWEST);
+
         ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
+        FoodProperties properties = item.components().get(DataComponents.FOOD);
+        boolean hasEffect = properties != null && !properties.effects().isEmpty();
 
         if (active != null) {
-            remove(player, active);
-        } else if (full) {
-            slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).ifPresent(x -> remove(player, x));
+            if (canReplenish && isReplenishable(active)) return EatingOutcome.REPLENISH;
+            return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.NOT_BALANCED;
         }
-        add(player, ConsumableFoodInstance.create(item, config));
+        if (slots.size() < maxFoods) return EatingOutcome.CONSUME;
+        if (canReplaceLowest) return EatingOutcome.REPLACE_LOW;
+        return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.TOO_MANY;
+    }
 
-        if (full) {
-            nourish(player, rules);
-        }
+    private static boolean isReplenishable(ConsumableFoodInstance instance) {
+        long duration = instance.duration();
+        return duration > 0 && (duration - instance.time()) * 100L <= duration * REPLENISH_THRESHOLD_PERCENT;
     }
 
     public boolean drain(ServerPlayer player, int amount) {
@@ -133,7 +138,7 @@ public class Diet {
         slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, false)));
     }
 
-    private void nourish(ServerPlayer player, GameRules rules) {
+    public void nourish(ServerPlayer player, GameRules rules) {
         if (rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT)) {
             int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
 
@@ -195,7 +200,7 @@ public class Diet {
         }
     }
     
-    private void add(ServerPlayer player, ConsumableFoodInstance instance) {
+    public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
 
         for (AttributeModifierInstance bonus : instance.attributes()) {
@@ -209,7 +214,7 @@ public class Diet {
         }
     }
 
-    private void remove(ServerPlayer player, ConsumableFoodInstance instance) {
+    public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.remove(instance);
         instance.attributes().forEach(bonus -> detach(player, bonus, false));
     }
@@ -241,9 +246,9 @@ public class Diet {
     }
 
     private int scale(GameRules rules, int amount) {
-        int total = amount * Math.max(0, rules.getInt(GameRuleRegistry.FOOD_DRAIN_RATE)) + drainRemainder;
-        drainRemainder = total % 100;
-        return total / 100;
+        long total = (long) amount * Math.max(0, rules.getInt(GameRuleRegistry.FOOD_DRAIN_RATE)) + drainRemainder;
+        drainRemainder = (int) (total % 100L);
+        return (int) Math.min(Integer.MAX_VALUE, total / 100L);
     }
 
     public static CompoundTag save(Diet diet) {

@@ -38,6 +38,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private final List<IconEntry> icons = new ArrayList<>();
     private final List<AbstractWidget> rowWidgets = new ArrayList<>();
 
+    private List<Item> items = List.of();
     private EditBox newItemField;
     private String searchQuery = "";
     private boolean noResults;
@@ -51,8 +52,9 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     protected void init() {
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
+        items = listItems();
 
-        modFilterField = new ModFilterField(() -> listItems().stream().map(FoodItemConfigScreen::idOf).toList(), namespace -> rebuildContent());
+        modFilterField = new ModFilterField(() -> items.stream().map(FoodItemConfigScreen::idOf).toList(), namespace -> rebuildContent());
 
         EditBox searchField = new EditBox(font, left, 30, 170, 20, Component.translatable("config.renourisheddelight.food_items.search"));
         searchField.setMaxLength(256);
@@ -98,7 +100,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         int centerX = width / 2;
         modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
-        List<Item> filtered = listItems().stream()
+        List<Item> filtered = items.stream()
                 .filter(item -> modFilterField.matches(idOf(item)))
                 .filter(this::matchesSearch)
                 .toList();
@@ -240,6 +242,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         Item item = resolveItem(newItemField.getValue().trim());
         if (item == null) return;
         newItemField.setValue("");
+        config.claim(item);
+        items = listItems();
         openBonuses(item);
     }
 
@@ -254,6 +258,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void resetItem(Item item) {
         if (!editable) return;
         config.reset(item);
+        items = listItems();
         save();
         rebuildContent();
     }
@@ -261,6 +266,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void resetAll() {
         if (!editable) return;
         config.foods.clear();
+        items = listItems();
         save();
         scrollOffset = 0;
         rebuildContent();

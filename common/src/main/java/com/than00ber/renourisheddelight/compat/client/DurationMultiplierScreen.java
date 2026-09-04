@@ -27,6 +27,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
     private final @Nullable Screen parent;
     private final List<MultiplierRow> rows = new ArrayList<>();
+    private List<Attribute> attributes = List.of();
     private String searchQuery = "";
     private boolean noResults;
 
@@ -38,8 +39,9 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
     @Override
     protected void init() {
         int centerX = width / 2;
+        attributes = listAttributes();
 
-        modFilterField = new ModFilterField(() -> listAttributes().stream().map(DurationMultiplierScreen::idOf).toList(), namespace -> rebuildContent());
+        modFilterField = new ModFilterField(() -> attributes.stream().map(DurationMultiplierScreen::idOf).toList(), namespace -> rebuildContent());
 
         EditBox searchField = new EditBox(font, centerX - SIDE_MARGIN, 30, 170, 20, Component.translatable("config.renourisheddelight.duration_multipliers.search"));
         searchField.setMaxLength(256);
@@ -80,7 +82,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
 
         modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
 
-        List<Attribute> filtered = listAttributes().stream()
+        List<Attribute> filtered = attributes.stream()
                 .filter(attribute -> modFilterField.matches(idOf(attribute)))
                 .filter(this::matchesSearch)
                 .toList();
@@ -131,7 +133,7 @@ public final class DurationMultiplierScreen extends AbstractFoodConfigScreen {
         if (!editable) return;
 
         for (MultiplierRow row : rows) {
-            config.setMultiplier(row.attribute(), parseDouble(row.multiplier().getValue(), 1.0));
+            config.setMultiplier(row.attribute(), parseDouble(row.multiplier().getValue(), config.multiplier(row.attribute())));
         }
     }
 
