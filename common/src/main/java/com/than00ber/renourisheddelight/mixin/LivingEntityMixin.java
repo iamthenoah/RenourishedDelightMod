@@ -1,8 +1,10 @@
 package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,6 +31,16 @@ public abstract class LivingEntityMixin {
                     instance.isAmbient(),
                     instance.isVisible(),
                     instance.showIcon()));
+        }
+    }
+
+    @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
+    private void renourisheddelight$hasEffect(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> callback) {
+        if (!FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(effect.value()))) return;
+        LivingEntity self = (LivingEntity) (Object) this;
+
+        if (self.hasEffect(EffectRegistry.nourishment())) {
+            callback.setReturnValue(true);
         }
     }
 }
