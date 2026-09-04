@@ -33,6 +33,13 @@ versionRange = "[${architecturyApiVersion},)"
 ordering = "AFTER"
 side = "BOTH"
 
+[[dependencies.${modId}]]
+modId = "cloth_config"
+type = "required"
+versionRange = "[${clothConfigVersion},)"
+ordering = "AFTER"
+side = "BOTH"
+
 [[mixins]]
 config = "${modId}.common.mixins.json"
 
