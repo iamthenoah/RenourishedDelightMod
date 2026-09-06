@@ -138,6 +138,18 @@ public class Diet {
         slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, false)));
     }
 
+    public boolean clear(ServerPlayer player) {
+        if (slots.isEmpty()) return false;
+        slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, true)));
+        slots.clear();
+        regen = 0;
+        drainTimer = 0;
+        drainRemainder = 0;
+        starving = 0;
+        player.removeEffect(EffectRegistry.nourishment());
+        return true;
+    }
+
     public void nourish(ServerPlayer player, GameRules rules) {
         if (rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT)) {
             int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);

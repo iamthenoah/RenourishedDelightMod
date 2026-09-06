@@ -8,6 +8,7 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
+import com.than00ber.renourisheddelight.registry.CommandRegistry;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import com.than00ber.renourisheddelight.registry.PotionRegistry;
@@ -25,6 +26,7 @@ public final class RenourishedDelightMod {
         ClientConfiguration.init();
         CommonConfiguration.init();
         GameRuleRegistry.init();
+        CommandRegistry.init();
         FoodConfigReloadListener.init();
         SuppressHurtFlashPayload.init();
         FoodConfigSyncPayload.init();
