@@ -37,6 +37,7 @@
   "config.renourisheddelight.reset": "Reset",
   "config.renourisheddelight.reset_all": "Reset All",
   "config.renourisheddelight.reset_confirm": "Are you sure?",
+  "config.renourisheddelight.client": "Client Settings...",
   "config.renourisheddelight.client.hud_position": "Reposition Hunger HUD",
   "config.renourisheddelight.client.golden_palette_item_hint": "Item ID, minecraft:gold_ingot",
   "config.renourisheddelight.client.hud_position.hint": "Drag the food HUD to reposition, then press Escape to save.",
@@ -79,7 +80,9 @@
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem": "Golden Palette Item",
   "text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip": "Item ID to sample for the golden-effect color palette for the %s effect.",
   "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory": "Display Timers In Inventory",
+  "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory.@Tooltip": "Render the active food items panel next to the inventory screen.",
   "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart": "Clip Unfillable Heart",
+  "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart.@Tooltip": "Clip the last heart's unfillable half when your max health is an odd number, instead of showing a half heart that can never fill.",
   "text.autoconfig.renourisheddelight/client.option.compactHealthBar": "Compact Health Bar",
   "text.autoconfig.renourisheddelight/client.option.compactHealthBar.@Tooltip": "Always draw 10 hearts on a single row and fill them proportionally to your max health, instead of stacking extra rows."
 }
