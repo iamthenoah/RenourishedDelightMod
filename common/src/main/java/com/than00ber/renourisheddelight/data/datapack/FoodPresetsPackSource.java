@@ -51,7 +51,7 @@ public final class FoodPresetsPackSource implements RepositorySource {
     }
 
     private Path getPackRoot() {
-        URL url = RenourishedDelightMod.class.getResource("/datapacks/food_presets/pack.mcmeta");
+        URL url = RenourishedDelightMod.class.getResource("/datapacks/foodpresets/pack.mcmeta");
 
         try {
             return url != null ? Path.of(url.toURI()).getParent() : null;
