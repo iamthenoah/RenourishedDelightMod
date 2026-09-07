@@ -30,7 +30,7 @@ import java.util.Map;
 
 public final class FoodConfigReloadListener extends SimpleJsonResourceReloadListener {
 
-    public static final ResourceLocation PRESETS_KEY =  RenourishedDelightMod.key("presets");
+    public static final ResourceLocation PRESETS_KEY =  RenourishedDelightMod.key("foodpresets");
     public static volatile List<FoodItemEntry> PRESETS = List.of();
 
     public static void init() {
@@ -38,7 +38,7 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
     }
 
     public FoodConfigReloadListener() {
-        super(new Gson(), "presets");
+        super(new Gson(), "foodpresets");
     }
 
     @Override
