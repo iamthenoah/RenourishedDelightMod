@@ -24,19 +24,20 @@ public abstract class ItemMixin implements FeatureElement, ItemLike, InjectedIte
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     public void renourisheddelight$use(Level level, Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResultHolder<ItemStack>> callback) {
         ItemStack stack = player.getItemInHand(hand);
+        if (!stack.has(DataComponents.FOOD) || !(player instanceof DietHolder holder)) return;
 
-        if (stack.getItem().components().has(DataComponents.FOOD) && !level.isClientSide() && player instanceof DietHolder holder) {
-            EatingOutcome outcome = holder.getDiet().toOutcome((ServerPlayer) player, stack.getItem());
-            outcome.message().ifPresent(x -> player.displayClientMessage(x, true));
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            callback.setReturnValue(InteractionResultHolder.pass(stack));
+            return;
+        }
+        EatingOutcome outcome = holder.getDiet().toOutcome(serverPlayer, stack.getItem());
+        outcome.message().ifPresent(x -> player.displayClientMessage(x, true));
 
-            if (outcome.isSuccess()) {
-                player.startUsingItem(hand);
-                callback.setReturnValue(InteractionResultHolder.consume(stack));
-            } else {
-                callback.setReturnValue(InteractionResultHolder.fail(stack));
-            }
+        if (outcome.isSuccess()) {
+            player.startUsingItem(hand);
+            callback.setReturnValue(InteractionResultHolder.consume(stack));
         } else {
-            callback.setReturnValue(InteractionResultHolder.pass(player.getItemInHand(hand)));
+            callback.setReturnValue(InteractionResultHolder.fail(stack));
         }
     }
 }

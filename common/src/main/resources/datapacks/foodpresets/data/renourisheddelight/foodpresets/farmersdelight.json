@@ -1,7 +1,6 @@
 [
   {
     "item": "farmersdelight:apple_pie",
-    "override": true,
     "attributes": [
       {
         "attribute": "minecraft:generic.max_health",
@@ -13,7 +12,6 @@
   },
   {
     "item": "farmersdelight:chocolate_pie",
-    "override": true,
     "attributes": [
       {
         "attribute": "minecraft:generic.max_health",
@@ -25,7 +23,6 @@
   },
   {
     "item": "farmersdelight:sweet_berry_cheesecake",
-    "override": true,
     "attributes": [
       {
         "attribute": "minecraft:generic.max_health",

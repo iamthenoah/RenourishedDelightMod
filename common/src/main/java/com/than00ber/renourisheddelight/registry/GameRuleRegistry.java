@@ -9,25 +9,17 @@ public final class GameRuleRegistry {
         // do nothing
     }
 
-    public static final GameRules.Key<GameRules.IntegerValue> PLAYER_STARTING_HEARTS = register("playerStartingHearts", GameRules.IntegerValue.create(20));
-    public static final GameRules.Key<GameRules.IntegerValue> MAX_CONSUMABLE_FOOD = register("maxConsumableFood", GameRules.IntegerValue.create(3));
-    public static final GameRules.Key<GameRules.BooleanValue> ALLOW_EATING_SAME_ITEM = register("allowEatingTheSameItem", GameRules.BooleanValue.create(false));
-    public static final GameRules.Key<GameRules.BooleanValue> REPLACE_LOWEST_FOOD_ITEM = register("replaceLowestFoodItem", GameRules.BooleanValue.create(false));
-    public static final GameRules.Key<GameRules.IntegerValue> FOOD_REPLENISHABLE_THRESHOLD = register("foodReplenishableThreshold", GameRules.IntegerValue.create(50));
-    public static final GameRules.Key<GameRules.BooleanValue> FOOD_ITEM_STACKS = register("foodItemStacks", GameRules.BooleanValue.create(true));
-    public static final GameRules.Key<GameRules.IntegerValue> HUNGER_FOOD_DRAIN = register("hungerFoodDrain", GameRules.IntegerValue.create(2));
-    public static final GameRules.Key<GameRules.IntegerValue> REGEN_HEALTH_TICK_INTERVAL = register("regenHealthTickInterval", GameRules.IntegerValue.create(60));
-    public static final GameRules.Key<GameRules.IntegerValue> REGEN_HEALTH_FOOD_DRAIN = register("regenHealthFoodDrain", GameRules.IntegerValue.create(3));
-    public static final GameRules.Key<GameRules.BooleanValue> APPLY_NOURISHMENT_WHEN_FULL = register("applyNourishmentWhenFull", GameRules.BooleanValue.create(false));
-    public static final GameRules.Key<GameRules.IntegerValue> NOURISHMENT_DURATION_PERCENT = register("nourishmentDurationPercent", GameRules.IntegerValue.create(10));
+    public static final GameRules.Key<GameRules.IntegerValue> STARTING_HEARTS = register("playerStartingHearts", GameRules.IntegerValue.create(20));
+    public static final GameRules.Key<GameRules.IntegerValue> MAX_ACTIVE_FOODS = register("maxConsumableFood", GameRules.IntegerValue.create(3));
+    public static final GameRules.Key<GameRules.IntegerValue> FOOD_DRAIN_RATE = register("foodDrainRate", GameRules.IntegerValue.create(100));
+    public static final GameRules.Key<GameRules.IntegerValue> REGEN_INTERVAL = register("regenHealthTickInterval", GameRules.IntegerValue.create(60));
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_DELAY_AFTER_DAMAGE = register("regenDelayAfterDamage", GameRules.IntegerValue.create(60));
-    public static final GameRules.Key<GameRules.IntegerValue> SLEEP_FOOD_DRAIN = register("sleepFoodDrain", GameRules.IntegerValue.create(12000));
-    public static final GameRules.Key<GameRules.IntegerValue> ATTACK_FOOD_DRAIN = register("attackFoodDrain", GameRules.IntegerValue.create(0));
-    public static final GameRules.Key<GameRules.IntegerValue> JUMP_FOOD_DRAIN = register("jumpFoodDrain", GameRules.IntegerValue.create(0));
-    public static final GameRules.Key<GameRules.IntegerValue> SPRINT_FOOD_DRAIN = register("sprintFoodDrain", GameRules.IntegerValue.create(0));
-    public static final GameRules.Key<GameRules.BooleanValue> DISABLE_HEALTH_REGEN_WHEN_HUNGRY = register("disableHealthRegenWhenHungry", GameRules.BooleanValue.create(true));
+    public static final GameRules.Key<GameRules.IntegerValue> NOURISHMENT_DURATION_PERCENT = register("nourishmentDurationPercent", GameRules.IntegerValue.create(10));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_SLEEP_FOOD_DRAIN = register("doSleepFoodDrain", GameRules.BooleanValue.create(true));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_NOURISHMENT = register("doNourishment", GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> DO_STARVATION = register("doStarvation", GameRules.BooleanValue.create(true));
-    public static final GameRules.Key<GameRules.IntegerValue> NOURISHMENT_REGEN_TICK_INTERVAL = register("nourishmentRegenTickInterval", GameRules.IntegerValue.create(20));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_REPLENISH = register("doReplenish", GameRules.BooleanValue.create(true));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_REPLACE_LOWEST = register("doReplaceLowest", GameRules.BooleanValue.create(true));
 
     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String id, GameRules.Type<T> value) {
         return GameRules.register(RenourishedDelightMod.MOD_ID + ":" + id, GameRules.Category.PLAYER, value);

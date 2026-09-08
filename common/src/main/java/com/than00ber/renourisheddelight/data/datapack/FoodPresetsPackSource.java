@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.data.datapack;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.*;
 import net.minecraft.server.packs.repository.Pack;
@@ -20,8 +21,8 @@ public final class FoodPresetsPackSource implements RepositorySource {
         Path root = getPackRoot();
 
         if (root != null) {
-            String location = "mod/" + RenourishedDelightMod.MOD_ID + ":presets";
-            Component name = Component.translatable("pack." + RenourishedDelightMod.MOD_ID + ".presets");
+            String location = "mod/" + FoodConfigReloadListener.PRESETS_KEY;
+            Component name = Component.translatable("pack." + RenourishedDelightMod.MOD_ID + ".foodpresets");
             PackLocationInfo info = new PackLocationInfo(location, name, PackSource.BUILT_IN, Optional.empty());
             Pack.ResourcesSupplier supplier = getResourcesSupplier(info, root);
             PackSelectionConfig packet = new PackSelectionConfig(false, Pack.Position.TOP, false);
@@ -50,7 +51,7 @@ public final class FoodPresetsPackSource implements RepositorySource {
     }
 
     private Path getPackRoot() {
-        URL url = RenourishedDelightMod.class.getResource("/datapacks/food_presets/pack.mcmeta");
+        URL url = RenourishedDelightMod.class.getResource("/datapacks/foodpresets/pack.mcmeta");
 
         try {
             return url != null ? Path.of(url.toURI()).getParent() : null;

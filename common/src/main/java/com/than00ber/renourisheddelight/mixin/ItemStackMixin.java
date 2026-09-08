@@ -20,7 +20,7 @@ public abstract class ItemStackMixin {
     private void renourisheddelight$finishUsingItem(Level level, LivingEntity entity, CallbackInfoReturnable<ItemStack> callback) {
         ItemStack stack = (ItemStack) (Object) this;
 
-        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.get(DataComponents.FOOD) != null) {
+        if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.has(DataComponents.FOOD)) {
             Diet diet = holder.getDiet();
             EatingOutcome outcome = diet.toOutcome(player, stack.getItem());
 

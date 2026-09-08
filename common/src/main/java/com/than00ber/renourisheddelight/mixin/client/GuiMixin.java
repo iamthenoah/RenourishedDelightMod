@@ -1,11 +1,15 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
+import com.than00ber.renourisheddelight.client.overlay.CompactHealthBar;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
@@ -17,17 +21,25 @@ public abstract class GuiMixin {
 
     @Unique private static final int HEART_SIZE = 9;
 
+    @Shadow @Final private RandomSource random;
+    @Shadow private int tickCount;
+
     @Unique private boolean renourisheddelight$clipActive;
     @Unique private boolean renourisheddelight$clipBlinking;
     @Unique private int renourisheddelight$clipX;
     @Unique private int renourisheddelight$clipY;
     @Unique private int renourisheddelight$clipDrawY;
 
-    @Inject(method = "renderHearts", at = @At("HEAD"))
+    @Inject(method = "renderHearts", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$renderHeartsStart(GuiGraphics guiGraphics, Player player, int left, int top, int rowHeight, int regenIndex, float maxHealth, int health, int displayHealth, int absorptionAmount, boolean highlight, CallbackInfo callback) {
         renourisheddelight$clipActive = false;
         renourisheddelight$clipBlinking = highlight;
 
+        if (ClientConfiguration.getInstance().compactHealthBar) {
+            CompactHealthBar.render(guiGraphics, player, random, left, top, tickCount, regenIndex >= 0, maxHealth, health, displayHealth, absorptionAmount, highlight);
+            callback.cancel();
+            return;
+        }
         if (ClientConfiguration.getInstance().clipOddMaxHealthHeart && Mth.ceil(maxHealth) % 2 != 0) {
             int index = Mth.ceil((double) maxHealth / 2.0) - 1;
             int row = index / 10;

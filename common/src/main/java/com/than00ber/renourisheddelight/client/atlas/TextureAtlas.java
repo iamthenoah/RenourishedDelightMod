@@ -11,13 +11,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public record TextureAtlas(Map<Item, Texture[]> textures) {
+public record TextureAtlas(ResourceLocation name, Map<Item, Texture[]> textures) {
 
     private static final int ICONS_PER_ROW = 5;
     private static final int MAX_ROWS = 30;
 
     public @Nullable Texture[] getTextures(Item item) {
         return textures.get(item);
+    }
+
+    public void release() {
+        Minecraft.getInstance().getTextureManager().release(name);
     }
 
     public static class Builder {
@@ -65,8 +69,8 @@ public record TextureAtlas(Map<Item, Texture[]> textures) {
         }
 
         public TextureAtlas done() {
-            texture.upload(); // update texture with image data
-            return new TextureAtlas(textures);
+            texture.upload();
+            return new TextureAtlas(name, textures);
         }
     }
 }

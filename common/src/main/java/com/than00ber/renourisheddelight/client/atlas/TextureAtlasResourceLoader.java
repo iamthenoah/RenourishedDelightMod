@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import dev.architectury.event.events.client.ClientTickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -29,21 +30,27 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
 
 public class TextureAtlasResourceLoader implements ResourceManagerReloadListener {
 
     private static final TextureAtlasResourceLoader INSTANCE = new TextureAtlasResourceLoader();
+    private static final int MAX_ATTEMPTS = 5;
 
     public static TextureAtlasResourceLoader getInstance() {
         return INSTANCE;
     }
 
+    public static void init() {
+        ClientTickEvent.CLIENT_POST.register(minecraft -> INSTANCE.scheduleBuild());
+    }
+
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
+    private boolean pending;
+    private boolean dirty = true;
+    private int attempts;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -55,47 +62,78 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        Minecraft.getInstance().tell(() -> {
-            long startNanos = System.nanoTime();
+        pending = false;
+        attempts = 0;
+        dirty = true;
+        scheduleBuild();
+    }
 
-            try {
-                List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
-                        .filter(x -> x.components().has(DataComponents.FOOD))
-                        .toList());
-                BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+    private void scheduleBuild() {
+        if (pending || attempts >= MAX_ATTEMPTS) return;
+        if (!dirty && miniAtlas != null && largeAtlas != null) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getOverlay() != null) return;
+        pending = true;
+        minecraft.tell(this::build);
+    }
 
-                TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
-                TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
-                int[] colorPalette = getColorPalette(getGoldenPaletteItem());
+    private void build() {
+        Minecraft minecraft = Minecraft.getInstance();
 
-                for (Item item : items) {
-                    NativeImage baseMini = itemToNativeImage(item, 9);
-                    NativeImage baseLarge = itemToNativeImage(item, 18);
+        if (minecraft.getOverlay() != null) {
+            pending = false;
+            return;
+        }
+        attempts++;
+        long startNanos = System.nanoTime();
 
-                    if (baseMini != null) {
-                        miniBuilder.appendTexture(0, item, baseMini)
-                                .appendTexture(1, item, makeHunger(baseMini))
-                                .appendTexture(2, item, makeSilhouette(baseMini))
-                                .appendTexture(3, item, makeOutlined(baseMini))
-                                .appendTexture(4, item, makeGolden(baseMini, colorPalette));
-                    }
-                    if (baseLarge != null) {
-                        largeBuilder.appendTexture(0, item, baseLarge)
-                                .appendTexture(1, item, makeHunger(baseLarge))
-                                .appendTexture(2, item, makeSilhouette(baseLarge))
-                                .appendTexture(3, item, makeOutlined(baseLarge))
-                                .appendTexture(4, item, makeGolden(baseLarge, colorPalette));
-                    }
+        try {
+            Set<Item> items = new LinkedHashSet<>();
+            BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            items.remove(Items.AIR);
+            TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
+            TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
+            int[] colorPalette = getColorPalette(getGoldenPaletteItem());
+
+            for (Item item : items) {
+                NativeImage baseMini = itemToNativeImage(item, 9);
+                NativeImage baseLarge = itemToNativeImage(item, 18);
+
+                if (baseMini != null) {
+                    miniBuilder.appendTexture(0, item, baseMini)
+                            .appendTexture(1, item, makeHunger(baseMini))
+                            .appendTexture(2, item, makeSilhouette(baseMini))
+                            .appendTexture(3, item, makeOutlined(baseMini))
+                            .appendTexture(4, item, makeGolden(baseMini, colorPalette));
                 }
-                miniAtlas = miniBuilder.done();
-                largeAtlas = largeBuilder.done();
-            } catch (Exception exception) {
-                RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas", exception);
-            } finally {
-                long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
-                RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", elapsedMs);
+                if (baseLarge != null) {
+                    largeBuilder.appendTexture(0, item, baseLarge)
+                            .appendTexture(1, item, makeHunger(baseLarge))
+                            .appendTexture(2, item, makeSilhouette(baseLarge))
+                            .appendTexture(3, item, makeOutlined(baseLarge))
+                            .appendTexture(4, item, makeGolden(baseLarge, colorPalette));
+                }
             }
-        });
+            TextureAtlas mini = miniBuilder.done();
+            TextureAtlas large = largeBuilder.done();
+
+            if (mini.textures().isEmpty() || large.textures().isEmpty()) {
+                mini.release();
+                large.release();
+                throw new IllegalStateException("no item textures could be rendered");
+            }
+            if (miniAtlas != null) miniAtlas.release();
+            if (largeAtlas != null) largeAtlas.release();
+            miniAtlas = mini;
+            largeAtlas = large;
+            dirty = false;
+            RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
+        } catch (Exception exception) {
+            RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas, attempt {} of {}", attempts, MAX_ATTEMPTS, exception);
+        } finally {
+            pending = false;
+        }
     }
 
     private @Nullable NativeImage itemToNativeImage(Item item, int dimensions) {
