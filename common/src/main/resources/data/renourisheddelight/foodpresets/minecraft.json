@@ -1,7 +1,6 @@
 [
   {
     "item": "minecraft:cake",
-    "override": true,
     "attributes": [
       {
         "attribute": "minecraft:generic.max_health",

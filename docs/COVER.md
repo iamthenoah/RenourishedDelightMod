@@ -18,32 +18,29 @@ Different foods give different bonuses and last different amounts of time, so ea
 
 ## Nourishment
 
-If you eat food while you're already at your max number of active food slots, you get **Nourishment**. It speeds up your natural health regen a lot and stops the extra food drain that normally comes with the Hunger effect. It's basically a reward for keeping your food topped up instead of letting your buffs expire before eating again.
+Once every food slot is full, eating again grants **Nourishment**. It speeds up natural health regen and stops the extra food drain that normally comes with the Hunger effect. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
 
 ## Game Rules
 
-The mod adds several game rules for server-wide customization:
+The mod adds eleven game rules for server-wide customization:
 
 | Game Rule | Default | Description |
 | --- | --- | --- |
-| `renourisheddelight:playerStartingHearts` | 20 | Hearts players start with when joining/respawning |
-| `renourisheddelight:maxConsumableFood` | 3 | Maximum number of different foods active at once |
-| `renourisheddelight:allowEatingTheSameItem` | false | Whether players can eat multiple of the same food |
-| `renourisheddelight:replaceLowestFoodItem` | false | Whether eating food replaces the food with the least time remaining when full |
-| `renourisheddelight:foodReplenishableThreshold` | 50 | % of a food's duration that must have passed before it can be eaten again to top it back up |
-| `renourisheddelight:foodItemStacks` | true | Whether same food items tick down simultaneously |
-| `renourisheddelight:hungerFoodDrain` | 2 | Extra food drained per second while the player has the Hunger effect |
-| `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration |
-| `renourisheddelight:regenHealthFoodDrain` | 3 | Food drained each time health regenerates |
-| `renourisheddelight:applyNourishmentWhenFull` | true | Whether players receive the Nourishment effect when full |
-| `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment's duration, as a % of the shortest remaining active food duration |
-| `renourisheddelight:nourishmentRegenTickInterval` | 20 | Ticks between natural health regeneration while nourished (lower is faster) |
+| `renourisheddelight:playerStartingHearts` | 20 | Base max health before any food bonuses |
+| `renourisheddelight:maxConsumableFood` | 3 | Maximum number of foods active at once |
+| `renourisheddelight:foodDrainRate` | 100 | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
+| `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration (three times faster while nourished) |
 | `renourisheddelight:regenDelayAfterDamage` | 60 | Ticks to wait after taking damage before natural regen can resume |
-| `renourisheddelight:sleepFoodDrain` | 12000 | Ticks of food drained for sleeping through a full night, scaled down for a partial night's sleep |
-| `renourisheddelight:attackFoodDrain` | 0 | Extra ticks of food drained each time a player attacks |
-| `renourisheddelight:jumpFoodDrain` | 0 | Extra ticks of food drained each time a player jumps |
-| `renourisheddelight:sprintFoodDrain` | 0 | Extra ticks of food drained per second while a player is sprinting |
-| `renourisheddelight:disableHealthRegenWhenHungry` | true | When the player has an empty stomach, health regen will be disabled. |
+| `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment duration as a % of the shortest active food |
+| `renourisheddelight:doSleepFoodDrain` | true | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
+| `renourisheddelight:doNourishment` | false | Whether eating while full grants the Nourishment effect |
+| `renourisheddelight:doStarvation` | true | Applies the configured starvation effects while a player has no active food |
+| `renourisheddelight:doReplenish` | true | Whether eating a food you already have active tops it back up, once it is at 50% or less remaining |
+| `renourisheddelight:doReplaceLowest` | true | Whether eating a new food while every slot is full replaces the food with the least time left |
+
+Eating resolves in one of three ways: a food you already have active is topped back up (`doReplenish`, once it is at 50% or less remaining), a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left (`doReplaceLowest`). When a rule turns its case off the food cannot be eaten at all, and the player is told why. Food that carries status effects is still edible in that situation, granting its effects but no slot.
+
+The Hunger effect, health regen and sleeping all drain food at a fixed cost scaled by `foodDrainRate`, and natural regen is disabled while a player has no active food.
 
 ## Configuration
 
@@ -73,8 +70,9 @@ The configs are also available as config files:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `foodItemConfigurations` | `[]` | Per-item attribute bonuses (auto-populated on first launch, editable from the in-game config screen) |
-| `durationMultipliers` | `[]` | Per-attribute duration multipliers applied when a bonus is granted, editable from the in-game config screen; stored per-item durations are unaffected |
+| `config.foods` | `[]` | Per-item attribute bonuses. Only items you customize are listed; anything left out falls back to a max health bonus derived from its nutrition and saturation. An entry is the full definition for that item, so listing only a swim speed bonus grants only swim speed |
+| `config.multipliers` | `[]` | Per-attribute duration multipliers applied when a bonus is granted. Attributes left out use `1.0`; stored per-item durations are unaffected |
+| `config.starvation` | slowness, mining fatigue, weakness | Effects applied in stages while a player has no active food |
 
 </details>
 

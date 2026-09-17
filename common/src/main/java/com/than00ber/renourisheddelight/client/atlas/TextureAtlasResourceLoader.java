@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import dev.architectury.event.events.client.ClientTickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -28,22 +29,28 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class TextureAtlasResourceLoader implements ResourceManagerReloadListener {
 
     private static final TextureAtlasResourceLoader INSTANCE = new TextureAtlasResourceLoader();
+    private static final int MINI_SIZE = 9;
+    private static final int LARGE_SIZE = 18;
 
     public static TextureAtlasResourceLoader getInstance() {
         return INSTANCE;
     }
 
+    public static void init() {
+        ClientTickEvent.CLIENT_POST.register(INSTANCE::rebuildIfStale);
+    }
+
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
+    private boolean stale = true;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -55,47 +62,65 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        Minecraft.getInstance().tell(() -> {
-            long startNanos = System.nanoTime();
+        stale = true;
+    }
 
-            try {
-                List<Item> items = new ArrayList<>(BuiltInRegistries.ITEM.stream()
-                        .filter(x -> x.components().has(DataComponents.FOOD))
-                        .toList());
-                BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+    private void rebuildIfStale(Minecraft minecraft) {
+        if (stale && minecraft.getOverlay() == null) {
+            stale = false;
+            build();
+        }
+    }
 
-                TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", 9, items.size());
-                TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", 18, items.size());
-                int[] colorPalette = getColorPalette(getGoldenPaletteItem());
+    private void build() {
+        long startNanos = System.nanoTime();
 
-                for (Item item : items) {
-                    NativeImage baseMini = itemToNativeImage(item, 9);
-                    NativeImage baseLarge = itemToNativeImage(item, 18);
+        try {
+            Set<Item> items = new LinkedHashSet<>();
+            BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            items.remove(Items.AIR);
+            TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", MINI_SIZE, items.size());
+            TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", LARGE_SIZE, items.size());
+            int[] palette = getColorPalette(getGoldenPaletteItem());
 
-                    if (baseMini != null) {
-                        miniBuilder.appendTexture(0, item, baseMini)
-                                .appendTexture(1, item, makeHunger(baseMini))
-                                .appendTexture(2, item, makeSilhouette(baseMini))
-                                .appendTexture(3, item, makeOutlined(baseMini))
-                                .appendTexture(4, item, makeGolden(baseMini, colorPalette));
-                    }
-                    if (baseLarge != null) {
-                        largeBuilder.appendTexture(0, item, baseLarge)
-                                .appendTexture(1, item, makeHunger(baseLarge))
-                                .appendTexture(2, item, makeSilhouette(baseLarge))
-                                .appendTexture(3, item, makeOutlined(baseLarge))
-                                .appendTexture(4, item, makeGolden(baseLarge, colorPalette));
-                    }
-                }
-                miniAtlas = miniBuilder.done();
-                largeAtlas = largeBuilder.done();
-            } catch (Exception exception) {
-                RenourishedDelightMod.LOGGER.warn("Failed to generate item icon atlas", exception);
-            } finally {
-                long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
-                RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", elapsedMs);
+            for (Item item : items) {
+                appendItem(miniBuilder, item, MINI_SIZE, palette);
+                appendItem(largeBuilder, item, LARGE_SIZE, palette);
             }
-        });
+            TextureAtlas mini = miniBuilder.done();
+            TextureAtlas large = largeBuilder.done();
+
+            if (mini.textures().isEmpty() || large.textures().isEmpty()) {
+                mini.release();
+                large.release();
+                throw new IllegalStateException("no item textures could be rendered");
+            }
+            if (miniAtlas != null) miniAtlas.release();
+            if (largeAtlas != null) largeAtlas.release();
+            miniAtlas = mini;
+            largeAtlas = large;
+            RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
+        } catch (Exception exception) {
+            RenourishedDelightMod.LOGGER.error("Failed to generate item icon atlas", exception);
+        }
+    }
+
+    private void appendItem(TextureAtlas.Builder builder, Item item, int dimensions, int @Nullable [] palette) {
+        try (NativeImage base = itemToNativeImage(item, dimensions)) {
+            if (base != null) {
+                try (NativeImage hunger = makeHunger(base); 
+                     NativeImage silhouette = makeSilhouette(base);
+                     NativeImage outlined = makeOutlined(base);
+                     NativeImage golden = makeGolden(base, palette)) {
+                    builder.appendTexture(0, item, base)
+                            .appendTexture(1, item, hunger)
+                            .appendTexture(2, item, silhouette)
+                            .appendTexture(3, item, outlined)
+                            .appendTexture(4, item, golden);
+                }
+            }
+        }
     }
 
     private @Nullable NativeImage itemToNativeImage(Item item, int dimensions) {
@@ -104,44 +129,39 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         ItemStack stack = new ItemStack(item);
 
         RenderTarget target = new MainTarget(dimensions, dimensions);
-        target.setClearColor(0f, 0f, 0f, 0f);
+        target.setClearColor(0F, 0F, 0F, 0F);
         target.clear(Minecraft.ON_OSX);
         target.bindWrite(true);
 
         RenderSystem.backupProjectionMatrix();
-        Matrix4f projection = new Matrix4f().setOrtho(0, 16, 16, 0, -1000, 1000);
-        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, 16, 16, 0, -1000, 1000), VertexSorting.ORTHOGRAPHIC_Z);
 
         PoseStack poseStack = new PoseStack();
         poseStack.pushPose();
-        poseStack.translate(8f, 8f, 150f); // 150 matches GuiGraphics.renderItem z depth
-        poseStack.scale(1f, -1f, 1f);      // flip Y to match screen coords
-        poseStack.scale(16f, 16f, 16f);    // scale to fill the 16x16 space
-
+        poseStack.translate(8F, 8F, 150F); // 150 matches GuiGraphics.renderItem z depth
+        poseStack.scale(1F, -1F, 1F);      // flip Y to match screen coords
+        poseStack.scale(16F, 16F, 16F);    // scale to fill the 16x16 space
         Lighting.setupForFlatItems();
-        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
-        BakedModel model = itemRenderer.getModel(stack, null, null, 0);
 
         try {
+            MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+            BakedModel model = itemRenderer.getModel(stack, null, null, 0);
             itemRenderer.render(stack, ItemDisplayContext.GUI, false, poseStack, bufferSource, 0xF000F0, OverlayTexture.NO_OVERLAY, model);
             bufferSource.endBatch();
-            poseStack.popPose();
-            Lighting.setupFor3DItems();
-            RenderSystem.restoreProjectionMatrix();
 
             NativeImage image = new NativeImage(dimensions, dimensions, false);
             target.bindRead();
             image.downloadTexture(0, false);
             image.flipY();
-            minecraft.getMainRenderTarget().bindWrite(false);
-            target.destroyBuffers();
             return image;
         } catch (Exception exception) {
+            return null;
+        } finally {
             poseStack.popPose();
             Lighting.setupFor3DItems();
             RenderSystem.restoreProjectionMatrix();
+            minecraft.getMainRenderTarget().bindWrite(false);
             target.destroyBuffers();
-            return null;
         }
     }
 
@@ -205,7 +225,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         return output;
     }
 
-    private NativeImage makeGolden(NativeImage input, int[] palette) {
+    private NativeImage makeGolden(NativeImage input, int @Nullable [] palette) {
         int width = input.getWidth();
         int height = input.getHeight();
         NativeImage output = new NativeImage(width, height, true);
@@ -218,48 +238,31 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             }
             return output;
         }
-        float minBrightness = 1f, maxBrightness = 0f;
+        float minBrightness = 1F;
+        float maxBrightness = 0F;
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int pixel = input.getPixelRGBA(x, y);
-                int a = (pixel >> 24) & 0xFF;
 
-                if (a != 0) {
+                if (((pixel >> 24) & 0xFF) != 0) {
                     float brightness = brightness(pixel);
                     minBrightness = Math.min(minBrightness, brightness);
                     maxBrightness = Math.max(maxBrightness, brightness);
                 }
             }
         }
-        float range = Math.max(0.01f, maxBrightness - minBrightness);
-        Integer[] boxedPalette = new Integer[palette.length];
+        float range = Math.max(0.01F, maxBrightness - minBrightness);
 
-        for (int i = 0; i < palette.length; i++) {
-            boxedPalette[i] = palette[i];
-        }
-        Arrays.sort(boxedPalette, (p1, p2) -> Float.compare(brightness(p1), brightness(p2)));
-
-        int[] sortedPalette = new int[boxedPalette.length];
-
-        for (int i = 0; i < boxedPalette.length; i++) {
-            sortedPalette[i] = boxedPalette[i];
-        }
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int pixel = input.getPixelRGBA(x, y);
                 int a = (pixel >> 24) & 0xFF;
 
                 if (a != 0) {
-                    float brightness = brightness(pixel);
-                    float t = (brightness - minBrightness) / range;
-                    t = (float) Math.pow(t, 0.7);
-                    int index = Mth.clamp((int) (t * (sortedPalette.length - 1)), 0, sortedPalette.length - 1);
-                    int goldPixel = sortedPalette[index];
-                    int r = (goldPixel >> 16) & 0xFF;
-                    int g = (goldPixel >> 8) & 0xFF;
-                    int b = goldPixel & 0xFF;
-                    output.setPixelRGBA(x, y, (a << 24) | (r << 16) | (g << 8) | b);
+                    float t = (float) Math.pow((brightness(pixel) - minBrightness) / range, 0.7);
+                    int index = Mth.clamp((int) (t * (palette.length - 1)), 0, palette.length - 1);
+                    output.setPixelRGBA(x, y, (a << 24) | (palette[index] & 0x00FFFFFF));
                 } else {
                     output.setPixelRGBA(x, y, 0x00000000);
                 }
@@ -267,50 +270,41 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         }
         return output;
     }
-    
-    private int[] getColorPalette(Item item) {
-        NativeImage image = itemToNativeImage(item, 16);
-        if (image == null) return null;
 
-        int width = image.getWidth();
-        int height = image.getHeight();
-        List<Integer> pixels = new ArrayList<>();
+    private int @Nullable [] getColorPalette(Item item) {
+        try (NativeImage image = itemToNativeImage(item, 16)) {
+            if (image != null) {
+                List<Integer> pixels = new ArrayList<>();
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int pixel = image.getPixelRGBA(x, y);
-                int a = (pixel >> 24) & 0xFF;
-                
-                if (a != 0) {
-                    pixels.add(pixel);
+                for (int x = 0; x < image.getWidth(); x++) {
+                    for (int y = 0; y < image.getHeight(); y++) {
+                        int pixel = image.getPixelRGBA(x, y);
+                        if (((pixel >> 24) & 0xFF) != 0) pixels.add(pixel);
+                    }
                 }
+                if (pixels.isEmpty()) return null;
+                pixels.sort((p1, p2) -> Float.compare(brightness(p1), brightness(p2)));
+                int[] palette = new int[pixels.size()];
+
+                for (int i = 0; i < palette.length; i++) {
+                    palette[i] = pixels.get(i);
+                }
+                return palette;
             }
         }
-        if (pixels.isEmpty()) return null;
-        pixels.sort(Comparator.comparingInt(TextureAtlasResourceLoader::luminance));
-        int[] palette = new int[pixels.size()];
-
-        for (int i = 0; i < palette.length; i++) {
-            palette[i] = pixels.get(i);
-        }
-        return palette;
+        return null;
     }
 
     private Item getGoldenPaletteItem() {
         try {
-            String name = ClientConfiguration.getInstance().goldenPaletteItem;
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(name));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(ClientConfiguration.getInstance().goldenPaletteItem));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
         } catch (Exception exception) {
             return Items.GOLDEN_CARROT;
         }
     }
-    
-    private static int luminance(int pixel) {
-        return (((pixel >> 16) & 0xFF) * 299 + ((pixel >> 8) & 0xFF) * 587 + (pixel & 0xFF) * 114) / 1000;
-    }
 
     private static float brightness(int pixel) {
-        return Color.RGBtoHSB((pixel >> 16) & 0xFF, (pixel >> 8) & 0xFF, pixel & 0xFF, null)[2];
+        return Math.max((pixel >> 16) & 0xFF, Math.max((pixel >> 8) & 0xFF, pixel & 0xFF)) / 255F;
     }
 }

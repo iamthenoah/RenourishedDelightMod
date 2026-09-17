@@ -43,7 +43,7 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
     public StarvationScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.starvation"));
         this.parent = parent;
-        this.workingEntries = config.getStarvationConfig();
+        this.workingEntries = config.starvation;
     }
 
     @Override

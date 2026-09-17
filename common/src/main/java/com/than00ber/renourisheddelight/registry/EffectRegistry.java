@@ -4,6 +4,8 @@ import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.effect.NourishmentMobEffect;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
 
@@ -15,5 +17,9 @@ public final class EffectRegistry {
 
     public static void init() {
         EFFECTS.register();
+    }
+
+    public static Holder<MobEffect> nourishment() {
+        return BuiltInRegistries.MOB_EFFECT.wrapAsHolder(NOURISHMENT.get());
     }
 }

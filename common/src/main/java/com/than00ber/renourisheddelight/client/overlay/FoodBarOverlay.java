@@ -59,7 +59,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
                 int y = window.getGuiScaledHeight() - 39 + ClientConfiguration.getInstance().foodBarOffsetY;
                 boolean blink = updateBlink(slots.size());
                 boolean hunger = player.hasEffect(MobEffects.HUNGER);
-                boolean nourished = player.hasEffect(EffectRegistry.NOURISHMENT);
+                boolean nourished = player.hasEffect(EffectRegistry.nourishment());
                 renderSlots(graphics, atlas, new Point(x, y), slots, blink, hunger, nourished);
             }
         }
