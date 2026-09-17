@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight;
 
 import com.mojang.logging.LogUtils;
+import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
@@ -33,6 +34,7 @@ public final class RenourishedDelightMod {
 
     public static void initClient() {
         FoodBarOverlay.init();
+        TextureAtlasResourceLoader.init();
     }
     
     public static ResourceLocation key(String name) {
