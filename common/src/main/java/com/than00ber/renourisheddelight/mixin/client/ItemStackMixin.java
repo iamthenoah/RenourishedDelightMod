@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
+import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
@@ -28,10 +29,11 @@ public abstract class ItemStackMixin {
     @Inject(method = "getTooltipLines", at = @At("RETURN"), cancellable = true)
     private void renourisheddelight$getTooltipLines(Item.TooltipContext context, Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> callback) {
         ItemStack stack = (ItemStack) (Object) this;
-        if (!stack.has(DataComponents.FOOD)) return;
         if (!(Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder)) return;
+        FoodConfig config = holder.getFoodConfig();
+        if (!stack.has(DataComponents.FOOD) && config.entry(stack.getItem()) == null) return;
 
-        ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), holder.getFoodConfig());
+        ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config);
         if (instance.attributes().isEmpty()) return;
 
         List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
