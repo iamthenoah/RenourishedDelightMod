@@ -45,11 +45,12 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
     }
 
     public static void init() {
-        ClientTickEvent.CLIENT_POST.register(INSTANCE::build);
+        ClientTickEvent.CLIENT_POST.register(INSTANCE::rebuildIfStale);
     }
 
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
+    private boolean stale = true;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -61,42 +62,47 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        build(Minecraft.getInstance());
+        stale = true;
     }
 
-    private void build(Minecraft minecraft) {
-        if (minecraft.getOverlay() == null) {
-            long startNanos = System.nanoTime();
+    private void rebuildIfStale(Minecraft minecraft) {
+        if (stale && minecraft.getOverlay() == null) {
+            stale = false;
+            build();
+        }
+    }
 
-            try {
-                Set<Item> items = new LinkedHashSet<>();
-                BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
-                BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
-                items.remove(Items.AIR);
-                TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", MINI_SIZE, items.size());
-                TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", LARGE_SIZE, items.size());
-                int[] palette = getColorPalette(getGoldenPaletteItem());
+    private void build() {
+        long startNanos = System.nanoTime();
 
-                for (Item item : items) {
-                    appendItem(miniBuilder, item, MINI_SIZE, palette);
-                    appendItem(largeBuilder, item, LARGE_SIZE, palette);
-                }
-                TextureAtlas mini = miniBuilder.done();
-                TextureAtlas large = largeBuilder.done();
+        try {
+            Set<Item> items = new LinkedHashSet<>();
+            BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
+            BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
+            items.remove(Items.AIR);
+            TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", MINI_SIZE, items.size());
+            TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", LARGE_SIZE, items.size());
+            int[] palette = getColorPalette(getGoldenPaletteItem());
 
-                if (mini.textures().isEmpty() || large.textures().isEmpty()) {
-                    mini.release();
-                    large.release();
-                    throw new IllegalStateException("no item textures could be rendered");
-                }
-                if (miniAtlas != null) miniAtlas.release();
-                if (largeAtlas != null) largeAtlas.release();
-                miniAtlas = mini;
-                largeAtlas = large;
-                RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
-            } catch (Exception exception) {
-                RenourishedDelightMod.LOGGER.error("Failed to generate item icon atlas", exception);
+            for (Item item : items) {
+                appendItem(miniBuilder, item, MINI_SIZE, palette);
+                appendItem(largeBuilder, item, LARGE_SIZE, palette);
             }
+            TextureAtlas mini = miniBuilder.done();
+            TextureAtlas large = largeBuilder.done();
+
+            if (mini.textures().isEmpty() || large.textures().isEmpty()) {
+                mini.release();
+                large.release();
+                throw new IllegalStateException("no item textures could be rendered");
+            }
+            if (miniAtlas != null) miniAtlas.release();
+            if (largeAtlas != null) largeAtlas.release();
+            miniAtlas = mini;
+            largeAtlas = large;
+            RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
+        } catch (Exception exception) {
+            RenourishedDelightMod.LOGGER.error("Failed to generate item icon atlas", exception);
         }
     }
 
