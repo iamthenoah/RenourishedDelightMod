@@ -51,7 +51,7 @@ public abstract class FoodDataMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     public void renourisheddelight$tick(Player player, CallbackInfo callback) {
-        if (renourisheddelight$player == null && player instanceof ServerPlayer serverPlayer) {
+        if (renourisheddelight$player != player && player instanceof ServerPlayer serverPlayer) {
             renourisheddelight$player = serverPlayer;
         }
         callback.cancel();
