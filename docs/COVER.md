@@ -95,7 +95,11 @@ The configs are also available as config files:
 
 ## Commands
 
-`/renourisheddelight clear [<targets>]` empties a player's food bar, dropping every active food and its bonuses. With no target it clears your own. It needs permission level 2, so operators and single-player worlds with cheats on.
+Both need permission level 2, so operators and single-player worlds with cheats on.
+
+`/renourisheddelight clear [<targets>]` empties a player's food bar, dropping every active food and its bonuses. With no target it clears your own.
+
+`/renourisheddelight decay reset [<targets>] [<item>]` clears accumulated nutrition decay, putting the affected foods back to full strength. With no target it resets your own, and naming an item resets only that food instead of everything.
 
 ## Compatibility
 

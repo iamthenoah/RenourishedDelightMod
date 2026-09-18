@@ -114,6 +114,18 @@ public class Diet {
         return instance;
     }
 
+    public boolean resetDecay() {
+        if (depletion.isEmpty() && recent.isEmpty()) return false;
+        depletion.clear();
+        recent.clear();
+        return true;
+    }
+
+    public boolean resetDecay(Item item) {
+        recent.remove(item);
+        return depletion.remove(item) != null;
+    }
+
     private static int maxDecay(GameRules rules) {
         return FULL_VALUE - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_VALUE);
     }
