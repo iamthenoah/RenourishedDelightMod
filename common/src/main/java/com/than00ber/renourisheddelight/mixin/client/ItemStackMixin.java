@@ -3,13 +3,14 @@ package com.than00ber.renourisheddelight.mixin.client;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
-import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
+import com.than00ber.renourisheddelight.food.DietHolder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
@@ -57,7 +58,9 @@ public abstract class ItemStackMixin {
                     .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
         }
         if (decay > 0) {
-            tooltip.add(Component.translatable("tooltip.nutrition_decay", decay).withStyle(ChatFormatting.GOLD));
+            int nutrition = 100 - decay;
+            tooltip.add(Component.translatable("tooltip.nutrition", nutrition)
+                    .withStyle(style -> style.withColor(Mth.hsvToRgb(nutrition / 300.0F, 0.85F, 1.0F))));
         }
         callback.setReturnValue(tooltip);
     }

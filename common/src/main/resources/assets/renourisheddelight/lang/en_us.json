@@ -1,7 +1,7 @@
 {
   "pack.renourisheddelight.foodpresets": "RD: Extra Mod Food Presets",
   "tooltip.eaten": "When Eaten:",
-  "tooltip.nutrition_decay": "Nutrition Decay: %s%%",
+  "tooltip.nutrition": "%s%% Nutrition",
   "message.starving": "You are starving...",
   "message.eating_too_many": "I'm full right now.",
   "message.eating_not_balanced": "I can't eat the same thing twice!",
