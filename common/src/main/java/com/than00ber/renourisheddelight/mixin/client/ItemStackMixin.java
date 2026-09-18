@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -38,6 +39,7 @@ public abstract class ItemStackMixin {
 
         LocalPlayer self = Minecraft.getInstance().player;
         int decay = self instanceof DietHolder diet ? diet.getDiet().nutritionDecay(self.level().getGameRules(), stack.getItem()) : 0;
+        int nutrition = 100 - decay;
 
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config, decay);
         if (instance.attributes().isEmpty()) return;
@@ -57,11 +59,9 @@ public abstract class ItemStackMixin {
                     .append(Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")"))
                     .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
         }
-        if (decay > 0) {
-            int nutrition = 100 - decay;
-            tooltip.add(Component.translatable("tooltip.nutrition", nutrition)
-                    .withStyle(style -> style.withColor(Mth.hsvToRgb(nutrition / 300.0F, 0.85F, 1.0F))));
-        }
+        MutableComponent state = Component.translatable("tooltip.nutrition", nutrition);
+        int color = Mth.hsvToRgb(nutrition / 300.0F, 1.0F, 1.0F);
+        tooltip.add(state.withStyle(style -> style.withColor(color)));
         callback.setReturnValue(tooltip);
     }
 }

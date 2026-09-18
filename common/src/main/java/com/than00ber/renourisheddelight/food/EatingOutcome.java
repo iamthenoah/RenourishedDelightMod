@@ -58,6 +58,7 @@ public enum EatingOutcome {
                     if (properties != null) {
                         properties.effects().forEach(x -> player.addEffect(new MobEffectInstance(x.effect())));
                     }
+                    diet.decay(player, item);
                 }
                 case REPLENISH -> replace(player, diet, config, item, diet.getSlots().stream()
                         .filter(x -> x.item() == item)

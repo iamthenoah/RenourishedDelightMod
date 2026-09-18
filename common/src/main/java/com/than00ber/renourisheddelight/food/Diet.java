@@ -91,22 +91,25 @@ public class Diet {
     }
 
     public ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
-        GameRules rules = player.level().getGameRules();
-        ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(rules, item));
-        int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
-
-        if (rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) && step > 0) {
-            int ceiling = maxDecay(rules);
-            depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
-            recent.remove(item);
-            recent.addFirst(item);
-
-            while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
-                recent.removeLast();
-            }
-            restore(step);
-        }
+        ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(player.level().getGameRules(), item));
+        decay(player, item);
         return instance;
+    }
+
+    public void decay(ServerPlayer player, Item item) {
+        GameRules rules = player.level().getGameRules();
+        int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
+        if (!rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) || step <= 0) return;
+
+        int ceiling = maxDecay(rules);
+        depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
+        recent.remove(item);
+        recent.addFirst(item);
+
+        while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
+            recent.removeLast();
+        }
+        restore(step);
     }
 
     public boolean resetDecay() {

@@ -28,31 +28,31 @@ What wins it back is variety. The mod remembers the last **3** different foods y
 
 The practical effect is that three food sources is not enough. Rotating through exactly your slot count keeps the same foods on the recently eaten list permanently, so they never recover — you need a wider pantry than you have slots. A food never drops below **10%** of its configured values, so a favourite you lean on too hard gets weak but never useless.
 
-Set `doNutritionDecay` to false to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced values rather than its full ones. Each player has their own values and their own recently eaten list, and both are saved with the world.
+Set `doNutritionDecay` to _false_ to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced values rather than its full ones. Each player has their own values and their own recently eaten list, and both are saved with the world.
 
-Item tooltips show what you would actually get rather than the configured numbers, and once a food has decayed at all its remaining nutrition appears on the last line, fading from green through yellow to red as it drops.
+Item tooltips show what you would actually get rather than the configured numbers, and every food's remaining nutrition appears on the last line, fading from green through yellow to red as it drops.
 
 ## Game Rules
 
 The mod adds fifteen game rules for server-wide customization:
 
 | Game Rule | Default | Description |
-| --- | --- | --- |
-| `renourisheddelight:playerStartingHearts` | 20 | Base max health before any food bonuses |
-| `renourisheddelight:maxConsumableFood` | 3 | Maximum number of foods active at once |
-| `renourisheddelight:foodDrainRate` | 100 | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
-| `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration (three times faster while nourished) |
-| `renourisheddelight:regenDelayAfterDamage` | 60 | Ticks to wait after taking damage before natural regen can resume |
-| `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment duration as a % of the shortest active food |
-| `renourisheddelight:nutritionDecayRate` | 1 | Percent of its duration and attribute strength a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
-| `renourisheddelight:nutritionDecayWindow` | 3 | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
-| `renourisheddelight:nutritionDecayFloor` | 10 | Lowest percent of its configured duration and attributes a food can be worn down to |
-| `renourisheddelight:doNutritionDecay` | true | Whether eating the same food repeatedly decays its duration and attribute bonuses |
-| `renourisheddelight:doSleepFoodDrain` | true | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
-| `renourisheddelight:doNourishment` | false | Whether eating while full grants the Nourishment effect |
-| `renourisheddelight:doStarvation` | true | Applies the configured starvation effects while a player has no active food |
-| `renourisheddelight:doReplenish` | true | Whether eating a food you already have active tops it back up, once it is at 50% or less remaining |
-| `renourisheddelight:doReplaceLowest` | true | Whether eating a new food while every slot is full replaces the food with the least time left |
+| --- |--------| --- |
+| `renourisheddelight:playerStartingHearts` | 20     | Base max health before any food bonuses |
+| `renourisheddelight:maxConsumableFood` | 3      | Maximum number of foods active at once |
+| `renourisheddelight:foodDrainRate` | 100    | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
+| `renourisheddelight:regenHealthTickInterval` | 60     | Ticks between natural health regeneration (three times faster while nourished) |
+| `renourisheddelight:regenDelayAfterDamage` | 60     | Ticks to wait after taking damage before natural regen can resume |
+| `renourisheddelight:nourishmentDurationPercent` | 10     | Nourishment duration as a % of the shortest active food |
+| `renourisheddelight:nutritionDecayRate` | 1      | Percent of its duration and attribute strength a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
+| `renourisheddelight:nutritionDecayWindow` | 3      | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
+| `renourisheddelight:nutritionDecayFloor` | 10     | Lowest percent of its configured duration and attributes a food can be worn down to |
+| `renourisheddelight:doNutritionDecay` | false  | Whether eating the same food repeatedly decays its duration and attribute bonuses |
+| `renourisheddelight:doSleepFoodDrain` | true   | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
+| `renourisheddelight:doNourishment` | false  | Whether eating while full grants the Nourishment effect |
+| `renourisheddelight:doStarvation` | true   | Applies the configured starvation effects while a player has no active food |
+| `renourisheddelight:doReplenish` | true   | Whether eating a food you already have active tops it back up, once it is at 50% or less remaining |
+| `renourisheddelight:doReplaceLowest` | true   | Whether eating a new food while every slot is full replaces the food with the least time left |
 
 Eating resolves in one of three ways: a food you already have active is topped back up (`doReplenish`, once it is at 50% or less remaining), a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left (`doReplaceLowest`). When a rule turns its case off the food cannot be eaten at all, and the player is told why. Food that carries status effects is still edible in that situation, granting its effects but no slot.
 
