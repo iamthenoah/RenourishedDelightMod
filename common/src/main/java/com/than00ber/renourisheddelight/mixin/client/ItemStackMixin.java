@@ -3,9 +3,11 @@ package com.than00ber.renourisheddelight.mixin.client;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
+import com.than00ber.renourisheddelight.food.DietHolder;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
@@ -33,7 +35,10 @@ public abstract class ItemStackMixin {
         FoodConfig config = holder.getFoodConfig();
         if (!stack.has(DataComponents.FOOD) && config.entry(stack.getItem()) == null) return;
 
-        ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config);
+        LocalPlayer self = Minecraft.getInstance().player;
+        int decay = self instanceof DietHolder diet ? diet.getDiet().nutritionDecay(self.level().getGameRules(), stack.getItem()) : 0;
+
+        ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config, decay);
         if (instance.attributes().isEmpty()) return;
 
         List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
@@ -50,6 +55,9 @@ public abstract class ItemStackMixin {
                     .append(Component.translatable(key, amount, description))
                     .append(Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")"))
                     .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
+        }
+        if (decay > 0) {
+            tooltip.add(Component.translatable("tooltip.nutrition_decay", decay).withStyle(ChatFormatting.GOLD));
         }
         callback.setReturnValue(tooltip);
     }

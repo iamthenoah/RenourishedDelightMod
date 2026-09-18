@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
@@ -9,15 +10,19 @@ import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -25,12 +30,16 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Diet {
@@ -42,6 +51,7 @@ public class Diet {
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
     private static final int REPLENISH_THRESHOLD_PERCENT = 50;
+    private static final int FULL_VALUE = 100;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
         @Override
@@ -64,6 +74,8 @@ public class Diet {
     };
 
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
+    private final Map<Item, Integer> depletion = new LinkedHashMap<>();
+    private final List<Item> recent = new ArrayList<>();
     private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
     private int drainTimer;
@@ -76,6 +88,42 @@ public class Diet {
 
     public void onDamaged() {
         ticksSinceDamage = 0;
+    }
+
+    public int nutritionDecay(GameRules rules, Item item) {
+        if (!rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY)) return 0;
+        return Math.min(maxDecay(rules), depletion.getOrDefault(item, 0));
+    }
+
+    public ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
+        GameRules rules = player.level().getGameRules();
+        ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(rules, item));
+        int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
+
+        if (rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) && step > 0) {
+            int ceiling = maxDecay(rules);
+            depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
+            recent.remove(item);
+            recent.addFirst(item);
+
+            while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
+                recent.removeLast();
+            }
+            restore(step);
+        }
+        return instance;
+    }
+
+    private static int maxDecay(GameRules rules) {
+        return FULL_VALUE - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_VALUE);
+    }
+
+    private void restore(int step) {
+        depletion.entrySet().removeIf(entry -> {
+            if (recent.contains(entry.getKey())) return false;
+            entry.setValue(Math.max(0, entry.getValue() - step));
+            return entry.getValue() <= 0;
+        });
     }
 
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
@@ -271,6 +319,18 @@ public class Diet {
         compoundTag.putInt("TicksSinceDamage", diet.ticksSinceDamage);
         compoundTag.putInt("Regen", diet.regen);
         compoundTag.putInt("Starving", diet.starving);
+        ListTag depleted = new ListTag();
+
+        diet.depletion.forEach((item, value) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putString("Item", BuiltInRegistries.ITEM.getKey(item).toString());
+            entry.putInt("Value", value);
+            depleted.add(entry);
+        });
+        compoundTag.put("Depletion", depleted);
+        ListTag eaten = new ListTag();
+        diet.recent.forEach(x -> eaten.add(StringTag.valueOf(BuiltInRegistries.ITEM.getKey(x).toString())));
+        compoundTag.put("Recent", eaten);
         return compoundTag;
     }
 
@@ -281,6 +341,25 @@ public class Diet {
         diet.regen = tag.getInt("Regen");
         diet.starving = tag.getInt("Starving");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
+
+        for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {
+            CompoundTag stored = (CompoundTag) entry;
+            Item item = resolveItem(stored.getString("Item"));
+            if (item != null) diet.depletion.put(item, stored.getInt("Value"));
+        }
+        for (Tag entry : tag.getList("Recent", Tag.TAG_STRING)) {
+            Item item = resolveItem(entry.getAsString());
+            if (item != null) diet.recent.add(item);
+        }
         return diet;
+    }
+
+    private static @Nullable Item resolveItem(String id) {
+        try {
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            return item != Items.AIR ? item : null;
+        } catch (Exception exception) {
+            return null;
+        }
     }
 }

@@ -17,6 +17,8 @@ import java.util.*;
 
 public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
 
+    private static final int FULL_VALUE = 100;
+
     public int duration() {
         return attributes.stream().mapToInt(AttributeModifierInstance::duration).max().orElse(0);
     }
@@ -41,22 +43,28 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
     }
 
     public static ConsumableFoodInstance create(Item item, FoodConfig config) {
+        return create(item, config, 0);
+    }
+
+    public static ConsumableFoodInstance create(Item item, FoodConfig config, int decay) {
         List<AttributeModifierInstance> attributes = new ArrayList<>();
+        int value = Math.max(0, FULL_VALUE - decay);
 
         for (AttributeBonus bonus : config.bonuses(item)) {
-            AttributeModifierInstance instance = resolveBonus(bonus, config);
+            AttributeModifierInstance instance = resolveBonus(bonus, config, value);
             if (instance != null) attributes.add(instance);
         }
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, FoodConfig config) {
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, FoodConfig config, int value) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
 
         if (attribute != null) {
             ResourceLocation id = RenourishedDelightMod.key(String.valueOf(UUID.randomUUID()));
-            AttributeModifier modifier = new AttributeModifier(id, bonus.amount, parseOperation(bonus.operation));
-            return new AttributeModifierInstance(attribute, modifier, config.effectiveDuration(bonus), 0);
+            AttributeModifier modifier = new AttributeModifier(id, bonus.amount * value / FULL_VALUE, parseOperation(bonus.operation));
+            int duration = Math.max(1, (int) Math.round(config.effectiveDuration(bonus) * value / (double) FULL_VALUE));
+            return new AttributeModifierInstance(attribute, modifier, duration, 0);
         } else {
             return null;
         }
