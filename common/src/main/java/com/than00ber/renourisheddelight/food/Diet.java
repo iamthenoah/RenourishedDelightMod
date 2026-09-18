@@ -13,7 +13,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -69,12 +68,12 @@ public class Diet {
 
     private final List<ConsumableFoodInstance> slots = new ArrayList<>();
     private final Map<Item, Integer> depletion = new LinkedHashMap<>();
-    private final List<Item> recent = new ArrayList<>();
     private int ticksSinceDamage = Integer.MAX_VALUE;
     private int regen;
     private int drainTimer;
     private int drainRemainder;
     private int starving;
+    private boolean decaying = true;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -84,8 +83,12 @@ public class Diet {
         ticksSinceDamage = 0;
     }
 
+    public boolean isDecaying() {
+        return decaying;
+    }
+
     public int nutritionDecay(Item item) {
-        return depletion.getOrDefault(item, 0);
+        return decaying ? depletion.getOrDefault(item, 0) : 0;
     }
 
     public ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
@@ -99,44 +102,33 @@ public class Diet {
         int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
 
         if (rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) && step > 0) {
-            int ceiling = maxDecay(rules);
-            depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
-            recent.remove(item);
-            recent.addFirst(item);
+            int current = depletion.getOrDefault(item, 0);
+            depletion.remove(item);
+            int protect = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW) - 1);
+            List<Item> tracked = new ArrayList<>(depletion.keySet());
 
-            while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
-                recent.removeLast();
+            for (int i = 0; i < tracked.size() - protect; i++) {
+                Item stale = tracked.get(i);
+                int value = depletion.get(stale) - step;
+                if (value > 0) depletion.put(stale, value);
+                else depletion.remove(stale);
             }
-            restore(step);
+            depletion.put(item, Math.min(current + step, maxDecay(rules)));
         }
     }
 
     public boolean resetDecay() {
-        if (!depletion.isEmpty() || !recent.isEmpty()) {
-            depletion.clear();
-            recent.clear();
-            return true;
-        }
-        return false;
+        if (depletion.isEmpty()) return false;
+        depletion.clear();
+        return true;
     }
 
     public boolean resetDecay(Item item) {
-        recent.remove(item);
         return depletion.remove(item) != null;
     }
 
     private static int maxDecay(GameRules rules) {
         return FULL_VALUE - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_VALUE);
-    }
-
-    private void restore(int step) {
-        depletion.entrySet().removeIf(entry -> {
-            if (!recent.contains(entry.getKey())) {
-                entry.setValue(Math.max(0, entry.getValue() - step));
-                return entry.getValue() <= 0;
-            }
-            return false;
-        });
     }
 
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
@@ -170,8 +162,12 @@ public class Diet {
     }
 
     public boolean tick(ServerPlayer player) {
-        if (!player.gameMode.isSurvival()) return false;
         GameRules rules = player.level().getGameRules();
+        boolean enabled = rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY);
+        boolean toggled = decaying != enabled;
+        decaying = enabled;
+
+        if (!player.gameMode.isSurvival()) return toggled;
         boolean nourished = player.hasEffect(EffectRegistry.nourishment());
         ticksSinceDamage++;
         int amount = 1;
@@ -180,7 +176,7 @@ public class Diet {
             drainTimer = 0;
             if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
         }
-        boolean changed = drain(player, amount);
+        boolean changed = toggled | drain(player, amount);
         changed |= regenerate(player, rules, nourished);
 
         if (slots.isEmpty() && nourished) {
@@ -284,7 +280,7 @@ public class Diet {
 
     public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.remove(instance);
-        instance.attributes().forEach(bonus -> detach(player, bonus, false));
+        instance.attributes().forEach(bonus -> detach(player, bonus, true));
     }
 
     private void expire(ServerPlayer player) {
@@ -327,6 +323,7 @@ public class Diet {
         compoundTag.putInt("TicksSinceDamage", diet.ticksSinceDamage);
         compoundTag.putInt("Regen", diet.regen);
         compoundTag.putInt("Starving", diet.starving);
+        compoundTag.putBoolean("Decaying", diet.decaying);
         ListTag depleted = new ListTag();
 
         diet.depletion.forEach((item, value) -> {
@@ -336,9 +333,6 @@ public class Diet {
             depleted.add(entry);
         });
         compoundTag.put("Depletion", depleted);
-        ListTag eaten = new ListTag();
-        diet.recent.forEach(x -> eaten.add(StringTag.valueOf(BuiltInRegistries.ITEM.getKey(x).toString())));
-        compoundTag.put("Recent", eaten);
         return compoundTag;
     }
 
@@ -348,16 +342,13 @@ public class Diet {
         diet.ticksSinceDamage = tag.getInt("TicksSinceDamage");
         diet.regen = tag.getInt("Regen");
         diet.starving = tag.getInt("Starving");
+        diet.decaying = !tag.contains("Decaying") || tag.getBoolean("Decaying");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
 
         for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {
             CompoundTag stored = (CompoundTag) entry;
             Item item = resolveItem(stored.getString("Item"));
             if (item != null) diet.depletion.put(item, stored.getInt("Value"));
-        }
-        for (Tag entry : tag.getList("Recent", Tag.TAG_STRING)) {
-            Item item = resolveItem(entry.getAsString());
-            if (item != null) diet.recent.add(item);
         }
         return diet;
     }

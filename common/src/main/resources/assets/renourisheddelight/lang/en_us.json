@@ -1,7 +1,10 @@
 {
   "pack.renourisheddelight.foodpresets": "RD: Extra Mod Food Presets",
   "tooltip.eaten": "When Eaten:",
-  "tooltip.nutrition": "%s%% Nutrition",
+  "tooltip.nutrition.nourishing": "Nourishing",
+  "tooltip.nutrition.fulfilling": "Fulfilling",
+  "tooltip.nutrition.bland": "Bland",
+  "tooltip.nutrition.tasteless": "Tasteless",
   "message.starving": "You are starving...",
   "message.eating_too_many": "I'm full right now.",
   "message.eating_not_balanced": "I can't eat the same thing twice!",

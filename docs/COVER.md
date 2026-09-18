@@ -30,8 +30,6 @@ The practical effect is that three food sources is not enough. Rotating through 
 
 Set `doNutritionDecay` to _false_ to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced values rather than its full ones. Each player has their own values and their own recently eaten list, and both are saved with the world.
 
-Item tooltips show what you would actually get rather than the configured numbers, and every food's remaining nutrition appears on the last line, fading from green through yellow to red as it drops.
-
 ## Game Rules
 
 The mod adds fifteen game rules for server-wide customization:
