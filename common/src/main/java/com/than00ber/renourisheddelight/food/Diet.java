@@ -45,7 +45,6 @@ public class Diet {
     private static final int REGEN_DRAIN = 3;
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
-    private static final int REPLENISH_THRESHOLD_PERCENT = 50;
     private static final int FULL_VALUE = 100;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
@@ -85,13 +84,12 @@ public class Diet {
         ticksSinceDamage = 0;
     }
 
-    public int nutritionDecay(GameRules rules, Item item) {
-        if (!rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY)) return 0;
-        return Math.min(maxDecay(rules), depletion.getOrDefault(item, 0));
+    public int nutritionDecay(Item item) {
+        return depletion.getOrDefault(item, 0);
     }
 
     public ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
-        ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(player.level().getGameRules(), item));
+        ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(item));
         decay(player, item);
         return instance;
     }
@@ -99,24 +97,27 @@ public class Diet {
     public void decay(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
         int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
-        if (!rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) || step <= 0) return;
 
-        int ceiling = maxDecay(rules);
-        depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
-        recent.remove(item);
-        recent.addFirst(item);
+        if (rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) && step > 0) {
+            int ceiling = maxDecay(rules);
+            depletion.merge(item, step, (current, added) -> Math.min(current + added, ceiling));
+            recent.remove(item);
+            recent.addFirst(item);
 
-        while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
-            recent.removeLast();
+            while (recent.size() > Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW))) {
+                recent.removeLast();
+            }
+            restore(step);
         }
-        restore(step);
     }
 
     public boolean resetDecay() {
-        if (depletion.isEmpty() && recent.isEmpty()) return false;
-        depletion.clear();
-        recent.clear();
-        return true;
+        if (!depletion.isEmpty() || !recent.isEmpty()) {
+            depletion.clear();
+            recent.clear();
+            return true;
+        }
+        return false;
     }
 
     public boolean resetDecay(Item item) {
@@ -130,9 +131,11 @@ public class Diet {
 
     private void restore(int step) {
         depletion.entrySet().removeIf(entry -> {
-            if (recent.contains(entry.getKey())) return false;
-            entry.setValue(Math.max(0, entry.getValue() - step));
-            return entry.getValue() <= 0;
+            if (!recent.contains(entry.getKey())) {
+                entry.setValue(Math.max(0, entry.getValue() - step));
+                return entry.getValue() <= 0;
+            }
+            return false;
         });
     }
 
@@ -147,17 +150,12 @@ public class Diet {
         boolean hasEffect = properties != null && !properties.effects().isEmpty();
 
         if (active != null) {
-            if (canReplenish && isReplenishable(active)) return EatingOutcome.REPLENISH;
+            if (canReplenish) return EatingOutcome.REPLENISH;
             return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.NOT_BALANCED;
         }
         if (slots.size() < maxFoods) return EatingOutcome.CONSUME;
         if (canReplaceLowest) return EatingOutcome.REPLACE_LOW;
         return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.TOO_MANY;
-    }
-
-    private static boolean isReplenishable(ConsumableFoodInstance instance) {
-        long duration = instance.duration();
-        return duration > 0 && (duration - instance.time()) * 100L <= duration * REPLENISH_THRESHOLD_PERCENT;
     }
 
     public boolean drain(ServerPlayer player, int amount) {

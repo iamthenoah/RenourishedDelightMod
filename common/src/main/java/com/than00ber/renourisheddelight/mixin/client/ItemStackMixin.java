@@ -38,7 +38,7 @@ public abstract class ItemStackMixin {
         if (!stack.has(DataComponents.FOOD) && config.entry(stack.getItem()) == null) return;
 
         LocalPlayer self = Minecraft.getInstance().player;
-        int decay = self instanceof DietHolder diet ? diet.getDiet().nutritionDecay(self.level().getGameRules(), stack.getItem()) : 0;
+        int decay = self instanceof DietHolder diet ? diet.getDiet().nutritionDecay(stack.getItem()) : 0;
         int nutrition = 100 - decay;
 
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config, decay);
