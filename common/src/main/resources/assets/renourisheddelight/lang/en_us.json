@@ -23,7 +23,7 @@
   "gamerule.renourisheddelight:nourishmentDurationPercent": "Nourishment Duration Percent",
   "gamerule.renourisheddelight:nourishmentDurationPercent.description": "Nourishment granted for eating while full, as a percentage of the shortest active food's duration. Set to 0 to disable Nourishment.",
   "gamerule.renourisheddelight:nutritionDecayRate": "Nutrition Decay Rate",
-  "gamerule.renourisheddelight:nutritionDecayRate.description": "Percentage of its duration and attribute strength a food loses each time it takes a slot, and wins back once it leaves your recently eaten list.",
+  "gamerule.renourisheddelight:nutritionDecayRate.description": "Percentage of its duration and attribute strength a food loses each time you eat it, and wins back once it leaves your recently eaten list.",
   "gamerule.renourisheddelight:nutritionDecayWindow": "Nutrition Decay Window",
   "gamerule.renourisheddelight:nutritionDecayWindow.description": "How many different foods you must eat before an earlier one starts recovering from its nutrition decay.",
   "gamerule.renourisheddelight:nutritionDecayFloor": "Nutrition Decay Floor",

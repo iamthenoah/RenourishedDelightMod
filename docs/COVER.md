@@ -22,15 +22,15 @@ Once every food slot is full, eating again grants **Nourishment**. It speeds up 
 
 ## Nutrition Decay
 
-Eating the same thing over and over stops working as well. Every time a food takes a slot it decays by **1%**, and that comes straight off its duration and off every attribute bonus it grants. Keep eating it and it keeps dropping. Nothing resets it on its own.
+Eating the same thing over and over stops working as well. Every time you eat a food it decays by **1%**, and that comes straight off its duration and off every attribute bonus it grants. Keep eating it and it keeps dropping. Nothing resets it on its own.
 
 What wins it back is variety. The mod remembers the last **3** different foods you ate, and anything that falls off that list recovers 1% every time you eat something else. So a food you have not touched in a while slowly climbs back to full strength while you are eating other things.
 
 The practical effect is that three food sources is not enough. Rotating through exactly your slot count keeps the same foods on the recently eaten list permanently, so they never recover — you need a wider pantry than you have slots. A food never drops below **10%** of its configured values, so a favourite you lean on too hard gets weak but never useless.
 
-Set `doNutritionDecay` to false to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active costs nothing, though it does respect what the food is currently worth — a worn-down food tops back up to its reduced duration, not its full one. Each player has their own values and their own recently eaten list, and both are saved with the world.
+Set `doNutritionDecay` to false to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced values rather than its full ones. Each player has their own values and their own recently eaten list, and both are saved with the world.
 
-Item tooltips show what you would actually get rather than the configured numbers, with the shortfall on the last line, so you can watch a food weaken as you lean on it.
+Item tooltips show what you would actually get rather than the configured numbers, and once a food has decayed at all its remaining nutrition appears on the last line, fading from green through yellow to red as it drops.
 
 ## Game Rules
 
@@ -44,7 +44,7 @@ The mod adds fifteen game rules for server-wide customization:
 | `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration (three times faster while nourished) |
 | `renourisheddelight:regenDelayAfterDamage` | 60 | Ticks to wait after taking damage before natural regen can resume |
 | `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment duration as a % of the shortest active food |
-| `renourisheddelight:nutritionDecayRate` | 1 | Percent of its duration and attribute strength a food decays by each time it takes a slot, and recovers once it leaves the recently eaten list |
+| `renourisheddelight:nutritionDecayRate` | 1 | Percent of its duration and attribute strength a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
 | `renourisheddelight:nutritionDecayWindow` | 3 | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
 | `renourisheddelight:nutritionDecayFloor` | 10 | Lowest percent of its configured duration and attributes a food can be worn down to |
 | `renourisheddelight:doNutritionDecay` | true | Whether eating the same food repeatedly decays its duration and attribute bonuses |
