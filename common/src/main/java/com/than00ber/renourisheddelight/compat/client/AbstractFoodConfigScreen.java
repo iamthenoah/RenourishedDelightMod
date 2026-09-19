@@ -3,6 +3,7 @@ package com.than00ber.renourisheddelight.compat.client;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
+import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.platform.Platform;
@@ -36,6 +37,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected @Nullable ModFilterField modFilterField;
 
     protected final FoodConfig config;
+    protected final List<FoodItemEntry> presets;
     protected final boolean inWorld;
     protected final boolean editable;
 
@@ -52,10 +54,12 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         super(title);
         Minecraft minecraft = Minecraft.getInstance();
         FoodConfigHolder holder = minecraft.getConnection() instanceof FoodConfigHolder x ? x : null;
+        FoodConfigHolder source = holder != null ? holder : CommonConfiguration.getInstance();
 
         this.inWorld = holder != null;
         this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
-        this.config = holder != null ? holder.getFoodConfig() : CommonConfiguration.getInstance().getFoodConfig();
+        this.config = source.getFoodConfig();
+        this.presets = source.getPresets();
     }
 
     protected abstract void rebuildContent();

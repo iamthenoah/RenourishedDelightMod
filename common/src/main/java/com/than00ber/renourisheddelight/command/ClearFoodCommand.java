@@ -16,9 +16,9 @@ public final class ClearFoodCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("clear")
-                .executes(c -> clear(c.getSource(), List.of(c.getSource().getPlayerOrException())))
+                .executes(context -> clear(context.getSource(), List.of(context.getSource().getPlayerOrException())))
                 .then(Commands.argument("targets", EntityArgument.players())
-                        .executes(c -> clear(c.getSource(), EntityArgument.getPlayers(c, "targets"))));
+                        .executes(context -> clear(context.getSource(), EntityArgument.getPlayers(context, "targets"))));
     }
 
     private static int clear(CommandSourceStack source, Collection<ServerPlayer> targets) {

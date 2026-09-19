@@ -15,6 +15,10 @@ public final class GameRuleRegistry {
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_INTERVAL = register("regenHealthTickInterval", GameRules.IntegerValue.create(60));
     public static final GameRules.Key<GameRules.IntegerValue> REGEN_DELAY_AFTER_DAMAGE = register("regenDelayAfterDamage", GameRules.IntegerValue.create(60));
     public static final GameRules.Key<GameRules.IntegerValue> NOURISHMENT_DURATION_PERCENT = register("nourishmentDurationPercent", GameRules.IntegerValue.create(10));
+    public static final GameRules.Key<GameRules.IntegerValue> NUTRITION_DECAY_RATE = register("nutritionDecayRate", GameRules.IntegerValue.create(1));
+    public static final GameRules.Key<GameRules.IntegerValue> NUTRITION_DECAY_WINDOW = register("nutritionDecayWindow", GameRules.IntegerValue.create(3));
+    public static final GameRules.Key<GameRules.IntegerValue> NUTRITION_DECAY_FLOOR = register("nutritionDecayFloor", GameRules.IntegerValue.create(10));
+    public static final GameRules.Key<GameRules.BooleanValue> DO_NUTRITION_DECAY = register("doNutritionDecay", GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> DO_SLEEP_FOOD_DRAIN = register("doSleepFoodDrain", GameRules.BooleanValue.create(true));
     public static final GameRules.Key<GameRules.BooleanValue> DO_NOURISHMENT = register("doNourishment", GameRules.BooleanValue.create(false));
     public static final GameRules.Key<GameRules.BooleanValue> DO_STARVATION = register("doStarvation", GameRules.BooleanValue.create(true));
