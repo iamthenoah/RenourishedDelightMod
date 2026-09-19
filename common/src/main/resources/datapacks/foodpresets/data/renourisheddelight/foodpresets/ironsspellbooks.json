@@ -1,0 +1,19 @@
+[
+  {
+    "item": "irons_spellbooks:item/cooked_ice_spider_egg",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 4.0,
+        "duration": 18000
+      },
+      {
+        "attribute": "irons_spellbooks:ice_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 18000
+      }
+    ]
+  }
+]

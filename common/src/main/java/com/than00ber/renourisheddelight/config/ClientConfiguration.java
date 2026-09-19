@@ -38,4 +38,8 @@ public final class ClientConfiguration implements ConfigData {
     @ConfigEntry.Gui.Tooltip
     @Comment("Whether to clip the last heart's unfillable half when the player has an odd max health, instead of showing a half heart that can never fill (default: true)")
     public boolean clipOddMaxHealthHeart = true;
+
+    @ConfigEntry.Gui.Tooltip
+    @Comment("Whether to compress the health bar into a single row of 10 hearts that fill proportionally to max health, instead of stacking extra heart rows (default: false)")
+    public boolean compactHealthBar = false;
 }

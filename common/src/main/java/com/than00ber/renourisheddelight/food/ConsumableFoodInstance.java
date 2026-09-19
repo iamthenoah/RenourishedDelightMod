@@ -1,9 +1,7 @@
 package com.than00ber.renourisheddelight.food;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.config.data.DurationMultiplierEntry;
-import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
-import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
+import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -12,7 +10,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,9 +18,7 @@ import java.util.*;
 public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
 
     public int duration() {
-        return attributes.stream().mapToInt(AttributeModifierInstance::duration)
-                .max()
-                .orElse(0);
+        return attributes.stream().mapToInt(AttributeModifierInstance::duration).max().orElse(0);
     }
 
     public int time() {
@@ -41,40 +36,32 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         attributes.forEach(x -> x.tick(ticks));
     }
 
-    public ConsumableFoodInstance copy() {
-        return new ConsumableFoodInstance(item, new ArrayList<>(attributes));
+    public static ConsumableFoodInstance create(Item item, FoodConfig config) {
+        return create(item, config, 0);
     }
 
-    public static ConsumableFoodInstance create(Item item, FoodConfigHolder config) {
-        FoodItemEntry entry = FoodItemEntry.get(config.getFoodConfig(), item);
-        List<DurationMultiplierEntry> multipliers = config.getMultiplierConfig();
+    public static ConsumableFoodInstance create(Item item, FoodConfig config, int decay) {
         List<AttributeModifierInstance> attributes = new ArrayList<>();
+        int value = Math.max(0, Diet.FULL_NUTRITION - decay);
 
-        if (entry != null) {
-            for (AttributeBonus bonus : entry.attributes) {
-                AttributeModifierInstance instance = resolveBonus(bonus, multipliers);
-                if (instance != null) attributes.add(instance);
-            }
-        }
-        boolean overridden = entry != null && entry.override;
-
-        if (!overridden && attributes.stream().noneMatch(x -> x.attribute().value() == Attributes.MAX_HEALTH.value())) {
-            AttributeModifierInstance health = resolveBonus(AttributeBonus.defaultMaxHealth(item), multipliers);
-
-            if (health != null) {
-                attributes.addFirst(health);
-            }
+        for (AttributeBonus bonus : config.bonuses(item)) {
+            AttributeModifierInstance instance = resolveBonus(bonus, config, value);
+            if (instance != null) attributes.add(instance);
         }
         return new ConsumableFoodInstance(item, attributes);
     }
 
-    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, List<DurationMultiplierEntry> multipliers) {
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, FoodConfig config, int value) {
         Holder<Attribute> attribute = resolveAttribute(bonus.attribute);
-        if (attribute == null) return null;
-        AttributeModifier.Operation operation = parseOperation(bonus.operation);
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RenourishedDelightMod.MOD_ID, String.valueOf(UUID.randomUUID()));
-        AttributeModifier modifier = new AttributeModifier(id, bonus.amount, operation);
-        return new AttributeModifierInstance(attribute, modifier, bonus.effectiveDuration(multipliers), 0);
+
+        if (attribute != null) {
+            ResourceLocation id = RenourishedDelightMod.key(String.valueOf(UUID.randomUUID()));
+            AttributeModifier modifier = new AttributeModifier(id, bonus.amount, parseOperation(bonus.operation));
+            int duration = Math.max(1, (int) Math.round(config.effectiveDuration(bonus) * value / (double) Diet.FULL_NUTRITION));
+            return new AttributeModifierInstance(attribute, modifier, duration, 0);
+        } else {
+            return null;
+        }
     }
 
     public static @Nullable Holder<Attribute> resolveAttribute(String id) {
@@ -108,14 +95,13 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         }
     }
 
-
     public static CompoundTag save(ConsumableFoodInstance instance) {
-        CompoundTag compoundTag = new CompoundTag();
-        compoundTag.putString("Item", BuiltInRegistries.ITEM.getKey(instance.item).toString());
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Item", BuiltInRegistries.ITEM.getKey(instance.item).toString());
         ListTag attributes = new ListTag();
         instance.attributes.forEach(x -> attributes.add(AttributeModifierInstance.save(x)));
-        compoundTag.put("Attributes", attributes);
-        return compoundTag;
+        tag.put("Attributes", attributes);
+        return tag;
     }
 
     public static ConsumableFoodInstance load(CompoundTag compoundTag) {

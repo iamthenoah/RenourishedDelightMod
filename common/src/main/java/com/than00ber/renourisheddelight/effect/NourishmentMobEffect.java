@@ -9,7 +9,7 @@ import net.minecraft.world.item.alchemy.Potion;
 public final class NourishmentMobEffect extends MobEffect {
 
     public static Potion createPotion() {
-        return new Potion(new MobEffectInstance(EffectRegistry.NOURISHMENT, 9600, 0));
+        return new Potion(new MobEffectInstance(EffectRegistry.nourishment(), 9600, 0));
     }
 
     public NourishmentMobEffect() {

@@ -43,7 +43,7 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
     public StarvationScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.starvation"));
         this.parent = parent;
-        this.workingEntries = config.getStarvationConfig();
+        this.workingEntries = config.starvation;
     }
 
     @Override
@@ -180,14 +180,8 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
     }
 
     private void addStage() {
-        if (!editable) return;
-        String effect = newEffectField.getValue().trim();
-        if (effect.isEmpty()) return;
-
-        int after = parseInt(newAfterField.getValue(), 3600);
-        int amplifier = Math.max(1, parseInt(newAmplifierField.getValue(), 1));
-        int max = Math.max(amplifier, parseInt(newMaxField.getValue(), amplifier));
-        workingEntries.add(new StarvationEntry(effect, after, amplifier, max));
+        if (!hasPendingStage()) return;
+        workingEntries.add(pendingStage());
         scrollOffset = Integer.MAX_VALUE;
 
         newEffectField.setValue("");
@@ -197,6 +191,17 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
 
         save();
         rebuildContent();
+    }
+
+    private StarvationEntry pendingStage() {
+        int after = parseInt(newAfterField.getValue(), 3600);
+        int amplifier = Math.max(1, parseInt(newAmplifierField.getValue(), 1));
+        int max = Math.max(amplifier, parseInt(newMaxField.getValue(), amplifier));
+        return new StarvationEntry(newEffectField.getValue().trim(), after, amplifier, max);
+    }
+
+    private boolean hasPendingStage() {
+        return editable && !newEffectField.getValue().isBlank();
     }
 
     private void removeStage(StarvationEntry entry) {
@@ -278,6 +283,7 @@ public final class StarvationScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
+        if (hasPendingStage()) workingEntries.add(pendingStage());
         save();
         minecraft.setScreen(parent);
     }

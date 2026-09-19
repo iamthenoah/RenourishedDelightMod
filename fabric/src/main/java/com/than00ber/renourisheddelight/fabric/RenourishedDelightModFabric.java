@@ -15,6 +15,6 @@ public final class RenourishedDelightModFabric implements ModInitializer {
     public void onInitialize() {
         RenourishedDelightMod.init();
         EntityDataSerializers.registerSerializer(Diet.DATA_SERIALIZER);
-        FabricBrewingRecipeRegistryBuilder.BUILD.register(x -> x.addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.NOURISHMENT));
+        FabricBrewingRecipeRegistryBuilder.BUILD.register(x -> x.addMix(Potions.AWKWARD, Items.BEEF, PotionRegistry.nourishment()));
     }
 }

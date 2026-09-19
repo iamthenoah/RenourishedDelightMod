@@ -190,12 +190,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     private void addBonus() {
-        AttributeBonus bonus = new AttributeBonus(
-                newAttributeField.getValue().trim(),
-                newOperationField.getValue().trim(),
-                parseDouble(newAmountField.getValue(), 0.0),
-                parseInt(newDurationField.getValue(), 0));
-        entry.attributes.add(bonus);
+        entry.attributes.add(pendingBonus());
         scrollOffset = Integer.MAX_VALUE;
 
         newAttributeField.setValue("");
@@ -206,6 +201,21 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         rebuildContent();
     }
 
+    private AttributeBonus pendingBonus() {
+        return new AttributeBonus(
+                newAttributeField.getValue().trim(),
+                newOperationField.getValue().trim(),
+                parseDouble(newAmountField.getValue(), 0.0),
+                parseInt(newDurationField.getValue(), 0));
+    }
+
+    private boolean hasPendingBonus() {
+        return editable && (!newAttributeField.getValue().isBlank()
+                || !newOperationField.getValue().isBlank()
+                || !newAmountField.getValue().isBlank()
+                || !newDurationField.getValue().isBlank());
+    }
+
     private void removeBonus(AttributeBonus bonus) {
         entry.attributes.remove(bonus);
         rebuildContent();
@@ -214,7 +224,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.add(AttributeBonus.defaultMaxHealth(icon));
+            entry.attributes.addAll(FoodItemEntry.baseline(presets, icon));
         }
         scrollOffset = 0;
         rebuildContent();
@@ -384,6 +394,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
+        if (hasPendingBonus()) entry.attributes.add(pendingBonus());
         saveAction.run();
         minecraft.setScreen(parent);
     }

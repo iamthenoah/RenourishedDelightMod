@@ -2,6 +2,7 @@ package com.than00ber.renourisheddelight.config.data;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,6 @@ public final class StarvationEntry {
 
     @SuppressWarnings("unused")
     public StarvationEntry() {
-        // needed for persisted config
     }
 
     public StarvationEntry(String effect, int after, int amplifier, int max) {
@@ -35,6 +35,19 @@ public final class StarvationEntry {
 
     public int levelAt(int stagesSince) {
         return Math.clamp(Math.max(1, amplifier) + stagesSince, 1, Math.max(Math.max(1, amplifier), max));
+    }
+
+    public CompoundTag save() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Effect", effect != null ? effect : "");
+        tag.putInt("After", after);
+        tag.putInt("Amplifier", amplifier);
+        tag.putInt("Max", max);
+        return tag;
+    }
+
+    public static StarvationEntry load(CompoundTag tag) {
+        return new StarvationEntry(tag.getString("Effect"), tag.getInt("After"), tag.getInt("Amplifier"), tag.getInt("Max"));
     }
 
     public static List<StarvationEntry> defaults() {

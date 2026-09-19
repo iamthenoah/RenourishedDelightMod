@@ -1,8 +1,10 @@
 package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    @Unique
-    private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
+    @Unique private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
 
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {
@@ -23,12 +24,22 @@ public abstract class LivingEntityMixin {
             callback.setReturnValue(true);
             LivingEntity self = (LivingEntity) (Object) this;
             self.addEffect(new MobEffectInstance(
-                    EffectRegistry.NOURISHMENT,
+                    EffectRegistry.nourishment(),
                     instance.getDuration(),
                     instance.getAmplifier(),
                     instance.isAmbient(),
                     instance.isVisible(),
                     instance.showIcon()));
+        }
+    }
+
+    @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
+    private void renourisheddelight$hasEffect(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> callback) {
+        if (!FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(effect.value()))) return;
+        LivingEntity self = (LivingEntity) (Object) this;
+
+        if (self.hasEffect(EffectRegistry.nourishment())) {
+            callback.setReturnValue(true);
         }
     }
 }

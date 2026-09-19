@@ -1,14 +1,20 @@
 package com.than00ber.renourisheddelight.config.data;
 
+import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
+
 import java.util.List;
 
 public interface FoodConfigHolder {
 
-    List<FoodItemEntry> getFoodConfig();
+    FoodConfig getFoodConfig();
 
-    List<DurationMultiplierEntry> getMultiplierConfig();
+    void setFoodConfig(FoodConfig config);
 
-    List<StarvationEntry> getStarvationConfig();
+    default List<FoodItemEntry> getPresets() {
+        return FoodConfigReloadListener.PRESETS;
+    }
 
-    void update(List<FoodItemEntry> entries, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation);
+    default void setPresets(List<FoodItemEntry> presets) {
+        // do nothing
+    }
 }
