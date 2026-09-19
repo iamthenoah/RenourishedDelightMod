@@ -59,13 +59,11 @@ public final class FoodConfig {
         return entry != null ? entry.attributes : AttributeBonus.defaults(item);
     }
 
-    public FoodItemEntry claim(Item item) {
+    public FoodItemEntry claim(List<FoodItemEntry> presets, Item item) {
         FoodItemEntry entry = entry(item);
 
         if (entry == null) {
-            List<AttributeBonus> bonuses = new ArrayList<>();
-            AttributeBonus.defaults(item).forEach(x -> bonuses.add(x.copy()));
-            entry = new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), bonuses);
+            entry = new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), FoodItemEntry.baseline(presets, item));
             foods.add(entry);
         }
         return entry;
@@ -75,14 +73,18 @@ public final class FoodConfig {
         FoodItemEntry entry = entry(item);
         if (entry != null) foods.remove(entry);
     }
-    
-    public void prune(Item item) {
+
+    public boolean isCustomized(List<FoodItemEntry> presets, Item item) {
         FoodItemEntry entry = entry(item);
-        if (entry != null && matchesDefaults(entry, item)) foods.remove(entry);
+        return entry != null && !matchesBaseline(entry, FoodItemEntry.baseline(presets, item));
     }
 
-    private static boolean matchesDefaults(FoodItemEntry entry, Item item) {
-        List<AttributeBonus> defaults = AttributeBonus.defaults(item);
+    public void prune(List<FoodItemEntry> presets, Item item) {
+        FoodItemEntry entry = entry(item);
+        if (entry != null && !isCustomized(presets, item)) foods.remove(entry);
+    }
+
+    private static boolean matchesBaseline(FoodItemEntry entry, List<AttributeBonus> defaults) {
         if (entry.attributes.size() != defaults.size()) return false;
 
         for (int i = 0; i < defaults.size(); i++) {

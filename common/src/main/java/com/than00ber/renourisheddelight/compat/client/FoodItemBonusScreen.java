@@ -210,10 +210,10 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     private boolean hasPendingBonus() {
-        return !newAttributeField.getValue().isBlank()
+        return editable && (!newAttributeField.getValue().isBlank()
                 || !newOperationField.getValue().isBlank()
                 || !newAmountField.getValue().isBlank()
-                || !newDurationField.getValue().isBlank();
+                || !newDurationField.getValue().isBlank());
     }
 
     private void removeBonus(AttributeBonus bonus) {
@@ -224,7 +224,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     private void resetBonuses() {
         entry.attributes.clear();
         if (icon != null) {
-            entry.attributes.addAll(AttributeBonus.defaults(icon));
+            entry.attributes.addAll(FoodItemEntry.baseline(presets, icon));
         }
         scrollOffset = 0;
         rebuildContent();
