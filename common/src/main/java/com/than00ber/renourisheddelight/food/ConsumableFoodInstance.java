@@ -36,10 +36,6 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         attributes.forEach(x -> x.tick(ticks));
     }
 
-    public ConsumableFoodInstance copy() {
-        return new ConsumableFoodInstance(item, new ArrayList<>(attributes));
-    }
-
     public static ConsumableFoodInstance create(Item item, FoodConfig config) {
         return create(item, config, 0);
     }
@@ -60,7 +56,7 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
 
         if (attribute != null) {
             ResourceLocation id = RenourishedDelightMod.key(String.valueOf(UUID.randomUUID()));
-            AttributeModifier modifier = new AttributeModifier(id, bonus.amount * value / Diet.FULL_NUTRITION, parseOperation(bonus.operation));
+            AttributeModifier modifier = new AttributeModifier(id, bonus.amount, parseOperation(bonus.operation));
             int duration = Math.max(1, (int) Math.round(config.effectiveDuration(bonus) * value / (double) Diet.FULL_NUTRITION));
             return new AttributeModifierInstance(attribute, modifier, duration, 0);
         } else {

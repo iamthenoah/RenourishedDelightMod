@@ -72,12 +72,14 @@ public abstract class ItemStackMixin {
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
         int filled = Mth.clamp(Math.round((float) nutrition * NUTRITION_BARS / Diet.FULL_NUTRITION), 0, NUTRITION_BARS);
         int color = Mth.hsvToRgb(nutrition * NUTRITION_HUE_RANGE / Diet.FULL_NUTRITION, 1.0F, 1.0F);
-        MutableComponent bar = Component.literal(" ").append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
+        MutableComponent bar = Component.literal(" [").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
 
         if (filled < NUTRITION_BARS) {
-            bar.append(Component.literal("|".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));
+            bar.append(Component.literal(".".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));
         }
         String tier = NUTRITION_TIERS[Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1)];
-        return bar.append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(style -> style.withColor(color)));
+        return bar.append(Component.literal("]").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(ChatFormatting.WHITE));
     }
 }

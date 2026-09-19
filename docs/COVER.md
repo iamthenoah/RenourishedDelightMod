@@ -22,13 +22,13 @@ Once every food slot is full, eating again grants **Nourishment**. It speeds up 
 
 ## Nutrition Decay
 
-Eating the same thing over and over stops working as well. Every time you eat a food it decays by **1%**, and that comes straight off its duration and off every attribute bonus it grants. Keep eating it and it keeps dropping. Nothing resets it on its own.
+Eating the same thing over and over stops working as well. Every time you eat a food it decays by **1%**, and that comes straight off how long its bonuses last. The bonuses themselves keep their full strength — you just hold them for less time. Keep eating it and it keeps dropping. Nothing resets it on its own.
 
 What wins it back is variety. The mod remembers the last **3** different foods you ate, and anything that falls off that list recovers 1% every time you eat something else. So a food you have not touched in a while slowly climbs back to full strength while you are eating other things.
 
-The practical effect is that three food sources is not enough. Rotating through exactly your slot count keeps the same foods on the recently eaten list permanently, so they never recover — you need a wider pantry than you have slots. A food never drops below **10%** of its configured values, so a favourite you lean on too hard gets weak but never useless.
+The practical effect is that three food sources is not enough. Rotating through exactly your slot count keeps the same foods on the recently eaten list permanently, so they never recover — you need a wider pantry than you have slots. A food never drops below **10%** of its configured duration, so a favourite you lean on too hard runs short but never useless.
 
-Set `doNutritionDecay` to _false_ to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced values rather than its full ones. Each player has their own values and their own recently eaten list, and both are saved with the world.
+Set `doNutritionDecay` to _false_ to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced duration rather than its full one. Each player has their own values and their own recently eaten list, and both are saved with the world.
 
 ## Game Rules
 
@@ -42,10 +42,10 @@ The mod adds fifteen game rules for server-wide customization:
 | `renourisheddelight:regenHealthTickInterval` | 60     | Ticks between natural health regeneration (three times faster while nourished) |
 | `renourisheddelight:regenDelayAfterDamage` | 60     | Ticks to wait after taking damage before natural regen can resume |
 | `renourisheddelight:nourishmentDurationPercent` | 10     | Nourishment duration as a % of the shortest active food |
-| `renourisheddelight:nutritionDecayRate` | 1      | Percent of its duration and attribute strength a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
+| `renourisheddelight:nutritionDecayRate` | 1      | Percent of its duration a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
 | `renourisheddelight:nutritionDecayWindow` | 3      | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
-| `renourisheddelight:nutritionDecayFloor` | 10     | Lowest percent of its configured duration and attributes a food can be worn down to |
-| `renourisheddelight:doNutritionDecay` | false  | Whether eating the same food repeatedly decays its duration and attribute bonuses |
+| `renourisheddelight:nutritionDecayFloor` | 10     | Lowest percent of its configured duration a food can be worn down to |
+| `renourisheddelight:doNutritionDecay` | false  | Whether eating the same food repeatedly shortens how long its bonuses last |
 | `renourisheddelight:doSleepFoodDrain` | true   | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
 | `renourisheddelight:doNourishment` | false  | Whether eating while full grants the Nourishment effect |
 | `renourisheddelight:doStarvation` | true   | Applies the configured starvation effects while a player has no active food |
@@ -95,7 +95,7 @@ Both need permission level 2, so operators and single-player worlds with cheats 
 
 `/renourisheddelight clear [<targets>]` empties a player's food bar, dropping every active food and its bonuses. With no target it clears your own.
 
-`/renourisheddelight decay reset [<targets>] [<item>]` clears accumulated nutrition decay, putting the affected foods back to full strength. With no target it resets your own, and naming an item resets only that food instead of everything.
+`/renourisheddelight decay reset [<targets>] [<item>]` clears accumulated nutrition decay, putting the affected foods back to their full duration. With no target it resets your own, and naming an item resets only that food instead of everything.
 
 ## Compatibility
 

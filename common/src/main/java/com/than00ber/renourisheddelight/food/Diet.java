@@ -9,6 +9,7 @@ import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -22,10 +23,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
@@ -94,13 +97,13 @@ public class Diet {
         return decaying ? depletion.getOrDefault(item, 0) : 0;
     }
 
-    public ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
+    private ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(item));
         decay(player, item);
         return instance;
     }
 
-    public void decay(ServerPlayer player, Item item) {
+    private void decay(ServerPlayer player, Item item) {
         GameRules rules = player.level().getGameRules();
         int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
 
@@ -134,10 +137,29 @@ public class Diet {
         return FULL_NUTRITION - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_NUTRITION);
     }
 
-    public EatingOutcome toOutcome(ServerPlayer player, Item item) {
-        if (slots.stream().anyMatch(x -> x.item() == item)) return EatingOutcome.REPLENISH;
-        int maxFoods = Math.max(1, player.level().getGameRules().getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
-        return slots.size() < maxFoods ? EatingOutcome.CONSUME : EatingOutcome.REPLACE_LOW;
+    public void consume(ServerPlayer player, Item item) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+
+        FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
+        GameRules rules = player.level().getGameRules();
+        int maxFoods = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
+
+        if (active != null) {
+            replaceSlot(player, config, item, active);
+        } else if (slots.size() < maxFoods) {
+            addToSlot(player, eat(player, item, config));
+        } else {
+            replaceSlot(player, config, item, slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null));
+        }
+        FoodProperties properties = item.components().get(DataComponents.FOOD);
+        boolean harmful = properties != null && properties.effects().stream()
+                .anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
+
+        if (slots.size() >= maxFoods && !harmful) {
+            nourish(player, rules);
+        }
     }
 
     public boolean drain(ServerPlayer player, int amount) {
@@ -194,7 +216,7 @@ public class Diet {
         return true;
     }
 
-    public void nourish(ServerPlayer player, GameRules rules) {
+    private void nourish(ServerPlayer player, GameRules rules) {
         if (rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT)) {
             int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
 
@@ -256,12 +278,12 @@ public class Diet {
         }
     }
 
-    public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
+    private void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
         attach(player, instance);
     }
 
-    public void replaceSlot(ServerPlayer player, FoodConfig config, Item item, @Nullable ConsumableFoodInstance previous) {
+    private void replaceSlot(ServerPlayer player, FoodConfig config, Item item, @Nullable ConsumableFoodInstance previous) {
         if (previous == null) return;
         int index = slots.indexOf(previous);
         if (index < 0) return;

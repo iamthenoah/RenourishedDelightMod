@@ -21,7 +21,7 @@ public abstract class ItemStackMixin {
 
         if (entity instanceof ServerPlayer player && player instanceof DietHolder holder && stack.has(DataComponents.FOOD)) {
             Diet diet = holder.getDiet();
-            diet.toOutcome(player, stack.getItem()).consume(player, diet, stack.getItem());
+            diet.consume(player, stack.getItem());
             holder.updateDiet();
         }
     }

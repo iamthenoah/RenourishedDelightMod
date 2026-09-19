@@ -38,7 +38,7 @@ public abstract class FoodDataMixin {
                 && result.getType() == HitResult.Type.BLOCK) {
             Item item = player.level().getBlockState(result.getBlockPos()).getBlock().asItem();
             Diet diet = holder.getDiet();
-            diet.toOutcome(player, item).consume(player, diet, item);
+            diet.consume(player, item);
             holder.updateDiet();
         }
     }

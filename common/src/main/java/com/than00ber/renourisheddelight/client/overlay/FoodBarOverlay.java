@@ -27,7 +27,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
@@ -135,7 +138,7 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     public static int countIconSlots(List<ConsumableFoodInstance> slots) {
-        return computeShares(merge(slots)).values().stream().mapToInt(Integer::intValue).sum();
+        return computeShares(slots).values().stream().mapToInt(Integer::intValue).sum();
     }
 
     private static void renderSlots(GuiGraphics graphics, TextureAtlas atlas, int x, int y, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished, Preview preview) {
@@ -145,7 +148,7 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
         RenderSystem.enableBlend();
 
-        for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
+        for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(slots).entrySet()) {
             renderFood(graphics, atlas, cursor, y, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished, preview, globalIndex);
             cursor += ICON_WIDTH * entry.getValue();
             globalIndex += entry.getValue();
@@ -194,37 +197,22 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return (Mth.floor(((color >> 24) & 0xFF) * opacity) << 24) | (color & 0xFFFFFF);
     }
 
-    private static List<ConsumableFoodInstance> merge(List<ConsumableFoodInstance> slots) {
-        Map<Item, ConsumableFoodInstance> merged = new LinkedHashMap<>();
-
-        for (ConsumableFoodInstance instance : slots) {
-            ConsumableFoodInstance existing = merged.get(instance.item());
-
-            if (existing == null) {
-                merged.put(instance.item(), instance.copy());
-            } else {
-                existing.attributes().addAll(instance.attributes());
-            }
-        }
-        return new ArrayList<>(merged.values());
-    }
-
-    private static Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> merged) {
-        int totalDuration = merged.stream().mapToInt(ConsumableFoodInstance::duration).sum();
+    private static Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> slots) {
+        int totalDuration = slots.stream().mapToInt(ConsumableFoodInstance::duration).sum();
         Map<ConsumableFoodInstance, Integer> result = new LinkedHashMap<>();
         int remainingSlots = MAX_ICONS;
 
-        if (merged.isEmpty()) {
+        if (slots.isEmpty()) {
             return result;
         }
-        for (ConsumableFoodInstance instance : merged) {
+        for (ConsumableFoodInstance instance : slots) {
             result.put(instance, 1);
             remainingSlots--;
         }
         if (remainingSlots <= 0) {
             return result;
         }
-        for (ConsumableFoodInstance instance : merged) {
+        for (ConsumableFoodInstance instance : slots) {
             if (remainingSlots == 0) break;
 
             float ratio = (float) instance.duration() / (float) totalDuration;
@@ -239,7 +227,7 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             remainingSlots -= extra;
         }
         if (remainingSlots > 0) {
-            ConsumableFoodInstance last = merged.getLast();
+            ConsumableFoodInstance last = slots.getLast();
             result.put(last, result.get(last) + remainingSlots);
         }
         return result;
