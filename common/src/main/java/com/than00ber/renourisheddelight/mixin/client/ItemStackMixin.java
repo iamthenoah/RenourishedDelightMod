@@ -32,6 +32,7 @@ import java.util.List;
 public abstract class ItemStackMixin {
 
     @Unique private static final int NUTRITION_BARS = 10;
+    @Unique private static final float NUTRITION_HUE_RANGE = 1.0F / 3.0F;
     @Unique private static final String[] NUTRITION_TIERS = { "tasteless", "bland", "fulfilling", "nourishing" };
 
     @Inject(method = "getTooltipLines", at = @At("RETURN"), cancellable = true)
@@ -43,7 +44,7 @@ public abstract class ItemStackMixin {
 
         Diet diet = Minecraft.getInstance().player instanceof DietHolder owner ? owner.getDiet() : null;
         int decay = diet != null ? diet.nutritionDecay(stack.getItem()) : 0;
-        int nutrition = 100 - decay;
+        int nutrition = Diet.FULL_NUTRITION - decay;
 
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config, decay);
         if (instance.attributes().isEmpty()) return;
@@ -69,14 +70,14 @@ public abstract class ItemStackMixin {
 
     @Unique
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
-        int filled = Mth.clamp(Math.round(nutrition * NUTRITION_BARS / 100.0F), 0, NUTRITION_BARS);
-        int color = Mth.hsvToRgb(nutrition / 300.0F, 1.0F, 1.0F);
+        int filled = Mth.clamp(Math.round((float) nutrition * NUTRITION_BARS / Diet.FULL_NUTRITION), 0, NUTRITION_BARS);
+        int color = Mth.hsvToRgb(nutrition * NUTRITION_HUE_RANGE / Diet.FULL_NUTRITION, 1.0F, 1.0F);
         MutableComponent bar = Component.literal(" ").append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
 
         if (filled < NUTRITION_BARS) {
             bar.append(Component.literal("|".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));
         }
-        String tier = NUTRITION_TIERS[Mth.clamp(nutrition / 25, 0, NUTRITION_TIERS.length - 1)];
+        String tier = NUTRITION_TIERS[Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1)];
         return bar.append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(style -> style.withColor(color)));
     }
 }

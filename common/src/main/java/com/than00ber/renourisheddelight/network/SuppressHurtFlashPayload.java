@@ -12,6 +12,8 @@ public record SuppressHurtFlashPayload() implements CustomPacketPayload {
     private static final Type<SuppressHurtFlashPayload> TYPE = new Type<>(RenourishedDelightMod.key("suppress_hurt_flash"));
     private static final StreamCodec<RegistryFriendlyByteBuf, SuppressHurtFlashPayload> CODEC = StreamCodec.unit(new SuppressHurtFlashPayload());
 
+    private static final long SUPPRESS_WINDOW_MILLIS = 500L;
+
     private static long shrinkTimestamp = -1L;
 
     public static void init() {
@@ -19,7 +21,7 @@ public record SuppressHurtFlashPayload() implements CustomPacketPayload {
     }
 
     public static boolean isSuppressed() {
-        return shrinkTimestamp >= 0 && System.currentTimeMillis() - shrinkTimestamp <= 500L;
+        return shrinkTimestamp >= 0 && System.currentTimeMillis() - shrinkTimestamp <= SUPPRESS_WINDOW_MILLIS;
     }
 
     @Override

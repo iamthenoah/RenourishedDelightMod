@@ -190,12 +190,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     }
 
     private void addBonus() {
-        AttributeBonus bonus = new AttributeBonus(
-                newAttributeField.getValue().trim(),
-                newOperationField.getValue().trim(),
-                parseDouble(newAmountField.getValue(), 0.0),
-                parseInt(newDurationField.getValue(), 0));
-        entry.attributes.add(bonus);
+        entry.attributes.add(pendingBonus());
         scrollOffset = Integer.MAX_VALUE;
 
         newAttributeField.setValue("");
@@ -204,6 +199,21 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
         newDurationField.setValue("");
 
         rebuildContent();
+    }
+
+    private AttributeBonus pendingBonus() {
+        return new AttributeBonus(
+                newAttributeField.getValue().trim(),
+                newOperationField.getValue().trim(),
+                parseDouble(newAmountField.getValue(), 0.0),
+                parseInt(newDurationField.getValue(), 0));
+    }
+
+    private boolean hasPendingBonus() {
+        return !newAttributeField.getValue().isBlank()
+                || !newOperationField.getValue().isBlank()
+                || !newAmountField.getValue().isBlank()
+                || !newDurationField.getValue().isBlank();
     }
 
     private void removeBonus(AttributeBonus bonus) {
@@ -384,6 +394,7 @@ public final class FoodItemBonusScreen extends AbstractFoodConfigScreen {
     @Override
     protected void onDone() {
         applyRows();
+        if (hasPendingBonus()) entry.attributes.add(pendingBonus());
         saveAction.run();
         minecraft.setScreen(parent);
     }

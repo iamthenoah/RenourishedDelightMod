@@ -101,7 +101,7 @@ Both need permission level 2, so operators and single-player worlds with cheats 
 
 ## Compatibility
 
-Works out of the box with vanilla food and is built to play nicely with other food mods, including [Farmer's Delight](https://github.com/vectorwing/FarmersDelight). Presets for supported mods ship with the mod itself and can be tweaked per-item from the config screen.
+Works out of the box with vanilla food and is built to play nicely with other food mods, including [Farmer's Delight](https://github.com/vectorwing/FarmersDelight) and [Neapolitan](https://github.com/team-abnormals/neapolitan). Presets for supported mods ship with the mod itself and can be tweaked per-item from the config screen.
 
 ## Feedback & Issues
 

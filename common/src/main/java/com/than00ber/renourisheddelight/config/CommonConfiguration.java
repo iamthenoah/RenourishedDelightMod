@@ -49,7 +49,7 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
       { effect: "minecraft:slowness", after: 3600, amplifier: 1, max: 3 }
     ]
     """)
-    public FoodConfig config = new FoodConfig();
+    public FoodConfig config = FoodConfig.defaults();
 
     @Override
     public FoodConfig getFoodConfig() {

@@ -18,13 +18,17 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
+public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
+
+    private static final int MAX_ICONS = 10;
+    private static final int ICON_WIDTH = 8;
+    private static final int ICON_HEIGHT = 9;
+    private static final int BLINK_DURATION = 20;
 
     private int previousFoodCount;
     private int foodBlinkEndTick;
@@ -32,7 +36,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     public static void init() {
         ClientGuiEvent.RENDER_HUD.register(new FoodBarOverlay());
     }
-    
+
     private boolean isVisible() {
         Minecraft minecraft = Minecraft.getInstance();
 
@@ -60,7 +64,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
                 boolean blink = updateBlink(slots.size());
                 boolean hunger = player.hasEffect(MobEffects.HUNGER);
                 boolean nourished = player.hasEffect(EffectRegistry.nourishment());
-                renderSlots(graphics, atlas, new Point(x, y), slots, blink, hunger, nourished);
+                renderSlots(graphics, atlas, x, y, slots, blink, hunger, nourished);
             }
         }
     }
@@ -69,17 +73,17 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         int tick = Minecraft.getInstance().gui.getGuiTicks();
 
         if (count < previousFoodCount) {
-            foodBlinkEndTick = tick + 20;
+            foodBlinkEndTick = tick + BLINK_DURATION;
         }
         previousFoodCount = count;
         return foodBlinkEndTick > tick && ((foodBlinkEndTick - tick) / 3) % 2 == 1;
     }
 
-    public static void renderPreview(GuiGraphics graphics, Point pos, List<ConsumableFoodInstance> slots) {
+    public static void renderPreview(GuiGraphics graphics, int x, int y, List<ConsumableFoodInstance> slots) {
         TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
 
         if (atlas != null && !slots.isEmpty()) {
-            renderSlots(graphics, atlas, pos, slots, false, false, false);
+            renderSlots(graphics, atlas, x, y, slots, false, false, false);
         }
     }
 
@@ -87,42 +91,43 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         return computeShares(merge(slots)).values().stream().mapToInt(Integer::intValue).sum();
     }
 
-    private static void renderSlots(GuiGraphics graphics, TextureAtlas atlas, Point pos, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished) {
+    private static void renderSlots(GuiGraphics graphics, TextureAtlas atlas, int x, int y, List<ConsumableFoodInstance> slots, boolean blink, boolean hunger, boolean nourished) {
         int tick = Minecraft.getInstance().gui.getGuiTicks();
         int globalIndex = 0;
+        int cursor = x;
 
         for (Map.Entry<ConsumableFoodInstance, Integer> entry : computeShares(merge(slots)).entrySet()) {
-            renderFood(graphics, atlas, pos, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished, globalIndex);
-            pos.x += 8 * entry.getValue();
+            renderFood(graphics, atlas, cursor, y, entry.getKey(), entry.getValue(), tick, blink, hunger, nourished, globalIndex);
+            cursor += ICON_WIDTH * entry.getValue();
             globalIndex += entry.getValue();
         }
     }
 
-    private static void renderFood(GuiGraphics graphics, TextureAtlas atlas, Point pos, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
+    private static void renderFood(GuiGraphics graphics, TextureAtlas atlas, int x, int y, ConsumableFoodInstance instance, int size, int tick, boolean blink, boolean hunger, boolean nourished, int globalIndexStart) {
         Texture[] textures = atlas.getTextures(instance.item());
 
         if (textures != null) {
             float fillRatio = 1.0f - ((float) instance.time() / (float) instance.duration());
-            int width = Math.round(size * 8 * fillRatio);
+            int width = Math.round(size * ICON_WIDTH * fillRatio);
 
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
-                textures[2].render(graphics, pos.x + i * 8, offset, 0xFF282828);
+                int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
+                textures[2].render(graphics, x + i * ICON_WIDTH, offset, 0xFF282828);
             }
             graphics.pose().pushPose();
-            graphics.enableScissor(pos.x, pos.y, pos.x + width, pos.y + 9);
+            graphics.enableScissor(x, y, x + width, y + ICON_HEIGHT);
 
             for (int i = 0; i < size; i++) {
-                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
-                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, pos.x + i * 8, offset, 0xFFFFFFFF);
+                int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
+                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, 0xFFFFFFFF);
             }
             graphics.disableScissor();
             graphics.pose().popPose();
 
             for (int i = 0; i < size; i++) {
                 int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
-                int offset = pos.y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
-                textures[3].render(graphics, pos.x + i * 8, offset, color);
+                int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
+                textures[3].render(graphics, x + i * ICON_WIDTH, offset, color);
             }
         }
     }
@@ -145,7 +150,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     private static Map<ConsumableFoodInstance, Integer> computeShares(List<ConsumableFoodInstance> merged) {
         int totalDuration = merged.stream().mapToInt(ConsumableFoodInstance::duration).sum();
         Map<ConsumableFoodInstance, Integer> result = new LinkedHashMap<>();
-        int remainingSlots = 10;
+        int remainingSlots = MAX_ICONS;
 
         if (merged.isEmpty()) {
             return result;
@@ -161,7 +166,7 @@ public class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             if (remainingSlots == 0) break;
 
             float ratio = (float) instance.duration() / (float) totalDuration;
-            int extra = Math.round(ratio * 10) - 1;
+            int extra = Math.round(ratio * MAX_ICONS) - 1;
 
             if (extra > remainingSlots) {
                 extra = remainingSlots;

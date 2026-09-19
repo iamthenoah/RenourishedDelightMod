@@ -39,12 +39,12 @@ import java.util.*;
 public class Diet {
 
     public static final int SLEEP_DRAIN = 12000;
+    public static final int FULL_NUTRITION = 100;
 
     private static final int HUNGER_DRAIN_PER_SECOND = 2;
     private static final int REGEN_DRAIN = 3;
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
-    private static final int FULL_VALUE = 100;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
         @Override
@@ -128,7 +128,7 @@ public class Diet {
     }
 
     private static int maxDecay(GameRules rules) {
-        return FULL_VALUE - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_VALUE);
+        return FULL_NUTRITION - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_NUTRITION);
     }
 
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
@@ -263,7 +263,7 @@ public class Diet {
             starving = 0;
         }
     }
-    
+
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
 

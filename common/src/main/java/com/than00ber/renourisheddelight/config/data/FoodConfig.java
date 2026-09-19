@@ -17,7 +17,7 @@ public final class FoodConfig {
 
     public List<FoodItemEntry> foods = new ArrayList<>();
     public List<DurationMultiplierEntry> multipliers = new ArrayList<>();
-    public List<StarvationEntry> starvation = StarvationEntry.defaults();
+    public List<StarvationEntry> starvation = new ArrayList<>();
 
     public FoodConfig() {
         // do nothing
@@ -29,6 +29,12 @@ public final class FoodConfig {
 
     public FoodConfig(List<FoodItemEntry> foods, List<DurationMultiplierEntry> multipliers, List<StarvationEntry> starvation) {
         copyFrom(foods, multipliers, starvation);
+    }
+
+    public static FoodConfig defaults() {
+        FoodConfig config = new FoodConfig();
+        config.starvation.addAll(StarvationEntry.defaults());
+        return config;
     }
 
     public void copyFrom(FoodConfig other) {
