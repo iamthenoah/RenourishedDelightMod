@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.mixin;
 
+import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
-import com.than00ber.renourisheddelight.food.EatingOutcome;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -27,7 +27,7 @@ public abstract class FoodDataMixin {
         callback.setReturnValue(true);
     }
 
-    @Inject(method = "add", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "add", at = @At("HEAD"))
     public void renourisheddelight$add(int nutrition, float saturation, CallbackInfo callback) {
         ServerPlayer player = renourisheddelight$player;
 
@@ -37,15 +37,9 @@ public abstract class FoodDataMixin {
                 && player.pick(5.0D, 0.0F, false) instanceof BlockHitResult result
                 && result.getType() == HitResult.Type.BLOCK) {
             Item item = player.level().getBlockState(result.getBlockPos()).getBlock().asItem();
-            EatingOutcome outcome = holder.getDiet().toOutcome(player, item);
-            outcome.message().ifPresent(x -> player.displayClientMessage(x, true));
-
-            if (outcome.isSuccess()) {
-                outcome.consume(player, holder.getDiet(), item);
-                holder.updateDiet();
-            } else {
-                callback.cancel();
-            }
+            Diet diet = holder.getDiet();
+            diet.toOutcome(player, item).consume(player, diet, item);
+            holder.updateDiet();
         }
     }
 

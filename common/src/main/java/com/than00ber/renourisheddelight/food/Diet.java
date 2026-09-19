@@ -9,7 +9,6 @@ import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -27,7 +26,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
@@ -74,6 +72,7 @@ public class Diet {
     private int drainRemainder;
     private int starving;
     private boolean decaying = true;
+    private int capacity;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -85,6 +84,10 @@ public class Diet {
 
     public boolean isDecaying() {
         return decaying;
+    }
+
+    public int getCapacity() {
+        return capacity;
     }
 
     public int nutritionDecay(Item item) {
@@ -132,22 +135,9 @@ public class Diet {
     }
 
     public EatingOutcome toOutcome(ServerPlayer player, Item item) {
-        GameRules rules = player.level().getGameRules();
-        int maxFoods = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
-        boolean canReplenish = rules.getBoolean(GameRuleRegistry.DO_REPLENISH);
-        boolean canReplaceLowest = rules.getBoolean(GameRuleRegistry.DO_REPLACE_LOWEST);
-
-        ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
-        FoodProperties properties = item.components().get(DataComponents.FOOD);
-        boolean hasEffect = properties != null && !properties.effects().isEmpty();
-
-        if (active != null) {
-            if (canReplenish) return EatingOutcome.REPLENISH;
-            return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.NOT_BALANCED;
-        }
-        if (slots.size() < maxFoods) return EatingOutcome.CONSUME;
-        if (canReplaceLowest) return EatingOutcome.REPLACE_LOW;
-        return hasEffect ? EatingOutcome.EFFECTS_ONLY : EatingOutcome.TOO_MANY;
+        if (slots.stream().anyMatch(x -> x.item() == item)) return EatingOutcome.REPLENISH;
+        int maxFoods = Math.max(1, player.level().getGameRules().getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        return slots.size() < maxFoods ? EatingOutcome.CONSUME : EatingOutcome.REPLACE_LOW;
     }
 
     public boolean drain(ServerPlayer player, int amount) {
@@ -164,8 +154,10 @@ public class Diet {
     public boolean tick(ServerPlayer player) {
         GameRules rules = player.level().getGameRules();
         boolean enabled = rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY);
-        boolean toggled = decaying != enabled;
+        int limit = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        boolean toggled = decaying != enabled || capacity != limit;
         decaying = enabled;
+        capacity = limit;
 
         if (!player.gameMode.isSurvival()) return toggled;
         boolean nourished = player.hasEffect(EffectRegistry.nourishment());
@@ -266,7 +258,21 @@ public class Diet {
 
     public void addToSlot(ServerPlayer player, ConsumableFoodInstance instance) {
         slots.add(instance);
+        attach(player, instance);
+    }
 
+    public void replaceSlot(ServerPlayer player, FoodConfig config, Item item, @Nullable ConsumableFoodInstance previous) {
+        if (previous == null) return;
+        int index = slots.indexOf(previous);
+        if (index < 0) return;
+
+        previous.attributes().forEach(bonus -> detach(player, bonus, true));
+        ConsumableFoodInstance instance = eat(player, item, config);
+        slots.set(index, instance);
+        attach(player, instance);
+    }
+
+    private void attach(ServerPlayer player, ConsumableFoodInstance instance) {
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
             if (attribute == null) continue;
@@ -276,11 +282,6 @@ public class Diet {
                 ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
             }
         }
-    }
-
-    public void removeFromSlot(ServerPlayer player, ConsumableFoodInstance instance) {
-        slots.remove(instance);
-        instance.attributes().forEach(bonus -> detach(player, bonus, true));
     }
 
     private void expire(ServerPlayer player) {
@@ -324,6 +325,7 @@ public class Diet {
         compoundTag.putInt("Regen", diet.regen);
         compoundTag.putInt("Starving", diet.starving);
         compoundTag.putBoolean("Decaying", diet.decaying);
+        compoundTag.putInt("Capacity", diet.capacity);
         ListTag depleted = new ListTag();
 
         diet.depletion.forEach((item, value) -> {
@@ -343,6 +345,7 @@ public class Diet {
         diet.regen = tag.getInt("Regen");
         diet.starving = tag.getInt("Starving");
         diet.decaying = !tag.contains("Decaying") || tag.getBoolean("Decaying");
+        diet.capacity = tag.getInt("Capacity");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
 
         for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {

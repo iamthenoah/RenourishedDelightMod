@@ -49,10 +49,8 @@ The mod adds fifteen game rules for server-wide customization:
 | `renourisheddelight:doSleepFoodDrain` | true   | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
 | `renourisheddelight:doNourishment` | false  | Whether eating while full grants the Nourishment effect |
 | `renourisheddelight:doStarvation` | true   | Applies the configured starvation effects while a player has no active food |
-| `renourisheddelight:doReplenish` | true | Whether eating a food you already have active tops it back up. Each top-up costs nutrition decay |
-| `renourisheddelight:doReplaceLowest` | true   | Whether eating a new food while every slot is full replaces the food with the least time left |
 
-Eating resolves in one of three ways: a food you already have active is topped back up (`doReplenish`), a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left (`doReplaceLowest`). When a rule turns its case off the food cannot be eaten at all, and the player is told why. Food that carries status effects is still edible in that situation, granting its effects but no slot.
+Food can always be eaten. A food you already have active is topped back up in the slot it already occupies, a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left. Holding a food you already have active pulses its bar in the HUD to show where it will land.
 
 The Hunger effect, health regen and sleeping all drain food at a fixed cost scaled by `foodDrainRate`, and natural regen is disabled while a player has no active food.
 
