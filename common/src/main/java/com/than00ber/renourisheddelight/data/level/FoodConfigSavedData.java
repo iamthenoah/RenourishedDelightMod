@@ -39,6 +39,7 @@ public final class FoodConfigSavedData extends SavedData implements FoodConfigHo
     @Override
     public void setFoodConfig(FoodConfig updated) {
         config.copyFrom(updated);
+        applyPresets();
         setDirty();
     }
 

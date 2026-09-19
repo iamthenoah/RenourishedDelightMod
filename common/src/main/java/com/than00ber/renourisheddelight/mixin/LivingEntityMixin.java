@@ -16,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    @Unique
-    private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
+    @Unique private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
 
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {

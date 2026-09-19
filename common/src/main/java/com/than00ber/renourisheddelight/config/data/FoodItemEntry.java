@@ -55,4 +55,11 @@ public final class FoodItemEntry {
     public static @Nullable FoodItemEntry get(List<FoodItemEntry> entries, String id) {
         return entries.stream().filter(x -> id.equals(x.item)).findFirst().orElse(null);
     }
+
+    public static List<AttributeBonus> baseline(List<FoodItemEntry> presets, Item item) {
+        FoodItemEntry preset = get(presets, item);
+        List<AttributeBonus> bonuses = new ArrayList<>();
+        (preset != null ? preset.attributes : AttributeBonus.defaults(item)).forEach(x -> bonuses.add(x.copy()));
+        return bonuses;
+    }
 }

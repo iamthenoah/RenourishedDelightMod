@@ -20,25 +20,37 @@ Different foods give different bonuses and last different amounts of time, so ea
 
 Once every food slot is full, eating again grants **Nourishment**. It speeds up natural health regen and stops the extra food drain that normally comes with the Hunger effect. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
 
+## Nutrition Decay
+
+Eating the same thing over and over stops working as well. Every time you eat a food it decays by **1%**, and that comes straight off how long its bonuses last. The bonuses themselves keep their full strength — you just hold them for less time. Keep eating it and it keeps dropping. Nothing resets it on its own.
+
+What wins it back is variety. The mod remembers the last **3** different foods you ate, and anything that falls off that list recovers 1% every time you eat something else. So a food you have not touched in a while slowly climbs back to full strength while you are eating other things.
+
+The practical effect is that three food sources is not enough. Rotating through exactly your slot count keeps the same foods on the recently eaten list permanently, so they never recover — you need a wider pantry than you have slots. A food never drops below **10%** of its configured duration, so a favourite you lean on too hard runs short but never useless.
+
+Set `doNutritionDecay` to _false_ to turn the whole system off; the rate, the window and the floor are all game rules too. Topping up a food you already have active counts as eating it, so it decays the same as taking a fresh slot does and tops back up to its reduced duration rather than its full one. Each player has their own values and their own recently eaten list, and both are saved with the world.
+
 ## Game Rules
 
-The mod adds eleven game rules for server-wide customization:
+The mod adds fifteen game rules for server-wide customization:
 
 | Game Rule | Default | Description |
-| --- | --- | --- |
-| `renourisheddelight:playerStartingHearts` | 20 | Base max health before any food bonuses |
-| `renourisheddelight:maxConsumableFood` | 3 | Maximum number of foods active at once |
-| `renourisheddelight:foodDrainRate` | 100 | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
-| `renourisheddelight:regenHealthTickInterval` | 60 | Ticks between natural health regeneration (three times faster while nourished) |
-| `renourisheddelight:regenDelayAfterDamage` | 60 | Ticks to wait after taking damage before natural regen can resume |
-| `renourisheddelight:nourishmentDurationPercent` | 10 | Nourishment duration as a % of the shortest active food |
-| `renourisheddelight:doSleepFoodDrain` | true | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
-| `renourisheddelight:doNourishment` | false | Whether eating while full grants the Nourishment effect |
-| `renourisheddelight:doStarvation` | true | Applies the configured starvation effects while a player has no active food |
-| `renourisheddelight:doReplenish` | true | Whether eating a food you already have active tops it back up, once it is at 50% or less remaining |
-| `renourisheddelight:doReplaceLowest` | true | Whether eating a new food while every slot is full replaces the food with the least time left |
+| --- |--------| --- |
+| `renourisheddelight:playerStartingHearts` | 20     | Base max health before any food bonuses |
+| `renourisheddelight:maxConsumableFood` | 3      | Maximum number of foods active at once |
+| `renourisheddelight:foodDrainRate` | 100    | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
+| `renourisheddelight:regenHealthTickInterval` | 60     | Ticks between natural health regeneration (three times faster while nourished) |
+| `renourisheddelight:regenDelayAfterDamage` | 60     | Ticks to wait after taking damage before natural regen can resume |
+| `renourisheddelight:nourishmentDurationPercent` | 10     | Nourishment duration as a % of the shortest active food |
+| `renourisheddelight:nutritionDecayRate` | 1      | Percent of its duration a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
+| `renourisheddelight:nutritionDecayWindow` | 3      | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
+| `renourisheddelight:nutritionDecayFloor` | 10     | Lowest percent of its configured duration a food can be worn down to |
+| `renourisheddelight:doNutritionDecay` | false  | Whether eating the same food repeatedly shortens how long its bonuses last |
+| `renourisheddelight:doSleepFoodDrain` | true   | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
+| `renourisheddelight:doNourishment` | false  | Whether eating while full grants the Nourishment effect |
+| `renourisheddelight:doStarvation` | true   | Applies the configured starvation effects while a player has no active food |
 
-Eating resolves in one of three ways: a food you already have active is topped back up (`doReplenish`, once it is at 50% or less remaining), a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left (`doReplaceLowest`). When a rule turns its case off the food cannot be eaten at all, and the player is told why. Food that carries status effects is still edible in that situation, granting its effects but no slot.
+Food can always be eaten. A food you already have active is topped back up in the slot it already occupies, a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left. Holding a food you already have active pulses its bar in the HUD to show where it will land.
 
 The Hunger effect, health regen and sleeping all drain food at a fixed cost scaled by `foodDrainRate`, and natural regen is disabled while a player has no active food.
 
@@ -62,6 +74,7 @@ The configs are also available as config files:
 | `goldenPaletteItem` | `minecraft:golden_carrot` | Item ID used to sample the color palette for the golden-effect tint |
 | `showFoodDisplayInInventory` | false | Whether to render the active food items panel next to the inventory screen |
 | `clipOddMaxHealthHeart` | true | Whether to clip the last heart's unfillable half when max health is odd, instead of showing a half heart that can never fill |
+| `compactHealthBar` | false | Whether to draw health as a single row of 10 hearts that fill proportionally to max health, instead of stacking extra heart rows |
 
 </details>
 
@@ -76,9 +89,17 @@ The configs are also available as config files:
 
 </details>
 
+## Commands
+
+Both need permission level 2, so operators and single-player worlds with cheats on.
+
+`/renourisheddelight clear [<targets>]` empties a player's food bar, dropping every active food and its bonuses. With no target it clears your own.
+
+`/renourisheddelight decay reset [<targets>] [<item>]` clears accumulated nutrition decay, putting the affected foods back to their full duration. With no target it resets your own, and naming an item resets only that food instead of everything.
+
 ## Compatibility
 
-Works out of the box with vanilla food and is built to play nicely with other food mods, including [Farmer's Delight](https://github.com/vectorwing/FarmersDelight). Presets for supported mods ship with the mod itself and can be tweaked per-item from the config screen.
+Works out of the box with vanilla food and is built to play nicely with other food mods, including [Farmer's Delight](https://github.com/vectorwing/FarmersDelight) and [Neapolitan](https://github.com/team-abnormals/neapolitan). Presets for supported mods ship with the mod itself and can be tweaked per-item from the config screen.
 
 ## Feedback & Issues
 

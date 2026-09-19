@@ -16,7 +16,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
-public record FoodConfigSyncPayload(FoodConfig config) implements CustomPacketPayload {
+import java.util.List;
+
+public record FoodConfigSyncPayload(FoodConfig config, List<FoodItemEntry> presets) implements CustomPacketPayload {
 
     private static final Type<FoodConfigSyncPayload> TYPE = new Type<>(RenourishedDelightMod.key("food_config_sync"));
 
@@ -45,7 +47,10 @@ public record FoodConfigSyncPayload(FoodConfig config) implements CustomPacketPa
             MULTIPLIER_CODEC.apply(ByteBufCodecs.list()), x -> x.multipliers,
             STARVATION_CODEC.apply(ByteBufCodecs.list()), x -> x.starvation,
             FoodConfig::new);
-    private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfigSyncPayload> CODEC = CONFIG_CODEC.map(FoodConfigSyncPayload::new, FoodConfigSyncPayload::config);
+    private static final StreamCodec<RegistryFriendlyByteBuf, FoodConfigSyncPayload> CODEC = StreamCodec.composite(
+            CONFIG_CODEC, FoodConfigSyncPayload::config,
+            ENTRY_CODEC.apply(ByteBufCodecs.list()), FoodConfigSyncPayload::presets,
+            FoodConfigSyncPayload::new);
 
     public static void init() {
         Edit.init();
@@ -54,6 +59,7 @@ public record FoodConfigSyncPayload(FoodConfig config) implements CustomPacketPa
 
             if (minecraft.getConnection() instanceof FoodConfigHolder holder) {
                 holder.setFoodConfig(payload.config());
+                holder.setPresets(payload.presets());
             }
             if (minecraft.screen instanceof AbstractFoodConfigScreen screen) {
                 screen.refresh();
@@ -70,7 +76,7 @@ public record FoodConfigSyncPayload(FoodConfig config) implements CustomPacketPa
     }
 
     public static FoodConfigSyncPayload of(FoodConfigHolder holder) {
-        return new FoodConfigSyncPayload(holder.getFoodConfig());
+        return new FoodConfigSyncPayload(holder.getFoodConfig(), holder.getPresets());
     }
 
     @Override

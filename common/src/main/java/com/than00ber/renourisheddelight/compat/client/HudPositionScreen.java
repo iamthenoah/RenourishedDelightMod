@@ -17,7 +17,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -120,7 +119,7 @@ public final class HudPositionScreen extends Screen {
 
         int x = hudX();
         int y = hudY();
-        FoodBarOverlay.renderPreview(graphics, new Point(x, y), previewSlots);
+        FoodBarOverlay.renderPreview(graphics, x, y, previewSlots);
 
         int centerY = height / 2;
         graphics.drawCenteredString(font, title, width / 2, centerY - 10, 0xFFFFFF);

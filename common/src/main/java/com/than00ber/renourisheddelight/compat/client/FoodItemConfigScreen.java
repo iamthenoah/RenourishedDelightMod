@@ -52,7 +52,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     protected void init() {
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
-        items = listItems();
 
         modFilterField = new ModFilterField(() -> items.stream().map(FoodItemConfigScreen::idOf).toList(), namespace -> rebuildContent());
 
@@ -91,6 +90,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void rebuildContent() {
+        items = listItems();
+
         for (AbstractWidget widget : rowWidgets) {
             removeWidget(widget);
         }
@@ -126,7 +127,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
             Item item = filtered.get(i + scrollOffset);
             int y = listTop + i * ROW_HEIGHT;
-            boolean customized = config.entry(item) != null;
+            boolean customized = config.isCustomized(presets, item);
             icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
 
             MutableComponent label = item.getDescription().copy();
@@ -155,12 +156,17 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         for (Item item : BuiltInRegistries.ITEM) {
             if (item != Items.AIR && item.components().get(DataComponents.FOOD) != null) items.add(item);
         }
-        for (FoodItemEntry entry : config.foods) {
+        collect(items, config.foods);
+        collect(items, presets);
+        items.sort(Comparator.comparing(FoodItemConfigScreen::idOf, String.CASE_INSENSITIVE_ORDER));
+        return items;
+    }
+
+    private static void collect(List<Item> items, List<FoodItemEntry> entries) {
+        for (FoodItemEntry entry : entries) {
             Item item = resolveItem(entry.item);
             if (item != null && !items.contains(item)) items.add(item);
         }
-        items.sort(Comparator.comparing(FoodItemConfigScreen::idOf, String.CASE_INSENSITIVE_ORDER));
-        return items;
     }
 
     private boolean matchesSearch(Item item) {
@@ -238,19 +244,21 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private void addItem() {
-        if (!editable) return;
-        Item item = resolveItem(newItemField.getValue().trim());
+        Item item = pendingItem();
         if (item == null) return;
         newItemField.setValue("");
-        config.claim(item);
-        items = listItems();
+        config.claim(presets, item);
         openBonuses(item);
+    }
+
+    private @Nullable Item pendingItem() {
+        return editable ? resolveItem(newItemField.getValue().trim()) : null;
     }
 
     private void openBonuses(Item item) {
         if (!editable) return;
-        minecraft.setScreen(new FoodItemBonusScreen(this, config.claim(item), () -> {
-            config.prune(item);
+        minecraft.setScreen(new FoodItemBonusScreen(this, config.claim(presets, item), () -> {
+            config.prune(presets, item);
             save();
         }));
     }
@@ -258,7 +266,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void resetItem(Item item) {
         if (!editable) return;
         config.reset(item);
-        items = listItems();
         save();
         rebuildContent();
     }
@@ -266,7 +273,6 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     private void resetAll() {
         if (!editable) return;
         config.foods.clear();
-        items = listItems();
         save();
         scrollOffset = 0;
         rebuildContent();
@@ -274,6 +280,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     @Override
     protected void onDone() {
+        Item pending = pendingItem();
+        if (pending != null) config.claim(presets, pending);
         save();
         minecraft.setScreen(parent);
     }
