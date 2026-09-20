@@ -298,11 +298,13 @@ public class Diet {
     private void attach(ServerPlayer player, ConsumableFoodInstance instance) {
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
-            if (attribute == null) continue;
-            attribute.addPermanentModifier(bonus.modifier());
 
-            if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-                ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+            if (attribute != null) {
+                attribute.addPermanentModifier(bonus.modifier());
+
+                if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
+                    ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+                }
             }
         }
     }
