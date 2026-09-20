@@ -34,7 +34,7 @@
   "gamerule.renourisheddelight:doSleepFoodDrain": "Do Sleep Food Drain",
   "gamerule.renourisheddelight:doSleepFoodDrain.description": "Whether skipping the night by sleeping drains food, scaled by how much of the night was skipped. Applies to every player, not only the ones who slept.",
   "gamerule.renourisheddelight:doNourishment": "Do Nourishment",
-  "gamerule.renourisheddelight:doNourishment.description": "Whether eating with every slot full and every active food still above 95% grants the Nourishment effect, lasting as long as the shortest active food.",
+  "gamerule.renourisheddelight:doNourishment.description": "Whether eating with every slot full and every active food still above 95% grants the Nourishment effect, lasting as long as the shortest active food and warding off harmful effects.",
   "gamerule.renourisheddelight:doStarvation": "Do Starvation",
   "gamerule.renourisheddelight:doStarvation.description": "Applies the configured starvation effects when the player goes without food.",
   "item.minecraft.potion.effect.nourishment": "Potion of Nourishment",

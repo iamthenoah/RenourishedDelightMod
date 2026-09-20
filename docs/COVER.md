@@ -18,7 +18,7 @@ Different foods give different bonuses and last different amounts of time, so ea
 
 ## Nourishment
 
-Eat with every slot full and every active food still above **95%** of its duration and you get **Nourishment**, lasting as long as your shortest active food. It speeds up natural health regen and stops the extra food drain that normally comes with the Hunger effect. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
+Eat with every slot full and every active food still above **95%** of its duration and you get **Nourishment**, lasting as long as your shortest active food. It speeds up natural health regen, stops the extra food drain that normally comes with the Hunger effect, and strips every harmful effect off you — both the ones you already had and any applied while it lasts. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
 
 ## Nutrition Decay
 
