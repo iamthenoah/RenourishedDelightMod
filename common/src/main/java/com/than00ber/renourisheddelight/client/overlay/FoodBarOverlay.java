@@ -184,7 +184,6 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
                     textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, preview.color());
                 }
             }
-
             for (int i = 0; i < size; i++) {
                 int color = blink ? 0xFFFFFFFF : hunger ? 0xFF12410B : 0xFF000000;
                 int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);

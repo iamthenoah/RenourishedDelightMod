@@ -46,6 +46,7 @@ public class Diet {
     private static final int REGEN_DRAIN = 3;
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
+    private static final int NOURISHMENT_THRESHOLD = 95;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
         @Override
@@ -217,18 +218,18 @@ public class Diet {
     }
 
     private void nourish(ServerPlayer player, GameRules rules) {
-        if (rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT)) {
-            int percent = rules.getInt(GameRuleRegistry.NOURISHMENT_DURATION_PERCENT);
+        if (!rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT) || slots.isEmpty()) return;
+        if (!slots.stream().allMatch(Diet::isFresh)) return;
 
-            if (percent > 0 && !slots.isEmpty()) {
-                int shortest = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
-                int duration = (int) Math.round(shortest * (percent / 100.0));
+        int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
 
-                if (duration > 0) {
-                    player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
-                }
-            }
+        if (duration > 0) {
+            player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
         }
+    }
+
+    private static boolean isFresh(ConsumableFoodInstance instance) {
+        return (instance.duration() - instance.time()) * 100 >= instance.duration() * NOURISHMENT_THRESHOLD;
     }
 
     private boolean regenerate(ServerPlayer player, GameRules rules, boolean nourished) {

@@ -18,7 +18,7 @@ Different foods give different bonuses and last different amounts of time, so ea
 
 ## Nourishment
 
-Once every food slot is full, eating again grants **Nourishment**. It speeds up natural health regen and stops the extra food drain that normally comes with the Hunger effect. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
+Eat with every slot full and every active food still above **95%** of its duration and you get **Nourishment**, lasting as long as your shortest active food. It speeds up natural health regen and stops the extra food drain that normally comes with the Hunger effect. Eating a food you already have active tops it back up, and eating a new food while full replaces whichever slot has the least time left, so you are never blocked from eating.
 
 ## Nutrition Decay
 
@@ -41,13 +41,12 @@ The mod adds fifteen game rules for server-wide customization:
 | `renourisheddelight:foodDrainRate` | 100    | How fast active foods tick down, in percent (50 is half speed, 0 never drains) |
 | `renourisheddelight:regenHealthTickInterval` | 60     | Ticks between natural health regeneration (three times faster while nourished) |
 | `renourisheddelight:regenDelayAfterDamage` | 60     | Ticks to wait after taking damage before natural regen can resume |
-| `renourisheddelight:nourishmentDurationPercent` | 10     | Nourishment duration as a % of the shortest active food |
 | `renourisheddelight:nutritionDecayRate` | 1      | Percent of its duration a food decays by each time you eat it, and recovers once it leaves the recently eaten list |
 | `renourisheddelight:nutritionDecayWindow` | 3      | How many different foods you must eat before an earlier one starts recovering from its nutrition decay |
 | `renourisheddelight:nutritionDecayFloor` | 10     | Lowest percent of its configured duration a food can be worn down to |
 | `renourisheddelight:doNutritionDecay` | false  | Whether eating the same food repeatedly shortens how long its bonuses last |
 | `renourisheddelight:doSleepFoodDrain` | true   | Whether skipping the night drains food, scaled by how much of the night was skipped, for every player |
-| `renourisheddelight:doNourishment` | false  | Whether eating while full grants the Nourishment effect |
+| `renourisheddelight:doNourishment` | false  | Whether eating with every slot full and every active food above 95% grants the Nourishment effect |
 | `renourisheddelight:doStarvation` | true   | Applies the configured starvation effects while a player has no active food |
 
 Food can always be eaten. A food you already have active is topped back up in the slot it already occupies, a food you do not have active takes a free slot, and if there is no free slot it replaces the one with the least time left. Holding a food you already have active pulses its bar in the HUD to show where it will land.
