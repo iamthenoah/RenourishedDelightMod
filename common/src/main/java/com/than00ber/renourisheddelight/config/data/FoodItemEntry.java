@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.config.data;
 
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.EffectBonus;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -15,20 +16,28 @@ public final class FoodItemEntry {
 
     public String item;
     public List<AttributeBonus> attributes;
+    public List<EffectBonus> effects = new ArrayList<>();
 
     @SuppressWarnings("unused")
     public FoodItemEntry() {
     }
 
     public FoodItemEntry(String item, List<AttributeBonus> attributes) {
+        this(item, attributes, new ArrayList<>());
+    }
+
+    public FoodItemEntry(String item, List<AttributeBonus> attributes, List<EffectBonus> effects) {
         this.item = item;
         this.attributes = attributes;
+        this.effects = effects;
     }
 
     public FoodItemEntry copy() {
         List<AttributeBonus> bonuses = new ArrayList<>();
+        List<EffectBonus> granted = new ArrayList<>();
         attributes.forEach(x -> bonuses.add(x.copy()));
-        return new FoodItemEntry(item, bonuses);
+        effects.forEach(x -> granted.add(x.copy()));
+        return new FoodItemEntry(item, bonuses, granted);
     }
 
     public CompoundTag save() {
@@ -37,15 +46,23 @@ public final class FoodItemEntry {
         ListTag list = new ListTag();
         attributes.forEach(x -> list.add(x.save()));
         tag.put("Attributes", list);
+        ListTag granted = new ListTag();
+        effects.forEach(x -> granted.add(x.save()));
+        tag.put("Effects", granted);
         return tag;
     }
 
     public static FoodItemEntry load(CompoundTag tag) {
         List<AttributeBonus> bonuses = new ArrayList<>();
+        List<EffectBonus> granted = new ArrayList<>();
+
         for (Tag bonus : tag.getList("Attributes", Tag.TAG_COMPOUND)) {
             bonuses.add(AttributeBonus.load((CompoundTag) bonus));
         }
-        return new FoodItemEntry(tag.getString("Item"), bonuses);
+        for (Tag bonus : tag.getList("Effects", Tag.TAG_COMPOUND)) {
+            granted.add(EffectBonus.load((CompoundTag) bonus));
+        }
+        return new FoodItemEntry(tag.getString("Item"), bonuses, granted);
     }
 
     public static @Nullable FoodItemEntry get(List<FoodItemEntry> entries, Item item) {
@@ -61,5 +78,12 @@ public final class FoodItemEntry {
         List<AttributeBonus> bonuses = new ArrayList<>();
         (preset != null ? preset.attributes : AttributeBonus.defaults(item)).forEach(x -> bonuses.add(x.copy()));
         return bonuses;
+    }
+
+    public static List<EffectBonus> baselineEffects(List<FoodItemEntry> presets, Item item) {
+        FoodItemEntry preset = get(presets, item);
+        List<EffectBonus> granted = new ArrayList<>();
+        if (preset != null) preset.effects.forEach(x -> granted.add(x.copy()));
+        return granted;
     }
 }

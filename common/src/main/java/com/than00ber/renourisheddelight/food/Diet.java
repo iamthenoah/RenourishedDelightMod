@@ -44,7 +44,6 @@ public class Diet {
 
     private static final int HUNGER_DRAIN_PER_SECOND = 2;
     private static final int REGEN_DRAIN = 3;
-    private static final int NOURISHED_REGEN_SPEEDUP = 3;
     private static final int STARVING_MESSAGE_INTERVAL = 40;
     private static final int NOURISHMENT_THRESHOLD = 95;
 
@@ -189,6 +188,7 @@ public class Diet {
 
         if (++drainTimer >= 20) {
             drainTimer = 0;
+            refresh(player);
             if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
         }
         boolean changed = toggled | drain(player, amount);
@@ -203,11 +203,13 @@ public class Diet {
 
     public void clearModifiers(ServerPlayer player) {
         slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, false)));
+        slots.forEach(instance -> release(player, instance));
     }
 
     public boolean clear(ServerPlayer player) {
         if (slots.isEmpty()) return false;
         slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, true)));
+        slots.forEach(instance -> release(player, instance));
         slots.clear();
         regen = 0;
         drainTimer = 0;
@@ -236,7 +238,6 @@ public class Diet {
         if (!slots.isEmpty() && player.isHurt() && rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
             if (nourished || ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE)) {
                 int interval = Math.max(1, rules.getInt(GameRuleRegistry.REGEN_INTERVAL));
-                if (nourished) interval = Math.max(1, interval / NOURISHED_REGEN_SPEEDUP);
                 if (++regen < interval) return false;
 
                 regen = 0;
@@ -290,12 +291,15 @@ public class Diet {
         if (index < 0) return;
 
         previous.attributes().forEach(bonus -> detach(player, bonus, true));
+        release(player, previous);
         ConsumableFoodInstance instance = eat(player, item, config);
         slots.set(index, instance);
         attach(player, instance);
     }
 
     private void attach(ServerPlayer player, ConsumableFoodInstance instance) {
+        instance.effects().forEach(x -> player.addEffect(x.toMobEffect()));
+
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeInstance attribute = player.getAttribute(bonus.attribute());
 
@@ -321,8 +325,24 @@ public class Diet {
                     instance.attributes().remove(j);
                 }
             }
+            for (int j = instance.effects().size() - 1; j >= 0; j--) {
+                EffectInstance granted = instance.effects().get(j);
+
+                if (granted.isExpired()) {
+                    player.removeEffect(granted.effect());
+                    instance.effects().remove(j);
+                }
+            }
             if (instance.isExpired()) slots.remove(i);
         }
+    }
+
+    private void refresh(ServerPlayer player) {
+        slots.forEach(instance -> instance.effects().forEach(x -> player.addEffect(x.toMobEffect())));
+    }
+
+    private void release(ServerPlayer player, ConsumableFoodInstance instance) {
+        instance.effects().forEach(x -> player.removeEffect(x.effect()));
     }
 
     private void detach(ServerPlayer player, AttributeModifierInstance bonus, boolean notify) {

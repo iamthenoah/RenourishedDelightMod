@@ -28,10 +28,6 @@ public final class ClientConfiguration implements ConfigData {
     public int foodBarOffsetY = 0;
 
     @ConfigEntry.Gui.Tooltip
-    @Comment("Item ID to sample for the golden-effect color palette (default: minecraft:golden_carrot)")
-    public String goldenPaletteItem = "minecraft:golden_carrot";
-
-    @ConfigEntry.Gui.Tooltip
     @Comment("Whether to render the active food items panel next to the inventory screen (default: false)")
     public boolean showFoodDisplayInInventory = false;
 

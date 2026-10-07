@@ -8,7 +8,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import dev.architectury.event.events.client.ClientTickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,7 +16,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
@@ -82,7 +80,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             items.remove(Items.AIR);
             TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", MINI_SIZE, items.size());
             TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", LARGE_SIZE, items.size());
-            int[] palette = getColorPalette(getGoldenPaletteItem());
+            int[] palette = getColorPalette(Items.GOLDEN_CARROT);
 
             for (Item item : items) {
                 appendItem(miniBuilder, item, MINI_SIZE, palette);
@@ -293,15 +291,6 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             }
         }
         return null;
-    }
-
-    private Item getGoldenPaletteItem() {
-        try {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(ClientConfiguration.getInstance().goldenPaletteItem));
-            return item != Items.AIR ? item : Items.GOLDEN_CARROT;
-        } catch (Exception exception) {
-            return Items.GOLDEN_CARROT;
-        }
     }
 
     private static float brightness(int pixel) {

@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.config.data;
 
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.EffectBonus;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -59,11 +60,16 @@ public final class FoodConfig {
         return entry != null ? entry.attributes : AttributeBonus.defaults(item);
     }
 
+    public List<EffectBonus> effects(Item item) {
+        FoodItemEntry entry = entry(item);
+        return entry != null ? entry.effects : List.of();
+    }
+
     public FoodItemEntry claim(List<FoodItemEntry> presets, Item item) {
         FoodItemEntry entry = entry(item);
 
         if (entry == null) {
-            entry = new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), FoodItemEntry.baseline(presets, item));
+            entry = new FoodItemEntry(BuiltInRegistries.ITEM.getKey(item).toString(), FoodItemEntry.baseline(presets, item), FoodItemEntry.baselineEffects(presets, item));
             foods.add(entry);
         }
         return entry;
@@ -76,7 +82,7 @@ public final class FoodConfig {
 
     public boolean isCustomized(List<FoodItemEntry> presets, Item item) {
         FoodItemEntry entry = entry(item);
-        return entry != null && !matchesBaseline(entry, FoodItemEntry.baseline(presets, item));
+        return entry != null && !matchesBaseline(entry, FoodItemEntry.baseline(presets, item), FoodItemEntry.baselineEffects(presets, item));
     }
 
     public void prune(List<FoodItemEntry> presets, Item item) {
@@ -84,8 +90,12 @@ public final class FoodConfig {
         if (entry != null && !isCustomized(presets, item)) foods.remove(entry);
     }
 
-    private static boolean matchesBaseline(FoodItemEntry entry, List<AttributeBonus> defaults) {
-        if (entry.attributes.size() != defaults.size()) return false;
+    private static boolean matchesBaseline(FoodItemEntry entry, List<AttributeBonus> defaults, List<EffectBonus> effects) {
+        if (entry.attributes.size() != defaults.size() || entry.effects.size() != effects.size()) return false;
+
+        for (int i = 0; i < effects.size(); i++) {
+            if (!entry.effects.get(i).matches(effects.get(i))) return false;
+        }
 
         for (int i = 0; i < defaults.size(); i++) {
             AttributeBonus bonus = entry.attributes.get(i);

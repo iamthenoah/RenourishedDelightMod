@@ -8,6 +8,7 @@ import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.EffectBonus;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.registry.ReloadListenerRegistry;
@@ -70,6 +71,7 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
     private static FoodItemEntry toFoodItemEntry(JsonObject object) {
         String id = GsonHelper.getAsString(object, "item", "");
         List<AttributeBonus> declared = new ArrayList<>();
+        List<EffectBonus> effects = new ArrayList<>();
 
         for (JsonElement element : GsonHelper.getAsJsonArray(object, "attributes", new JsonArray())) {
             if (element.isJsonObject()) {
@@ -82,7 +84,17 @@ public final class FoodConfigReloadListener extends SimpleJsonResourceReloadList
                         GsonHelper.getAsInt(bonus, "duration", 0)));
             }
         }
-        return new FoodItemEntry(id, withDefaults(id, declared));
+        for (JsonElement element : GsonHelper.getAsJsonArray(object, "effects", new JsonArray())) {
+            if (element.isJsonObject()) {
+                JsonObject bonus = element.getAsJsonObject();
+
+                effects.add(new EffectBonus(
+                        GsonHelper.getAsString(bonus, "effect", ""),
+                        GsonHelper.getAsInt(bonus, "level", 1),
+                        GsonHelper.getAsInt(bonus, "duration", 0)));
+            }
+        }
+        return new FoodItemEntry(id, withDefaults(id, declared), effects);
     }
 
     private static List<AttributeBonus> withDefaults(String id, List<AttributeBonus> declared) {

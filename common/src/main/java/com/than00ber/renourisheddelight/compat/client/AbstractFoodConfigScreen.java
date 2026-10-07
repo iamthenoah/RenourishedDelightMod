@@ -96,6 +96,10 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         return super.addRenderableWidget(widget);
     }
 
+    protected boolean showTitle() {
+        return true;
+    }
+
     protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     }
 
@@ -130,7 +134,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected @Nullable SuggestField openSuggestFieldAt(double mouseX, double mouseY) {
         for (SuggestField field : suggestFields) {
-            if (field.box.isFocused() && !field.matches.isEmpty() && field.isMouseOver(mouseX, mouseY)) {
+            if (field.box.visible && field.box.isFocused() && !field.matches.isEmpty() && field.isMouseOver(mouseX, mouseY)) {
                 return field;
             }
         }
@@ -140,7 +144,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (SuggestField field : suggestFields) {
-            if (field.box.isFocused() && !field.matches.isEmpty()) {
+            if (field.box.visible && field.box.isFocused() && !field.matches.isEmpty()) {
                 int index = field.indexAt(mouseX, mouseY);
                 if (index >= 0) {
                     field.box.setValue(field.matches.get(index).value());
@@ -202,7 +206,9 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderPanelChrome(graphics);
-        graphics.drawCenteredString(font, title, width / 2, TITLE_Y, 0xFFFFFF);
+        if (showTitle()) {
+            graphics.drawCenteredString(font, title, width / 2, TITLE_Y, 0xFFFFFF);
+        }
 
         MutableComponent scope = !editable
                 ? Component.translatable("config.renourisheddelight.food_items.read_only").withStyle(ChatFormatting.RED)
@@ -227,7 +233,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         }
 
         for (SuggestField field : suggestFields) {
-            if (field.box.isFocused() && !field.matches.isEmpty()) {
+            if (field.box.visible && field.box.isFocused() && !field.matches.isEmpty()) {
                 field.render(graphics, mouseX, mouseY);
             }
         }

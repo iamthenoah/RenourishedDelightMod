@@ -5,6 +5,7 @@ import com.than00ber.renourisheddelight.compat.client.AbstractFoodConfigScreen;
 import com.than00ber.renourisheddelight.config.data.*;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
+import com.than00ber.renourisheddelight.food.EffectBonus;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.Minecraft;
@@ -28,9 +29,15 @@ public record FoodConfigSyncPayload(FoodConfig config, List<FoodItemEntry> prese
             ByteBufCodecs.DOUBLE, x -> x.amount,
             ByteBufCodecs.VAR_INT, x -> x.duration,
             AttributeBonus::new);
+    private static final StreamCodec<RegistryFriendlyByteBuf, EffectBonus> EFFECT_CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, x -> x.effect,
+            ByteBufCodecs.VAR_INT, x -> x.level,
+            ByteBufCodecs.VAR_INT, x -> x.duration,
+            EffectBonus::new);
     private static final StreamCodec<RegistryFriendlyByteBuf, FoodItemEntry> ENTRY_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, x -> x.item,
             BONUS_CODEC.apply(ByteBufCodecs.list()), x -> x.attributes,
+            EFFECT_CODEC.apply(ByteBufCodecs.list()), x -> x.effects,
             FoodItemEntry::new);
     private static final StreamCodec<RegistryFriendlyByteBuf, DurationMultiplierEntry> MULTIPLIER_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, x -> x.attribute,

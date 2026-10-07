@@ -9,31 +9,38 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Stream;
 
-public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
+public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes, List<EffectInstance> effects) {
 
     public int duration() {
-        return attributes.stream().mapToInt(AttributeModifierInstance::duration).max().orElse(0);
+        return Math.max(
+                attributes.stream().mapToInt(AttributeModifierInstance::duration).max().orElse(0),
+                effects.stream().mapToInt(EffectInstance::duration).max().orElse(0));
     }
 
     public int time() {
-        return attributes.stream()
-                .max(Comparator.comparingInt(AttributeModifierInstance::duration))
-                .map(AttributeModifierInstance::time)
+        int duration = duration();
+        return Stream.concat(
+                        attributes.stream().filter(x -> x.duration() == duration).map(AttributeModifierInstance::time),
+                        effects.stream().filter(x -> x.duration() == duration).map(EffectInstance::time))
+                .findFirst()
                 .orElse(0);
     }
 
     public boolean isExpired() {
-        return attributes.isEmpty();
+        return attributes.isEmpty() && effects.isEmpty();
     }
 
     public void tick(int ticks) {
         attributes.forEach(x -> x.tick(ticks));
+        effects.forEach(x -> x.tick(ticks));
     }
 
     public static ConsumableFoodInstance create(Item item, FoodConfig config) {
@@ -42,13 +49,26 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
 
     public static ConsumableFoodInstance create(Item item, FoodConfig config, int decay) {
         List<AttributeModifierInstance> attributes = new ArrayList<>();
+        List<EffectInstance> effects = new ArrayList<>();
         int value = Math.max(0, Diet.FULL_NUTRITION - decay);
 
         for (AttributeBonus bonus : config.bonuses(item)) {
             AttributeModifierInstance instance = resolveBonus(bonus, config, value);
             if (instance != null) attributes.add(instance);
         }
-        return new ConsumableFoodInstance(item, attributes);
+        for (EffectBonus bonus : config.effects(item)) {
+            EffectInstance instance = resolveEffect(bonus, value);
+            if (instance != null) effects.add(instance);
+        }
+        return new ConsumableFoodInstance(item, attributes, effects);
+    }
+
+    private static @Nullable EffectInstance resolveEffect(EffectBonus bonus, int value) {
+        Holder<MobEffect> effect = EffectBonus.resolve(bonus.effect);
+        if (effect == null) return null;
+
+        int duration = Math.max(1, (int) Math.round(bonus.duration * value / (double) Diet.FULL_NUTRITION));
+        return new EffectInstance(effect, Math.max(1, bonus.level), duration, 0);
     }
 
     private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, FoodConfig config, int value) {
@@ -101,6 +121,9 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         ListTag attributes = new ListTag();
         instance.attributes.forEach(x -> attributes.add(AttributeModifierInstance.save(x)));
         tag.put("Attributes", attributes);
+        ListTag effects = new ListTag();
+        instance.effects.forEach(x -> effects.add(EffectInstance.save(x)));
+        tag.put("Effects", effects);
         return tag;
     }
 
@@ -108,10 +131,16 @@ public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> 
         Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(compoundTag.getString("Item")));
         List<AttributeModifierInstance> attributes = new ArrayList<>();
 
+        List<EffectInstance> effects = new ArrayList<>();
+
         for (Tag tag : compoundTag.getList("Attributes", Tag.TAG_COMPOUND)) {
             AttributeModifierInstance bonus = AttributeModifierInstance.load((CompoundTag) tag);
             if (bonus != null) attributes.add(bonus);
         }
-        return new ConsumableFoodInstance(item, attributes);
+        for (Tag tag : compoundTag.getList("Effects", Tag.TAG_COMPOUND)) {
+            EffectInstance instance = EffectInstance.load((CompoundTag) tag);
+            if (instance != null) effects.add(instance);
+        }
+        return new ConsumableFoodInstance(item, attributes, effects);
     }
 }

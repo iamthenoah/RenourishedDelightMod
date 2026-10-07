@@ -6,6 +6,7 @@ import com.than00ber.renourisheddelight.food.AttributeModifierInstance;
 import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.food.EffectInstance;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
@@ -47,7 +48,7 @@ public abstract class ItemStackMixin {
         int nutrition = Diet.FULL_NUTRITION - decay;
 
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(stack.getItem(), config, decay);
-        if (instance.attributes().isEmpty()) return;
+        if (instance.attributes().isEmpty() && instance.effects().isEmpty()) return;
 
         List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
         tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
@@ -64,6 +65,15 @@ public abstract class ItemStackMixin {
                     .append(Component.translatable(key, amount, description))
                     .append(Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")"))
                     .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
+        }
+        for (EffectInstance granted : instance.effects()) {
+            MutableComponent name = Component.translatable(granted.effect().value().getDescriptionId());
+            if (granted.level() > 1) name = Component.translatable("potion.withAmplifier", name, Component.translatable("potion.potency." + (granted.level() - 1)));
+
+            tooltip.add(Component.literal(" ")
+                    .append(name)
+                    .append(Component.literal(" (" + StringUtil.formatTickDuration(granted.duration(), 20) + ")"))
+                    .withStyle(granted.effect().value().isBeneficial() ? ChatFormatting.BLUE : ChatFormatting.RED));
         }
         callback.setReturnValue(tooltip);
     }

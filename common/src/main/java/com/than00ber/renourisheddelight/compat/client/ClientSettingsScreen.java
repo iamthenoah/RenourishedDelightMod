@@ -1,11 +1,9 @@
 package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
-import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -20,9 +18,8 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
     private static final int RESET_GAP = 5;
     private static final int RESET_WIDTH = 45;
     private static final int TOTAL_WIDTH = FIELD_WIDTH + RESET_GAP + RESET_WIDTH;
-    private static final int ROWS = 6;
+    private static final int ROWS = 5;
 
-    private EditBox goldenPaletteItemField;
     private boolean showFoodDisplayValue;
     private boolean clipOddMaxHealthHeartValue;
     private boolean compactHealthBarValue;
@@ -57,17 +54,9 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
             AutoConfig.getConfigHolder(ClientConfiguration.class).save();
         });
 
-        goldenPaletteItemField = new EditBox(font, left, top + ROW_HEIGHT, FIELD_WIDTH, BUTTON_HEIGHT, Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem"));
-        goldenPaletteItemField.setMaxLength(256);
-        goldenPaletteItemField.setValue(config.goldenPaletteItem.isBlank() ? DEFAULTS.goldenPaletteItem : config.goldenPaletteItem);
-        goldenPaletteItemField.setHint(Component.translatable("config.renourisheddelight.client.golden_palette_item_hint"));
-        goldenPaletteItemField.setTooltip(Tooltip.create(Component.translatable("text.autoconfig.renourisheddelight/client.option.goldenPaletteItem.@Tooltip", EffectRegistry.nourishment().value().getDisplayName())));
-        addRenderableWidget(goldenPaletteItemField);
-        addResetButton(left, top + ROW_HEIGHT, () -> goldenPaletteItemField.setValue(DEFAULTS.goldenPaletteItem));
-
-        addToggle(left, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayValue, DEFAULTS.showFoodDisplayInInventory, value -> showFoodDisplayValue = value);
-        addToggle(left, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart", clipOddMaxHealthHeartValue, DEFAULTS.clipOddMaxHealthHeart, value -> clipOddMaxHealthHeartValue = value);
-        addToggle(left, top + ROW_HEIGHT * 4, "text.autoconfig.renourisheddelight/client.option.compactHealthBar", compactHealthBarValue, DEFAULTS.compactHealthBar, value -> compactHealthBarValue = value);
+        addToggle(left, top + ROW_HEIGHT, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayValue, DEFAULTS.showFoodDisplayInInventory, value -> showFoodDisplayValue = value);
+        addToggle(left, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart", clipOddMaxHealthHeartValue, DEFAULTS.clipOddMaxHealthHeart, value -> clipOddMaxHealthHeartValue = value);
+        addToggle(left, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.compactHealthBar", compactHealthBarValue, DEFAULTS.compactHealthBar, value -> compactHealthBarValue = value);
 
         addDoneButton(left, top + ROW_HEIGHT * (ROWS - 1) + DONE_BUTTON_GAP);
     }
@@ -103,7 +92,6 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
     @Override
     protected void save() {
         ClientConfiguration config = ClientConfiguration.getInstance();
-        config.goldenPaletteItem = goldenPaletteItemField.getValue().trim();
         config.showFoodDisplayInInventory = showFoodDisplayValue;
         config.clipOddMaxHealthHeart = clipOddMaxHealthHeartValue;
         config.compactHealthBar = compactHealthBarValue;

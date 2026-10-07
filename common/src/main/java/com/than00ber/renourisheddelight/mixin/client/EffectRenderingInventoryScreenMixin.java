@@ -44,7 +44,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
     @Unique private static final int ICON_SIZE = 18;
     @Unique private static final int ICON_MARGIN = 6;
     @Unique private static final int TEXT_GAP = 4;
-    @Unique private static final int TEXT_MAX_WIDTH = 90;
+    @Unique private static final int TEXT_MAX_WIDTH = 86;
 
     public EffectRenderingInventoryScreenMixin(T abstractContainerMenu, Inventory inventory, Component component) {
         super(abstractContainerMenu, inventory, component);
