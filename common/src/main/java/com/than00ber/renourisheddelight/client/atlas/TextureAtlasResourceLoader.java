@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
-import dev.architectury.event.events.client.ClientTickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -68,6 +67,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
             BuiltInRegistries.ITEM.stream().filter(x -> x.components().has(DataComponents.FOOD)).forEach(items::add);
             BuiltInRegistries.BLOCK.forEach(x -> items.add(x.asItem()));
             items.remove(Items.AIR);
+
             TextureAtlas.Builder miniBuilder = new TextureAtlas.Builder("mini", MINI_SIZE, items.size());
             TextureAtlas.Builder largeBuilder = new TextureAtlas.Builder("large", LARGE_SIZE, items.size());
             int[] palette = getColorPalette(getGoldenPaletteItem());
@@ -84,14 +84,11 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 large.release();
                 throw new IllegalStateException("no item textures could be rendered");
             }
-            if (miniAtlas != null)
-                miniAtlas.release();
-            if (largeAtlas != null)
-                largeAtlas.release();
+            if (miniAtlas != null) miniAtlas.release();
+            if (largeAtlas != null) largeAtlas.release();
             miniAtlas = mini;
             largeAtlas = large;
-            RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms",
-                    (System.nanoTime() - startNanos) / 1_000_000L);
+            RenourishedDelightMod.LOGGER.info("Item icon atlas generated in {} ms", (System.nanoTime() - startNanos) / 1_000_000L);
         } catch (Exception exception) {
             RenourishedDelightMod.LOGGER.error("Failed to generate item icon atlas", exception);
         }
@@ -125,8 +122,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         target.bindWrite(true);
 
         RenderSystem.backupProjectionMatrix();
-        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, 16, 16, 0, -1000, 1000),
-                VertexSorting.ORTHOGRAPHIC_Z);
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, 16, 16, 0, -1000, 1000), VertexSorting.ORTHOGRAPHIC_Z);
 
         PoseStack poseStack = new PoseStack();
         poseStack.pushPose();
@@ -138,8 +134,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         try {
             MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
             BakedModel model = itemRenderer.getModel(stack, null, null, 0);
-            itemRenderer.render(stack, ItemDisplayContext.GUI, false, poseStack, bufferSource, 0xF000F0,
-                    OverlayTexture.NO_OVERLAY, model);
+            itemRenderer.render(stack, ItemDisplayContext.GUI, false, poseStack, bufferSource, 0xF000F0, OverlayTexture.NO_OVERLAY, model);
             bufferSource.endBatch();
 
             NativeImage image = new NativeImage(dimensions, dimensions, false);
@@ -192,14 +187,10 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
                 if (a == 0) {
                     boolean neighbor = x > 0 && ((input.getPixelRGBA(x - 1, y) >> 24) & 0xFF) != 0;
-                    if (!neighbor && x < width - 1 && ((input.getPixelRGBA(x + 1, y) >> 24) & 0xFF) != 0)
-                        neighbor = true;
-                    if (!neighbor && y > 0 && ((input.getPixelRGBA(x, y - 1) >> 24) & 0xFF) != 0)
-                        neighbor = true;
-                    if (!neighbor && y < height - 1 && ((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0)
-                        neighbor = true;
-                    if (neighbor)
-                        output.setPixelRGBA(x, y, 0xFFFFFFFF);
+                    if (!neighbor && x < width - 1 && ((input.getPixelRGBA(x + 1, y) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (!neighbor && y > 0 && ((input.getPixelRGBA(x, y - 1) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (!neighbor && y < height - 1 && ((input.getPixelRGBA(x, y + 1) >> 24) & 0xFF) != 0) neighbor = true;
+                    if (neighbor) output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 } else if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
                     output.setPixelRGBA(x, y, 0xFFFFFFFF);
                 }
@@ -276,12 +267,10 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
                 for (int x = 0; x < image.getWidth(); x++) {
                     for (int y = 0; y < image.getHeight(); y++) {
                         int pixel = image.getPixelRGBA(x, y);
-                        if (((pixel >> 24) & 0xFF) != 0)
-                            pixels.add(pixel);
+                        if (((pixel >> 24) & 0xFF) != 0) pixels.add(pixel);
                     }
                 }
-                if (pixels.isEmpty())
-                    return null;
+                if (pixels.isEmpty()) return null;
                 pixels.sort((p1, p2) -> Float.compare(brightness(p1), brightness(p2)));
                 int[] palette = new int[pixels.size()];
 
@@ -296,8 +285,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     private Item getGoldenPaletteItem() {
         try {
-            Item item = BuiltInRegistries.ITEM
-                    .get(ResourceLocation.parse(ClientConfiguration.getInstance().goldenPaletteItem));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(ClientConfiguration.getInstance().goldenPaletteItem));
             return item != Items.AIR ? item : Items.GOLDEN_CARROT;
         } catch (Exception exception) {
             return Items.GOLDEN_CARROT;
