@@ -58,8 +58,7 @@ public record FoodConfigSyncPayload(FoodConfig config, List<FoodItemEntry> prese
             Minecraft minecraft = Minecraft.getInstance();
 
             if (minecraft.getConnection() instanceof FoodConfigHolder holder) {
-                holder.setFoodConfig(payload.config());
-                holder.setPresets(payload.presets());
+                holder.sync(payload.config(), payload.presets());
             }
             if (minecraft.screen instanceof AbstractFoodConfigScreen screen) {
                 screen.refresh();

@@ -2,28 +2,16 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import me.shedaniel.autoconfig.AutoConfig;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public final class ServerConfigScreen extends AbstractMenuScreen {
 
     private static final ServerConfiguration DEFAULTS = new ServerConfiguration();
 
-    private static final int FIELD_WIDTH = 210;
-    private static final int RESET_GAP = 5;
-    private static final int RESET_WIDTH = 45;
-    private static final int TOTAL_WIDTH = FIELD_WIDTH + RESET_GAP + RESET_WIDTH;
     private static final int ROWS = 14;
-    private static final int INTEGER_FIELD_WIDTH = 40;
-    private static final int LABEL_GAP = 8;
 
     private boolean doNutritionDecayValue;
     private boolean doSleepFoodDrainValue;
@@ -42,11 +30,6 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
 
     public ServerConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.server"), parent);
-    }
-
-    @Override
-    protected int contentWidth() {
-        return TOTAL_WIDTH;
     }
 
     @Override
@@ -78,63 +61,6 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         nutritionDecayFloorField = addIntegerField(left, top + ROW_HEIGHT * 12, "text.autoconfig.renourisheddelight/server.option.nutritionDecayFloor", config.nutritionDecayFloor, DEFAULTS.nutritionDecayFloor);
 
         addDoneButton(left, top + ROW_HEIGHT * 13 + DONE_BUTTON_GAP);
-    }
-
-    private void addToggle(int x, int y, String labelKey, boolean initial, boolean defaultValue, Consumer<Boolean> onChange) {
-        boolean[] state = { initial };
-        Button toggleButton = Button.builder(toggleLabel(labelKey, initial), button -> {
-            state[0] = !state[0];
-            onChange.accept(state[0]);
-            button.setMessage(toggleLabel(labelKey, state[0]));
-        }).bounds(x, y, FIELD_WIDTH, BUTTON_HEIGHT).build();
-        toggleButton.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
-        addRenderableWidget(toggleButton);
-        addResetButton(x, y, FIELD_WIDTH, () -> {
-            state[0] = defaultValue;
-            onChange.accept(defaultValue);
-            toggleButton.setMessage(toggleLabel(labelKey, defaultValue));
-        });
-    }
-
-    private EditBox addIntegerField(int x, int y, String labelKey, int initial, int defaultValue) {
-        int fieldX = x + FIELD_WIDTH - INTEGER_FIELD_WIDTH;
-        Component label = Component.translatable(labelKey);
-
-        StringWidget textLabel = new StringWidget(x, y, FIELD_WIDTH - INTEGER_FIELD_WIDTH - LABEL_GAP, BUTTON_HEIGHT, label, font).alignLeft();
-        textLabel.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
-
-        EditBox field = new EditBox(font, fieldX, y, INTEGER_FIELD_WIDTH, BUTTON_HEIGHT, label);
-        field.setMaxLength(10);
-        field.setValue(String.valueOf(initial));
-        field.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
-
-        addRenderableWidget(textLabel);
-        addRenderableWidget(field);
-        addResetButton(fieldX, y, INTEGER_FIELD_WIDTH, () -> field.setValue(String.valueOf(defaultValue)));
-        return field;
-    }
-
-    private void addResetButton(int x, int y, int fieldWidth, Runnable action) {
-        addRenderableWidget(Button.builder(Component.translatable("config.renourisheddelight.reset"), button -> action.run())
-                .bounds(x + fieldWidth + RESET_GAP, y, RESET_WIDTH, BUTTON_HEIGHT)
-                .build());
-    }
-
-    private Component toggleLabel(String labelKey, boolean value) {
-        Component valueText = Component
-                .translatable(value ? "gui.yes" : "gui.no")
-                .withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
-        return Component.translatable(labelKey)
-                .append(Component.literal(": "))
-                .append(valueText);
-    }
-
-    private int parseInteger(EditBox field, int fallback) {
-        try {
-            return Integer.parseInt(field.getValue().trim());
-        } catch (NumberFormatException ignored) {
-            return fallback;
-        }
     }
 
     @Override

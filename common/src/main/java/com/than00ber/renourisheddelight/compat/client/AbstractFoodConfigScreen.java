@@ -4,8 +4,6 @@ import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
-import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
-import dev.architectury.networking.NetworkManager;
 import dev.architectury.platform.Platform;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -20,11 +18,20 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public abstract class AbstractFoodConfigScreen extends Screen {
 
     protected static final int ROW_HEIGHT = 24;
+    protected static final int BUTTON_HEIGHT = 20;
+    protected static final int GAP = 5;
+    protected static final int TOOLBAR_Y = 30;
+    protected static final int HEADER_LABEL_Y = 76;
+    protected static final int LIST_TOP = 92;
+    protected static final int NORMAL_TEXT_COLOR = 0xE0E0E0;
+    protected static final int INVALID_TEXT_COLOR = 0xFF5555;
     protected static final int SCROLLBAR_WIDTH = 6;
     protected static final int SUGGESTION_ROW_HEIGHT = 14;
     protected static final int MAX_SUGGESTIONS = 40;
@@ -33,14 +40,18 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected static final int TITLE_Y = 11;
     protected static final String ALL_MODS = "*";
 
+    private final @Nullable Screen parent;
+
     protected final List<SuggestField> suggestFields = new ArrayList<>();
     protected @Nullable ModFilterField modFilterField;
 
+    protected final FoodConfigHolder holder;
     protected final FoodConfig config;
     protected final List<FoodItemEntry> presets;
     protected final boolean inWorld;
     protected final boolean editable;
 
+    protected String searchQuery = "";
     protected int scrollOffset = 0;
     protected int scrollTrackX;
     protected int scrollTrackTop;
@@ -50,34 +61,32 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected int scrollTotalRows;
     protected boolean draggingScrollbar;
 
-    protected AbstractFoodConfigScreen(Component title) {
+    protected AbstractFoodConfigScreen(Component title, @Nullable Screen parent) {
+        this(title, parent, new FoodConfig(resolveHolder().getFoodConfig()));
+    }
+
+    protected AbstractFoodConfigScreen(Component title, @Nullable Screen parent, FoodConfig config) {
         super(title);
         Minecraft minecraft = Minecraft.getInstance();
-        FoodConfigHolder holder = minecraft.getConnection() instanceof FoodConfigHolder x ? x : null;
-        FoodConfigHolder source = holder != null ? holder : CommonConfiguration.getInstance();
-
-        this.inWorld = holder != null;
+        this.parent = parent;
+        this.holder = resolveHolder();
+        this.config = config;
+        this.presets = holder.getPresets();
+        this.inWorld = minecraft.getConnection() instanceof FoodConfigHolder;
         this.editable = !inWorld || (minecraft.player != null && minecraft.player.hasPermissions(2));
-        this.config = source.getFoodConfig();
-        this.presets = source.getPresets();
+    }
+
+    private static FoodConfigHolder resolveHolder() {
+        return Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder ? holder : CommonConfiguration.getInstance();
     }
 
     protected abstract void rebuildContent();
 
-    protected abstract void onDone();
+    protected abstract void save();
 
     public void refresh() {
+        config.copyFrom(holder.getFoodConfig());
         rebuildContent();
-    }
-
-    protected void save() {
-        if (!editable) return;
-
-        if (inWorld) {
-            NetworkManager.sendToServer(new FoodConfigSyncPayload.Edit(config));
-        } else {
-            CommonConfiguration.save();
-        }
     }
 
     @Override
@@ -96,14 +105,54 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         return super.addRenderableWidget(widget);
     }
 
-    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void addSearchField(int x, String keyPrefix) {
+        EditBox searchField = new EditBox(font, x, TOOLBAR_Y, 170, BUTTON_HEIGHT, Component.translatable(keyPrefix + ".search"));
+        searchField.setMaxLength(256);
+        searchField.setHint(Component.translatable(keyPrefix + ".search_hint").withStyle(ChatFormatting.DARK_GRAY));
+        searchField.setResponder(value -> {
+            searchQuery = value.toLowerCase(Locale.ROOT).trim();
+            scrollOffset = 0;
+            rebuildContent();
+        });
+        addViewWidget(searchField);
     }
 
-    protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void rebuildModFilter() {
+        modFilterField.rebuild(width / 2 + 35, TOOLBAR_Y, 110, BUTTON_HEIGHT, Component.translatable("config.renourisheddelight.filter"));
     }
 
-    protected Button createResetButton(int x, int y, int width, int height, Runnable action) {
-        boolean[] armed = {false};
+    protected boolean matchesSearch(String text) {
+        return searchQuery.isEmpty() || text.toLowerCase(Locale.ROOT).contains(searchQuery);
+    }
+
+    protected EditBox addField(int x, int y, int width, String key, int maxLength) {
+        EditBox field = new EditBox(font, x, y, width, BUTTON_HEIGHT, Component.translatable(key));
+        field.setMaxLength(maxLength);
+        field.setHint(Component.translatable(key).withStyle(ChatFormatting.DARK_GRAY));
+        addRenderableWidget(field);
+        return field;
+    }
+
+    protected Button addSmallButton(String label, int x, int y, Runnable action) {
+        return addRenderableWidget(Button.builder(Component.literal(label), button -> action.run())
+                .bounds(x, y, BUTTON_HEIGHT, BUTTON_HEIGHT)
+                .build());
+    }
+
+    protected void addFooterButtons(Runnable resetAction) {
+        int buttonsY = height - 28;
+        int buttonsWidth = 200;
+        int buttonsLeft = width / 2 - buttonsWidth / 2;
+        int halfWidth = (buttonsWidth - GAP) / 2;
+
+        addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
+                .bounds(buttonsLeft, buttonsY, halfWidth, BUTTON_HEIGHT)
+                .build());
+        addRenderableWidget(createResetAllButton(buttonsLeft + halfWidth + GAP, buttonsY, buttonsWidth - halfWidth - GAP, resetAction));
+    }
+
+    private Button createResetAllButton(int x, int y, int width, Runnable action) {
+        boolean[] armed = { false };
         return Button.builder(Component.translatable("config.renourisheddelight.reset_all"), button -> {
             if (armed[0]) {
                 armed[0] = false;
@@ -113,13 +162,62 @@ public abstract class AbstractFoodConfigScreen extends Screen {
                 armed[0] = true;
                 button.setMessage(Component.translatable("config.renourisheddelight.reset_confirm").withStyle(ChatFormatting.YELLOW));
             }
-        }).bounds(x, y, width, height).build();
+        }).bounds(x, y, width, BUTTON_HEIGHT).build();
+    }
+
+    protected int inputRowY() {
+        return height - 56;
+    }
+
+    protected int layoutList(int listTop, int rowContentHeight, int totalRows, int trackX) {
+        int listBottom = height - 68;
+        int visibleRows = Math.max(1, (listBottom - listTop + ROW_HEIGHT - rowContentHeight) / ROW_HEIGHT);
+        scrollMaxOffset = Math.max(0, totalRows - visibleRows);
+        scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
+        scrollVisibleRows = visibleRows;
+        scrollTotalRows = Math.max(1, totalRows);
+        scrollTrackX = trackX;
+        scrollTrackTop = listTop;
+        scrollTrackBottom = listBottom;
+        return visibleRows;
+    }
+
+    protected void drawHeaderLabel(GuiGraphics graphics, String key, int x) {
+        graphics.drawString(font, Component.translatable(key), x, HEADER_LABEL_Y, 0xFFFFFF);
+    }
+
+    protected void drawCenteredMessage(GuiGraphics graphics, String key) {
+        graphics.drawCenteredString(font, Component.translatable(key), width / 2, height / 2, 0xAAAAAA);
+    }
+
+    protected int parseInt(String value, int fallback) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception exception) {
+            return fallback;
+        }
+    }
+
+    protected double parseDouble(String value, double fallback) {
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (Exception exception) {
+            return fallback;
+        }
+    }
+
+    protected boolean isHovering(AbstractWidget widget, int mouseX, int mouseY) {
+        return mouseX >= widget.getX() && mouseX < widget.getX() + widget.getWidth() && mouseY >= widget.getY() && mouseY < widget.getY() + widget.getHeight();
+    }
+
+    protected void renderHeaderActions(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
+    protected void renderScrollableContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     protected boolean isInsideScrollbar(double mouseX, double mouseY) {
-        return scrollMaxOffset > 0
-                && mouseX >= scrollTrackX && mouseX <= scrollTrackX + SCROLLBAR_WIDTH
-                && mouseY >= scrollTrackTop && mouseY <= scrollTrackBottom;
+        return scrollMaxOffset > 0 && mouseX >= scrollTrackX && mouseX <= scrollTrackX + SCROLLBAR_WIDTH && mouseY >= scrollTrackTop && mouseY <= scrollTrackBottom;
     }
 
     protected void scrollToMouse(double mouseY) {
@@ -142,6 +240,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         for (SuggestField field : suggestFields) {
             if (field.box.isFocused() && !field.matches.isEmpty()) {
                 int index = field.indexAt(mouseX, mouseY);
+                
                 if (index >= 0) {
                     field.box.setValue(field.matches.get(index).value());
                     field.matches = List.of();
@@ -180,6 +279,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         SuggestField hovered = openSuggestFieldAt(mouseX, mouseY);
+        
         if (hovered != null) {
             hovered.scroll(-(int) Math.signum(scrollY));
             return true;
@@ -221,11 +321,9 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             int thumbTravel = trackHeight - thumbHeight;
             double scrollFraction = scrollOffset / (double) scrollMaxOffset;
             int thumbY = scrollTrackTop + (int) Math.round(thumbTravel * scrollFraction);
-
             graphics.fill(scrollTrackX, scrollTrackTop, scrollTrackX + SCROLLBAR_WIDTH, scrollTrackBottom, 0x40000000);
             graphics.fill(scrollTrackX, thumbY, scrollTrackX + SCROLLBAR_WIDTH, thumbY + thumbHeight, 0xFFAAAAAA);
         }
-
         for (SuggestField field : suggestFields) {
             if (field.box.isFocused() && !field.matches.isEmpty()) {
                 field.render(graphics, mouseX, mouseY);
@@ -235,7 +333,8 @@ public abstract class AbstractFoodConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        onDone();
+        if (editable) save();
+        minecraft.setScreen(parent);
     }
 
     @Override
@@ -246,12 +345,17 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     protected void renderPanelChrome(GuiGraphics graphics) {
         int headerBottom = 54;
         int footerTop = height - 62;
-
         graphics.fill(0, headerBottom, width, headerBottom + 1, 0x20FFFFFF);
         graphics.fill(0, headerBottom + 1, width, headerBottom + 2, 0x80000000);
-
         graphics.fill(0, footerTop, width, footerTop + 1, 0x80000000);
         graphics.fill(0, footerTop + 1, width, footerTop + 2, 0x20FFFFFF);
+    }
+
+    protected static <T> List<SuggestOption> buildOptions(Stream<T> entries, Function<T, String> idOf, Function<T, String> nameOf) {
+        return entries
+                .map(entry -> SuggestOption.of(idOf.apply(entry), nameOf.apply(entry)))
+                .sorted(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     protected static String namespaceOf(String id) {
@@ -264,6 +368,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     }
 
     protected final class ModFilterField {
+        
         private final Supplier<List<String>> idsSupplier;
         private final Consumer<String> onChange;
         private String value = ALL_MODS;
@@ -290,14 +395,10 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             if (!namespaces.contains(value)) {
                 value = ALL_MODS;
             }
-            button = CycleButton.builder((String namespace) -> namespace.equals(ALL_MODS)
-                            ? Component.translatable("config.renourisheddelight.all_mods")
-                            : Component.literal(namespace).withStyle(isModInstalled(namespace) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
+            button = CycleButton.builder((String namespace) -> namespace.equals(ALL_MODS) ? Component.translatable("config.renourisheddelight.all_mods") : Component.literal(namespace).withStyle(isModInstalled(namespace) ? ChatFormatting.RESET : ChatFormatting.DARK_GRAY))
                     .withValues(namespaces)
                     .withInitialValue(value)
-                    .withTooltip(namespace -> namespace.equals(ALL_MODS) || isModInstalled(namespace)
-                            ? null
-                            : Tooltip.create(Component.translatable("config.renourisheddelight.mod_not_installed").withStyle(ChatFormatting.RED)))
+                    .withTooltip(namespace -> namespace.equals(ALL_MODS) || isModInstalled(namespace) ? null : Tooltip.create(Component.translatable("config.renourisheddelight.mod_not_installed").withStyle(ChatFormatting.RED)))
                     .create(x, y, width, height, title, (widget, namespace) -> {
                         value = namespace;
                         scrollOffset = 0;
@@ -334,6 +435,11 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     }
 
     protected record SuggestOption(String value, String name, String searchText) {
+
+        protected static SuggestOption of(String value, String name) {
+            return new SuggestOption(value, name, (value + " " + name).toLowerCase(Locale.ROOT));
+        }
+
         protected boolean hasDistinctName() {
             return !name.equals(value);
         }
@@ -344,6 +450,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
     }
 
     protected final class SuggestField {
+        
         protected final EditBox box;
         private final List<SuggestOption> pool;
         private final boolean dropUp;
@@ -394,17 +501,14 @@ public abstract class AbstractFoodConfigScreen extends Screen {
         }
 
         private int listTop() {
-            return dropUp
-                    ? box.getY() - visibleCount() * SUGGESTION_ROW_HEIGHT
-                    : box.getY() + box.getHeight();
+            return dropUp ? box.getY() - visibleCount() * SUGGESTION_ROW_HEIGHT : box.getY() + box.getHeight();
         }
 
         protected boolean isMouseOver(double mouseX, double mouseY) {
             int x = box.getX();
             int y = listTop();
             int listWidth = contentWidth();
-            return mouseX >= x && mouseX <= x + listWidth
-                    && mouseY >= y && mouseY <= y + visibleCount() * SUGGESTION_ROW_HEIGHT;
+            return mouseX >= x && mouseX <= x + listWidth && mouseY >= y && mouseY <= y + visibleCount() * SUGGESTION_ROW_HEIGHT;
         }
 
         protected int indexAt(double mouseX, double mouseY) {
@@ -428,6 +532,7 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, SUGGESTION_Z);
             graphics.fill(x, y, x + listWidth, y + totalHeight, 0xE0000000);
+            
             for (int i = 0; i < visible; i++) {
                 SuggestOption option = matches.get(scrollOffset + i);
                 int rowY = y + i * SUGGESTION_ROW_HEIGHT;
@@ -436,7 +541,8 @@ public abstract class AbstractFoodConfigScreen extends Screen {
                 if (hovered) {
                     graphics.drawString(font, option.plainText(), textX, rowY + 3, 0xFFFF00, false);
                 } else if (option.hasDistinctName()) {
-                    Component styled = Component.literal(option.name()).withStyle(ChatFormatting.WHITE)
+                    Component styled = Component.literal(option.name())
+                            .withStyle(ChatFormatting.WHITE)
                             .append(Component.literal(" (" + option.value() + ")").withStyle(ChatFormatting.GRAY));
                     graphics.drawString(font, styled, textX, rowY + 3, 0xFFFFFF, false);
                 } else {
@@ -445,13 +551,12 @@ public abstract class AbstractFoodConfigScreen extends Screen {
             }
 
             if (scrollable) {
-                graphics.fill(x, y, x + barWidth, y + totalHeight, 0x40FFFFFF);
-
                 double fraction = visible / (double) matches.size();
                 int thumbHeight = Math.max(6, (int) Math.round(totalHeight * fraction));
                 int thumbTravel = totalHeight - thumbHeight;
                 double scrollFraction = scrollOffset / (double) Math.max(1, matches.size() - visible);
                 int thumbY = y + (int) Math.round(thumbTravel * scrollFraction);
+                graphics.fill(x, y, x + barWidth, y + totalHeight, 0x40FFFFFF);
                 graphics.fill(x, thumbY, x + barWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
             graphics.pose().popPose();

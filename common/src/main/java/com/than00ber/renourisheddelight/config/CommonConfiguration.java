@@ -22,10 +22,6 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
         return AutoConfig.getConfigHolder(CommonConfiguration.class).getConfig();
     }
 
-    public static void save() {
-        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
-    }
-
     @ConfigEntry.Gui.Excluded
     @Comment("""
             Defaults used when a new world is created. Existing worlds keep their own copy; edit those from the in-game config screen.
@@ -60,6 +56,6 @@ public final class CommonConfiguration implements ConfigData, FoodConfigHolder {
     @Override
     public void setFoodConfig(FoodConfig updated) {
         config.copyFrom(updated);
-        save();
+        AutoConfig.getConfigHolder(CommonConfiguration.class).save();
     }
 }

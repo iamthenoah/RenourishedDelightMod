@@ -34,99 +34,59 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private static final int SIDE_MARGIN = 140;
 
-    private final @Nullable Screen parent;
     private final List<IconEntry> icons = new ArrayList<>();
     private final List<AbstractWidget> rowWidgets = new ArrayList<>();
 
     private List<Item> items = List.of();
     private EditBox newItemField;
-    private String searchQuery = "";
     private boolean noResults;
 
     public FoodItemConfigScreen(@Nullable Screen parent) {
-        super(Component.translatable("config.renourisheddelight.food_items"));
-        this.parent = parent;
+        super(Component.translatable("config.renourisheddelight.food_items"), parent);
     }
 
     @Override
     protected void init() {
         int centerX = width / 2;
         int left = centerX - SIDE_MARGIN;
-
         modFilterField = new ModFilterField(() -> items.stream().map(FoodItemConfigScreen::idOf).toList(), namespace -> rebuildContent());
 
-        EditBox searchField = new EditBox(font, left, 30, 170, 20, Component.translatable("config.renourisheddelight.food_items.search"));
-        searchField.setMaxLength(256);
-        searchField.setHint(Component.translatable("config.renourisheddelight.food_items.search_hint").withStyle(ChatFormatting.DARK_GRAY));
-        searchField.setResponder(value -> {
-            searchQuery = value.toLowerCase(Locale.ROOT).trim();
-            scrollOffset = 0;
-            rebuildContent();
-        });
-        addViewWidget(searchField);
+        addSearchField(left, "config.renourisheddelight.food_items");
 
-        newItemField = new EditBox(font, left, height - 56, 260, 20, Component.translatable("config.renourisheddelight.food_items.new_item"));
-        newItemField.setMaxLength(256);
+        newItemField = addField(left, inputRowY(), 260, "config.renourisheddelight.food_items.new_item", 256);
         newItemField.setHint(Component.literal("minecraft:cake").withStyle(ChatFormatting.DARK_GRAY));
-        addRenderableWidget(newItemField);
         suggestFields.add(new SuggestField(newItemField, buildItemOptions(), true));
+        addSmallButton("+", centerX + 125, inputRowY(), this::addItem);
 
-        addRenderableWidget(Button.builder(Component.literal("+"), button -> addItem())
-                .bounds(centerX + 125, height - 56, 20, 20)
-                .build());
-
-        int buttonsY = height - 28;
-        int buttonsWidth = 200;
-        int buttonsLeft = centerX - buttonsWidth / 2;
-        int gap = 5;
-        int halfWidth = (buttonsWidth - gap) / 2;
-
-        addViewWidget(Button.builder(Component.translatable("gui.done"), button -> onDone())
-                .bounds(buttonsLeft, buttonsY, halfWidth, 20)
-                .build());
-        addRenderableWidget(createResetButton(buttonsLeft + halfWidth + gap, buttonsY, buttonsWidth - halfWidth - gap, 20, this::resetAll));
+        addFooterButtons(this::resetAll);
         rebuildContent();
     }
 
     @Override
     protected void rebuildContent() {
         items = listItems();
-
         for (AbstractWidget widget : rowWidgets) {
             removeWidget(widget);
         }
         rowWidgets.clear();
         icons.clear();
+        rebuildModFilter();
 
         int centerX = width / 2;
-        modFilterField.rebuild(centerX + 35, 30, 110, 20, Component.translatable("config.renourisheddelight.filter"));
-
-        List<Item> filtered = items.stream()
-                .filter(item -> modFilterField.matches(idOf(item)))
-                .filter(this::matchesSearch)
-                .toList();
-        noResults = filtered.isEmpty();
-
-        int listTop = 76;
-        int listBottom = height - 68;
-        int rowGap = ROW_HEIGHT - 17;
-        int visibleRows = Math.max(1, (listBottom - listTop + rowGap) / ROW_HEIGHT);
-        scrollMaxOffset = Math.max(0, filtered.size() - visibleRows);
-        scrollOffset = Math.min(scrollOffset, scrollMaxOffset);
-        scrollVisibleRows = visibleRows;
-        scrollTotalRows = Math.max(1, filtered.size());
-
         int iconX = centerX - SIDE_MARGIN;
         int nameX = iconX + 20;
         int nameWidth = 241;
         int resetX = centerX + 125;
-        scrollTrackX = centerX + 150;
-        scrollTrackTop = listTop;
-        scrollTrackBottom = listBottom;
+        List<Item> filtered = items.stream()
+                .filter(item -> modFilterField.matches(idOf(item)))
+                .filter(item -> matchesSearch(idOf(item) + " " + item.getDescription().getString()))
+                .toList();
+        noResults = filtered.isEmpty();
+        int visibleRows = layoutList(HEADER_LABEL_Y, 17, filtered.size(), centerX + 150);
 
         for (int i = 0; i < visibleRows && i + scrollOffset < filtered.size(); i++) {
             Item item = filtered.get(i + scrollOffset);
-            int y = listTop + i * ROW_HEIGHT;
+            int y = HEADER_LABEL_Y + i * ROW_HEIGHT;
             boolean customized = config.isCustomized(presets, item);
             icons.add(new IconEntry(new ItemStack(item), iconX, y + 2));
 
@@ -134,25 +94,21 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             if (customized) label = label.withStyle(ChatFormatting.YELLOW);
 
             Button nameButton = Button.builder(label, button -> openBonuses(item))
-                    .bounds(nameX, y, nameWidth, 20)
+                    .bounds(nameX, y, nameWidth, BUTTON_HEIGHT)
                     .tooltip(buildTooltip(item))
                     .build();
             addRenderableWidget(nameButton);
             rowWidgets.add(nameButton);
 
-            Button resetButton = Button.builder(Component.literal("x"), button -> resetItem(item))
-                    .bounds(resetX, y, 20, 20)
-                    .tooltip(Tooltip.create(Component.translatable("config.renourisheddelight.food_items.reset_item")))
-                    .build();
+            Button resetButton = addSmallButton("x", resetX, y, () -> resetItem(item));
+            resetButton.setTooltip(Tooltip.create(Component.translatable("config.renourisheddelight.food_items.reset_item")));
             resetButton.active = customized && editable;
-            addRenderableWidget(resetButton);
             rowWidgets.add(resetButton);
         }
     }
 
     private List<Item> listItems() {
         List<Item> items = new ArrayList<>();
-
         for (Item item : BuiltInRegistries.ITEM) {
             if (item != Items.AIR && item.components().get(DataComponents.FOOD) != null) items.add(item);
         }
@@ -169,19 +125,12 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         }
     }
 
-    private boolean matchesSearch(Item item) {
-        if (searchQuery.isEmpty()) return true;
-        return (idOf(item) + " " + item.getDescription().getString()).toLowerCase(Locale.ROOT).contains(searchQuery);
-    }
-
     private Tooltip buildTooltip(Item item) {
         List<AttributeBonus> bonuses = config.bonuses(item);
-
         if (bonuses.isEmpty()) {
             return Tooltip.create(Component.translatable("config.renourisheddelight.food_items.no_bonuses"));
         }
         MutableComponent text = Component.empty();
-
         for (int i = 0; i < bonuses.size(); i++) {
             if (i > 0) text.append("\n");
             text.append(formatBonusLine(bonuses.get(i)));
@@ -191,10 +140,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private Component formatBonusLine(AttributeBonus bonus) {
         Holder<Attribute> attribute = ConsumableFoodInstance.resolveAttribute(bonus.attribute);
-        Component name = attribute != null
-                ? Component.translatable(attribute.value().getDescriptionId())
-                : Component.literal(bonus.attribute);
-
+        Component name = attribute != null ? Component.translatable(attribute.value().getDescriptionId()) : Component.literal(bonus.attribute);
         AttributeModifier.Operation operation = resolveOperation(bonus.operation);
         double display = operation != AttributeModifier.Operation.ADD_VALUE ? bonus.amount * 100.0 : bonus.amount;
         int effective = config.effectiveDuration(bonus);
@@ -211,7 +157,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
 
     private AttributeModifier.Operation resolveOperation(@Nullable String raw) {
         String value = raw != null ? raw.trim().toLowerCase(Locale.ROOT) : "";
-
+        
         for (AttributeModifier.Operation operation : AttributeModifier.Operation.values()) {
             if (operation.getSerializedName().equals(value)) return operation;
         }
@@ -222,25 +168,8 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
         return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
-    private static @Nullable Item resolveItem(String id) {
-        try {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
-            return item != Items.AIR ? item : null;
-        } catch (Exception exception) {
-            return null;
-        }
-    }
-
     private List<SuggestOption> buildItemOptions() {
-        List<SuggestOption> options = new ArrayList<>();
-        BuiltInRegistries.ITEM.forEach(item -> {
-            if (item == Items.AIR) return;
-            String id = idOf(item);
-            String name = item.getDescription().getString();
-            options.add(new SuggestOption(id, name, (id + " " + name).toLowerCase(Locale.ROOT)));
-        });
-        options.sort(Comparator.comparing(SuggestOption::value, String.CASE_INSENSITIVE_ORDER));
-        return options;
+        return buildOptions(BuiltInRegistries.ITEM.stream().filter(item -> item != Items.AIR), FoodItemConfigScreen::idOf, item -> item.getDescription().getString());
     }
 
     private void addItem() {
@@ -252,38 +181,38 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
     }
 
     private @Nullable Item pendingItem() {
-        return editable ? resolveItem(newItemField.getValue().trim()) : null;
+        return resolveItem(newItemField.getValue().trim());
+    }
+
+    private static @Nullable Item resolveItem(String id) {
+        try {
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            return item != Items.AIR ? item : null;
+        } catch (Exception exception) {
+            return null;
+        }
     }
 
     private void openBonuses(Item item) {
-        if (!editable) return;
-        minecraft.setScreen(new FoodItemBonusScreen(this, config.claim(presets, item), () -> {
-            config.prune(presets, item);
-            save();
-        }));
+        minecraft.setScreen(new FoodItemBonusScreen(this, item));
     }
 
     private void resetItem(Item item) {
-        if (!editable) return;
         config.reset(item);
-        save();
         rebuildContent();
     }
 
     private void resetAll() {
-        if (!editable) return;
         config.foods.clear();
-        save();
         scrollOffset = 0;
         rebuildContent();
     }
 
     @Override
-    protected void onDone() {
+    protected void save() {
         Item pending = pendingItem();
         if (pending != null) config.claim(presets, pending);
-        save();
-        minecraft.setScreen(parent);
+        holder.setFoodConfig(config);
     }
 
     @Override
@@ -292,7 +221,7 @@ public final class FoodItemConfigScreen extends AbstractFoodConfigScreen {
             graphics.renderItem(icon.stack(), icon.x(), icon.y());
         }
         if (noResults) {
-            graphics.drawCenteredString(font, Component.translatable("config.renourisheddelight.food_items.no_results"), width / 2, height / 2, 0xAAAAAA);
+            drawCenteredMessage(graphics, "config.renourisheddelight.food_items.no_results");
         }
     }
 
