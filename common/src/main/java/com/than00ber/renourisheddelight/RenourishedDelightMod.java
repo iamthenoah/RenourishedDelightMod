@@ -34,9 +34,8 @@ public final class RenourishedDelightMod {
 
     public static void initClient() {
         FoodBarOverlay.init();
-        TextureAtlasResourceLoader.init();
     }
-    
+
     public static ResourceLocation key(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
