@@ -1,42 +1,107 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.RenourishedDelightMod;
+import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.Nullable;
 
-public class ConsumableFoodInstance {
+import java.util.*;
 
-    public final Item item;
-    public AttributeModifier hearts;
-    public int duration;
-    public int time;
+public record ConsumableFoodInstance(Item item, List<AttributeModifierInstance> attributes) {
 
-    public ConsumableFoodInstance(Item item, AttributeModifier hearts, int duration, int time) {
-        this.item = item;
-        this.hearts = hearts;
-        this.duration = duration;
-        this.time = time;
+    public int duration() {
+        return attributes.stream().mapToInt(AttributeModifierInstance::duration).max().orElse(0);
     }
 
-    public ConsumableFoodInstance copy() {
-        return new ConsumableFoodInstance(item, hearts, duration, time);
+    public int time() {
+        return attributes.stream()
+                .max(Comparator.comparingInt(AttributeModifierInstance::duration))
+                .map(AttributeModifierInstance::time)
+                .orElse(0);
+    }
+
+    public boolean isExpired() {
+        return attributes.isEmpty();
+    }
+
+    public void tick(int ticks) {
+        attributes.forEach(x -> x.tick(ticks));
+    }
+
+    public static ConsumableFoodInstance create(Item item, FoodConfig config) {
+        return create(item, config, 0);
+    }
+
+    public static ConsumableFoodInstance create(Item item, FoodConfig config, int decay) {
+        List<AttributeModifierInstance> attributes = new ArrayList<>();
+        int value = Math.max(0, Diet.FULL_NUTRITION - decay);
+
+        for (AttributeBonus bonus : config.bonuses(item)) {
+            AttributeModifierInstance instance = resolveBonus(bonus, config, value);
+            if (instance != null) attributes.add(instance);
+        }
+        return new ConsumableFoodInstance(item, attributes);
+    }
+
+    private static @Nullable AttributeModifierInstance resolveBonus(AttributeBonus bonus, FoodConfig config, int value) {
+        Attribute attribute = resolveAttribute(bonus.attribute);
+
+        if (attribute != null) {
+            AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), RenourishedDelightMod.MOD_ID + ".food", bonus.amount, AttributeOperation.parse(bonus.operation));
+            int duration = Math.max(1, (int) Math.round(config.effectiveDuration(bonus) * value / (double) Diet.FULL_NUTRITION));
+            return new AttributeModifierInstance(attribute, modifier, duration, 0);
+        } else {
+            return null;
+        }
+    }
+
+    public static @Nullable Attribute resolveAttribute(String id) {
+        Attribute attribute = tryGetAttribute(id);
+
+        if (attribute == null && id != null) {
+            int colon = id.indexOf(':');
+            String namespace = colon >= 0 ? id.substring(0, colon) : "minecraft";
+            String path = colon >= 0 ? id.substring(colon + 1) : id;
+
+            if (!path.contains(".")) {
+                attribute = tryGetAttribute(namespace + ":generic." + path);
+            }
+        }
+        return attribute;
+    }
+
+    private static @Nullable Attribute tryGetAttribute(String id) {
+        try {
+            return BuiltInRegistries.ATTRIBUTE.get(new ResourceLocation(id));
+        } catch (Exception exception) {
+            return null;
+        }
     }
 
     public static CompoundTag save(ConsumableFoodInstance instance) {
-        CompoundTag compoundTag = new CompoundTag();
-        compoundTag.putString("Item", BuiltInRegistries.ITEM.getKey(instance.item).toString());
-        compoundTag.put("Hearts", instance.hearts.save());
-        compoundTag.putInt("Duration", instance.duration);
-        compoundTag.putInt("Time", instance.time);
-        return compoundTag;
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Item", BuiltInRegistries.ITEM.getKey(instance.item).toString());
+        ListTag attributes = new ListTag();
+        instance.attributes.forEach(x -> attributes.add(AttributeModifierInstance.save(x)));
+        tag.put("Attributes", attributes);
+        return tag;
     }
 
     public static ConsumableFoodInstance load(CompoundTag compoundTag) {
-        Item item = BuiltInRegistries.ITEM.get(new net.minecraft.resources.ResourceLocation(compoundTag.getString("Item")));
-        AttributeModifier hearts = AttributeModifier.load(compoundTag.getCompound("Hearts"));
-        int duration = compoundTag.getInt("Duration");
-        int time = compoundTag.getInt("Time");
-        return new ConsumableFoodInstance(item, hearts, duration, time);
+        Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(compoundTag.getString("Item")));
+        List<AttributeModifierInstance> attributes = new ArrayList<>();
+
+        for (Tag tag : compoundTag.getList("Attributes", Tag.TAG_COMPOUND)) {
+            AttributeModifierInstance bonus = AttributeModifierInstance.load((CompoundTag) tag);
+            if (bonus != null) attributes.add(bonus);
+        }
+        return new ConsumableFoodInstance(item, attributes);
     }
 }

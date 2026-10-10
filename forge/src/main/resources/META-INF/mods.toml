@@ -32,3 +32,10 @@ mandatory = true
 versionRange = "[${architecturyApiVersion},)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.${modId}]]
+modId = "cloth_config"
+mandatory = true
+versionRange = "[${clothConfigVersion},)"
+ordering = "AFTER"
+side = "BOTH"

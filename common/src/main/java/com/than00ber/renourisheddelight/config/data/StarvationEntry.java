@@ -1,0 +1,75 @@
+package com.than00ber.renourisheddelight.config.data;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffect;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+public final class StarvationEntry {
+
+    public String effect;
+    public int after;
+    public int amplifier;
+    public int max;
+
+    @SuppressWarnings("unused")
+    public StarvationEntry() {
+    }
+
+    public StarvationEntry(String effect, int after, int amplifier, int max) {
+        this.effect = effect;
+        this.after = after;
+        this.amplifier = amplifier;
+        this.max = max;
+    }
+
+    public StarvationEntry copy() {
+        return new StarvationEntry(effect, after, amplifier, max);
+    }
+
+    public int levelAt(int stagesSince) {
+        return Mth.clamp(Math.max(1, amplifier) + stagesSince, 1, Math.max(Math.max(1, amplifier), max));
+    }
+
+    public CompoundTag save() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Effect", effect != null ? effect : "");
+        tag.putInt("After", after);
+        tag.putInt("Amplifier", amplifier);
+        tag.putInt("Max", max);
+        return tag;
+    }
+
+    public static StarvationEntry load(CompoundTag tag) {
+        return new StarvationEntry(tag.getString("Effect"), tag.getInt("After"), tag.getInt("Amplifier"), tag.getInt("Max"));
+    }
+
+    public static List<StarvationEntry> defaults() {
+        List<StarvationEntry> entries = new ArrayList<>();
+        entries.add(new StarvationEntry("minecraft:slowness", 3600, 1, 3));
+        entries.add(new StarvationEntry("minecraft:mining_fatigue", 7200, 1, 3));
+        entries.add(new StarvationEntry("minecraft:weakness", 10800, 1, 2));
+        return entries;
+    }
+
+    public static @Nullable MobEffect resolveEffect(String id) {
+        try {
+            return BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(id));
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    public static List<StarvationEntry> reached(List<StarvationEntry> entries, int ticks) {
+        List<StarvationEntry> sorted = new ArrayList<>(entries);
+        sorted.sort(Comparator.comparingInt(x -> x.after));
+        sorted.removeIf(x -> x.after > ticks || x.after < 0);
+        return sorted;
+    }
+}

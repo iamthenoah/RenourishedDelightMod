@@ -1,0 +1,420 @@
+[
+  {
+    "item": "endersdelight:mite_crust",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:shulker_mollusk",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:shulker_filet",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 1200
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:uncanny_cookies",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
+      },
+      {
+        "attribute": "spell_power:shadow",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:chorus_juice",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
+      },
+      {
+        "attribute": "irons_spellbooks:casting_movespeed",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 3600
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:strange_eclair",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
+      },
+      {
+        "attribute": "spell_power:shadow",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 16800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:chorus_pie_slice",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 6000
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 6000
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:chorus_stew",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "irons_spellbooks:mana_regen",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 12000
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:crispy_skewer",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
+      },
+      {
+        "attribute": "spell_power:generic",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 3600
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:crawling_sandwich",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 4800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 4800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:twisted_cereal",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:eldritch_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:shadow",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:endermite_stew",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "irons_spellbooks:max_mana",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:pearl_pasta",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "irons_spellbooks:cooldown_reduction",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.5,
+        "duration": 10800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:ender_paella",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "irons_spellbooks:mana_regen",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 10800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 10800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:stuffed_shulker_bowl",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:ender_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "irons_spellbooks:max_mana",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:amberveil_stew",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:evocation_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 12000
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:amberveiled_curry",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:evocation_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 14400
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.08,
+        "duration": 14400
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:chicken_curry",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:generic",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:steak_fries",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:cast_time_reduction",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 21600
+      },
+      {
+        "attribute": "spell_power:haste",
+        "operation": "add_multiplied_base",
+        "amount": 0.11,
+        "duration": 21600
+      }
+    ]
+  },
+  {
+    "item": "endersdelight:veil_of_flames_risotto",
+    "attributes": [
+      {
+        "attribute": "irons_spellbooks:fire_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "irons_spellbooks:evocation_spell_power",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:fire",
+        "operation": "add_multiplied_base",
+        "amount": 0.17,
+        "duration": 28800
+      },
+      {
+        "attribute": "spell_power:arcane",
+        "operation": "add_multiplied_base",
+        "amount": 0.6,
+        "duration": 28800
+      }
+    ]
+  }
+]

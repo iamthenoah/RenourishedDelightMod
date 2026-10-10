@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="50%" alt="renourisheddelight_lg" src="https://github.com/user-attachments/assets/264e4b75-535e-4b98-914d-b7aaa15d938f" />
+  <img width="50%" alt="renourisheddelight_lg" src="https://cdn.modrinth.com/data/cached_images/83a0cc25224318f32d26b2e09ef2588a3f4be507.png" />
 </div>
 
 <br>
@@ -15,4 +15,4 @@
 
 <br>
 
-This mod overhauls how eating works, encouraging players to think more about what food choices they make. Heavily inspired by Valheim's food system and designed to delighfully well with the [Farmer's Delight](https://github.com/vectorwing/FarmersDelight/blob/1.20/README.md) mod.
+This mod overhauls how eating works, encouraging players to think more about what food choices they make. Heavily inspired by Valheim's food system and designed to work delighfully well with the [Farmer's Delight](https://github.com/vectorwing/FarmersDelight/blob/1.20/README.md) mod.

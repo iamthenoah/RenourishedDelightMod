@@ -14,6 +14,10 @@ dependencies {
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
+
+    modImplementation "maven.modrinth:cloth-config:$clothConfigVersion+fabric"
+    modCompileOnly "maven.modrinth:modmenu:$modMenuVersion"
+    modLocalRuntime "maven.modrinth:modmenu:$modMenuVersion"
 }
 
 processResources {
@@ -22,5 +26,11 @@ processResources {
 
     filesMatching('fabric.mod.json') {
         expand(properties)
+    }
+}
+
+modrinth {
+    dependencies {
+        optional.project 'modmenu'
     }
 }

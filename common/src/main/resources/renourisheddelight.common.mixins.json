@@ -6,10 +6,18 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "client": [],
+  "client": [
+    "client.ClientPacketListenerMixin",
+    "client.EffectRenderingInventoryScreenMixin",
+    "client.GameRendererMixin",
+    "client.GuiMixin",
+    "client.ItemStackMixin",
+    "client.LocalPlayerMixin"
+  ],
   "mixins": [
     "FoodDataMixin",
-    "ItemMixin",
+    "ItemStackMixin",
+    "LivingEntityMixin",
     "PlayerMixin"
   ]
 }

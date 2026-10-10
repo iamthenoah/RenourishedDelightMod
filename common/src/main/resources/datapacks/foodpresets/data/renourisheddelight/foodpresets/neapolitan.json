@@ -1,0 +1,116 @@
+[
+  {
+    "item": "neapolitan:strawberry_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 3.0,
+        "duration": 6000
+      }
+    ]
+  },
+  {
+    "item": "neapolitan:chocolate_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.movement_speed",
+        "operation": "add_multiplied_base",
+        "amount": 0.15,
+        "duration": 4800
+      },
+      {
+        "attribute": "minecraft:player.block_break_speed",
+        "operation": "add_multiplied_base",
+        "amount": 0.15,
+        "duration": 4800
+      }
+    ]
+  },
+  {
+    "item": "neapolitan:vanilla_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.armor",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 4800
+      }
+    ]
+  },
+  {
+    "item": "neapolitan:banana_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.safe_fall_distance",
+        "operation": "add_value",
+        "amount": 3.0,
+        "duration": 4800
+      },
+      {
+        "attribute": "minecraft:generic.movement_speed",
+        "operation": "add_multiplied_base",
+        "amount": 0.1,
+        "duration": 4800
+      }
+    ]
+  },
+  {
+    "item": "neapolitan:mint_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.attack_damage",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 4800
+      },
+      {
+        "attribute": "minecraft:generic.armor",
+        "operation": "add_value",
+        "amount": -1.0,
+        "duration": 4800
+      }
+    ]
+  },
+  {
+    "item": "neapolitan:adzuki_cake",
+    "attributes": [
+      {
+        "attribute": "minecraft:generic.max_health",
+        "operation": "add_value",
+        "amount": 2.0,
+        "duration": 6000
+      },
+      {
+        "attribute": "minecraft:generic.knockback_resistance",
+        "operation": "add_value",
+        "amount": 0.2,
+        "duration": 4800
+      }
+    ]
+  }
+]

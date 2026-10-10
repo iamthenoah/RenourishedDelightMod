@@ -35,6 +35,17 @@ subprojects {
         }
     }
 
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven { url = 'https://api.modrinth.com/maven' }
+            }
+            filter {
+                includeGroup 'maven.modrinth'
+            }
+        }
+    }
+
     base {
         archivesName = modId
     }
@@ -68,11 +79,28 @@ subprojects {
         inputFile.set shadowJar.archiveFile
     }
 
+    afterEvaluate {
+        if (tasks.findByName('processResources') && project.name != 'common') {
+            tasks.named('processResources') {
+                from(project(':common').file('src/main/resources/renourisheddelight.png'))
+            }
+        }
+    }
+
     modrinth {
         token = System.getenv('MODRINTH_TOKEN')
         gameVersions = [minecraftVersion]
         projectId = project.archivesBaseName
         versionType = version?.split('-')[1] ?: 'alpha'
+        changelog = System.getenv('CHANGELOG')
+        syncBodyFrom = rootProject.file("docs/COVER.md").text
         uploadFile = remapJar
+
+        dependencies {
+            required.project 'architectury-api'
+            required.project 'cloth-config'
+        }
     }
+
+    tasks.modrinth.dependsOn(tasks.modrinthSyncBody)
 }
