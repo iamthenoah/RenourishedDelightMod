@@ -62,7 +62,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void renourisheddelight$tick(CallbackInfo callback) {
-        if (!((Object) this instanceof ServerPlayer player) || renourisheddelight$sleepStartDayTime == -1L) return;
+        if (!((Object) this instanceof ServerPlayer player)) return;
 
         int hearts = ServerConfiguration.getInstance().playerStartingHealth;
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
