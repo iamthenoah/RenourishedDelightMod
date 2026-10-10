@@ -3,6 +3,7 @@ package com.than00ber.renourisheddelight.forge;
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
 import com.than00ber.renourisheddelight.compat.client.ConfigMenuScreen;
 import com.than00ber.renourisheddelight.food.Diet;
+import com.than00ber.renourisheddelight.forge.client.ForgeClientSetup;
 import dev.architectury.platform.forge.EventBuses;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,6 +28,6 @@ public final class RenourishedDelightModForge {
         serializers.register("diet", () -> Diet.DATA_SERIALIZER);
         serializers.register(bus);
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> new ConfigMenuScreen(screen))));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ForgeClientSetup::registerConfigScreen);
     }
 }
