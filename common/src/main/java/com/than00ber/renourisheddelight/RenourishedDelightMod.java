@@ -21,16 +21,23 @@ public final class RenourishedDelightMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static void init() {
+        // registries
         EffectRegistry.init();
         PotionRegistry.init();
+        CommandRegistry.init();
+
+        // configs
         ServerConfiguration.init();
         ClientConfiguration.init();
         CommonConfiguration.init();
-        CommandRegistry.init();
+        
+        // listeners
         FoodConfigReloadListener.init();
-        SuppressHurtFlashPayload.init();
+
+        // networking
         FoodConfigSyncPayload.init();
         NoSprintPayload.init();
+        SuppressHurtFlashPayload.init();
     }
 
     public static void initClient() {

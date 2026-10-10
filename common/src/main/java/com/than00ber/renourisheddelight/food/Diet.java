@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
@@ -33,7 +34,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.than00ber.renourisheddelight.config.ServerConfiguration;
 
 import java.util.*;
 

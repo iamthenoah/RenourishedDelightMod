@@ -10,9 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 public record NoSprintPayload(boolean canSprintValue) implements CustomPacketPayload {
 
-    public static final Type<NoSprintPayload> TYPE = new Type<>(
-            RenourishedDelightMod.key("can_sprint"));
-
+    public static final Type<NoSprintPayload> TYPE = new Type<>(RenourishedDelightMod.key("can_sprint"));
     public static final StreamCodec<RegistryFriendlyByteBuf, NoSprintPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
             NoSprintPayload::canSprintValue,
@@ -20,15 +18,12 @@ public record NoSprintPayload(boolean canSprintValue) implements CustomPacketPay
 
     private static boolean canSprint = true;
 
-    public static boolean canSprint() {
-        return canSprint;
+    public static void init() {
+        NetworkManager.registerReceiver(NetworkManager.s2c(), TYPE, CODEC, (payload, context) -> context.queue(() -> canSprint = payload.canSprintValue()));
     }
 
-    public static void init() {
-        NetworkManager.registerReceiver(NetworkManager.s2c(), TYPE, CODEC,
-                (payload, context) -> context.queue(() -> {
-                    canSprint = payload.canSprintValue();
-                }));
+    public static boolean canSprint() {
+        return canSprint;
     }
 
     @Override
