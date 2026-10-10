@@ -1,10 +1,10 @@
 package com.than00ber.renourisheddelight.config;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
+
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 
@@ -19,27 +19,21 @@ public final class ClientConfiguration implements ConfigData {
         return AutoConfig.getConfigHolder(ClientConfiguration.class).getConfig();
     }
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Horizontal pixel offset for the food display UI (default: 0)")
     public int foodBarOffsetX = 0;
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Vertical pixel offset for the food display UI (default: 0)")
     public int foodBarOffsetY = 0;
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Item ID to sample for the golden-effect color palette (default: minecraft:golden_carrot)")
     public String goldenPaletteItem = "minecraft:golden_carrot";
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Whether to render the active food items panel next to the inventory screen (default: false)")
     public boolean showFoodDisplayInInventory = false;
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Whether to clip the last heart's unfillable half when the player has an odd max health, instead of showing a half heart that can never fill (default: true)")
     public boolean clipOddMaxHealthHeart = true;
 
-    @ConfigEntry.Gui.Tooltip
     @Comment("Whether to compress the health bar into a single row of 10 hearts that fill proportionally to max health, instead of stacking extra heart rows (default: false)")
     public boolean compactHealthBar = false;
 }

@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.network;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.compat.client.AbstractFoodConfigScreen;
+import com.than00ber.renourisheddelight.compat.client.food.AbstractFoodConfigScreen;
 import com.than00ber.renourisheddelight.config.data.*;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
@@ -58,8 +58,7 @@ public record FoodConfigSyncPayload(FoodConfig config, List<FoodItemEntry> prese
             Minecraft minecraft = Minecraft.getInstance();
 
             if (minecraft.getConnection() instanceof FoodConfigHolder holder) {
-                holder.setFoodConfig(payload.config());
-                holder.setPresets(payload.presets());
+                holder.sync(payload.config(), payload.presets());
             }
             if (minecraft.screen instanceof AbstractFoodConfigScreen screen) {
                 screen.refresh();

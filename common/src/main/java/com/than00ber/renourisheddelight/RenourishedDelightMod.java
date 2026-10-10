@@ -4,12 +4,13 @@ import com.mojang.logging.LogUtils;
 import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
+import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
+import com.than00ber.renourisheddelight.network.NoSprintPayload;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.CommandRegistry;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
-import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import com.than00ber.renourisheddelight.registry.PotionRegistry;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
@@ -20,15 +21,23 @@ public final class RenourishedDelightMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static void init() {
+        // registries
         EffectRegistry.init();
         PotionRegistry.init();
+        CommandRegistry.init();
+
+        // configs
+        ServerConfiguration.init();
         ClientConfiguration.init();
         CommonConfiguration.init();
-        GameRuleRegistry.init();
-        CommandRegistry.init();
+        
+        // listeners
         FoodConfigReloadListener.init();
-        SuppressHurtFlashPayload.init();
+
+        // networking
         FoodConfigSyncPayload.init();
+        NoSprintPayload.init();
+        SuppressHurtFlashPayload.init();
     }
 
     public static void initClient() {

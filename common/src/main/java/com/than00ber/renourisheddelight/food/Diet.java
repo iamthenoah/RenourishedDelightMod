@@ -1,11 +1,11 @@
 package com.than00ber.renourisheddelight.food;
 
+import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.StarvationEntry;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
-import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -45,7 +45,6 @@ public class Diet {
     private static final int HUNGER_DRAIN_PER_SECOND = 2;
     private static final int REGEN_DRAIN = 3;
     private static final int NOURISHED_REGEN_SPEEDUP = 3;
-    private static final int STARVING_MESSAGE_INTERVAL = 40;
     private static final int NOURISHMENT_THRESHOLD = 95;
 
     public static final EntityDataSerializer<Diet> DATA_SERIALIZER = new EntityDataSerializer<>() {
@@ -98,20 +97,14 @@ public class Diet {
         return decaying ? depletion.getOrDefault(item, 0) : 0;
     }
 
-    private ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
+    private ConsumableFoodInstance eat(Item item, FoodConfig config) {
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(item));
-        decay(player, item);
-        return instance;
-    }
+        int step = Math.max(0, ServerConfiguration.getInstance().nutritionDecayRate);
 
-    private void decay(ServerPlayer player, Item item) {
-        GameRules rules = player.level().getGameRules();
-        int step = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_RATE));
-
-        if (rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY) && step > 0) {
+        if (ServerConfiguration.getInstance().doNutritionDecay && step > 0) {
             int current = depletion.getOrDefault(item, 0);
             depletion.remove(item);
-            int protect = Math.max(0, rules.getInt(GameRuleRegistry.NUTRITION_DECAY_WINDOW) - 1);
+            int protect = Math.max(0, ServerConfiguration.getInstance().nutritionDecayWindow - 1);
             List<Item> tracked = new ArrayList<>(depletion.keySet());
 
             for (int i = 0; i < tracked.size() - protect; i++) {
@@ -120,8 +113,9 @@ public class Diet {
                 if (value > 0) depletion.put(stale, value);
                 else depletion.remove(stale);
             }
-            depletion.put(item, Math.min(current + step, maxDecay(rules)));
+            depletion.put(item, Math.min(current + step, maxDecay()));
         }
+        return instance;
     }
 
     public boolean resetDecay() {
@@ -134,8 +128,8 @@ public class Diet {
         return depletion.remove(item) != null;
     }
 
-    private static int maxDecay(GameRules rules) {
-        return FULL_NUTRITION - Mth.clamp(rules.getInt(GameRuleRegistry.NUTRITION_DECAY_FLOOR), 0, FULL_NUTRITION);
+    private static int maxDecay() {
+        return FULL_NUTRITION - Mth.clamp(ServerConfiguration.getInstance().nutritionDecayFloor, 0, FULL_NUTRITION);
     }
 
     public void consume(ServerPlayer player, Item item) {
@@ -143,41 +137,35 @@ public class Diet {
         if (server == null) return;
 
         FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
-        GameRules rules = player.level().getGameRules();
-        int maxFoods = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
 
         if (active != null) {
             replaceSlot(player, config, item, active);
         } else if (slots.size() < maxFoods) {
-            addToSlot(player, eat(player, item, config));
+            addToSlot(player, eat(item, config));
         } else {
             replaceSlot(player, config, item, slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null));
         }
         FoodProperties properties = item.components().get(DataComponents.FOOD);
-        boolean harmful = properties != null && properties.effects().stream()
-                .anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
+        boolean harmful = properties != null && properties.effects().stream().anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
 
         if (slots.size() >= maxFoods && !harmful) {
-            nourish(player, rules);
+            nourish(player);
         }
     }
 
     public boolean drain(ServerPlayer player, int amount) {
         if (amount <= 0 || slots.isEmpty()) return false;
-        int ticks = scale(player.level().getGameRules(), amount);
-
-        if (ticks > 0) {
-            slots.forEach(x -> x.tick(ticks));
-        }
+        int ticks = scale(amount);
+        if (ticks > 0) slots.forEach(x -> x.tick(ticks));
         expire(player);
         return true;
     }
 
     public boolean tick(ServerPlayer player) {
-        GameRules rules = player.level().getGameRules();
-        boolean enabled = rules.getBoolean(GameRuleRegistry.DO_NUTRITION_DECAY);
-        int limit = Math.max(1, rules.getInt(GameRuleRegistry.MAX_ACTIVE_FOODS));
+        boolean enabled = ServerConfiguration.getInstance().doNutritionDecay;
+        int limit = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         boolean toggled = decaying != enabled || capacity != limit;
         decaying = enabled;
         capacity = limit;
@@ -192,12 +180,12 @@ public class Diet {
             if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
         }
         boolean changed = toggled | drain(player, amount);
-        changed |= regenerate(player, rules, nourished);
+        changed |= regenerate(player, nourished);
 
         if (slots.isEmpty() && nourished) {
             player.removeEffect(EffectRegistry.nourishment());
         }
-        starve(player, rules);
+        starve(player);
         return changed;
     }
 
@@ -217,10 +205,9 @@ public class Diet {
         return true;
     }
 
-    private void nourish(ServerPlayer player, GameRules rules) {
-        if (!rules.getBoolean(GameRuleRegistry.DO_NOURISHMENT) || slots.isEmpty()) return;
+    private void nourish(ServerPlayer player) {
+        if (!ServerConfiguration.getInstance().doNourishment || slots.isEmpty()) return;
         if (!slots.stream().allMatch(Diet::isFresh)) return;
-
         int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
 
         if (duration > 0) {
@@ -232,16 +219,18 @@ public class Diet {
         return (instance.duration() - instance.time()) * 100 >= instance.duration() * NOURISHMENT_THRESHOLD;
     }
 
-    private boolean regenerate(ServerPlayer player, GameRules rules, boolean nourished) {
+    private boolean regenerate(ServerPlayer player, boolean nourished) {
+        GameRules rules = player.level().getGameRules();
+
         if (!slots.isEmpty() && player.isHurt() && rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
-            if (nourished || ticksSinceDamage >= rules.getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE)) {
-                int interval = Math.max(1, rules.getInt(GameRuleRegistry.REGEN_INTERVAL));
+            if (nourished || ticksSinceDamage >= ServerConfiguration.getInstance().regenDelayAfterDamage) {
+                int interval = Math.max(1, ServerConfiguration.getInstance().regenHealthTickInterval);
                 if (nourished) interval = Math.max(1, interval / NOURISHED_REGEN_SPEEDUP);
                 if (++regen < interval) return false;
 
                 regen = 0;
                 player.heal(1.0F);
-                int ticks = scale(rules, REGEN_DRAIN);
+                int ticks = scale(REGEN_DRAIN);
 
                 if (ticks > 0) {
                     slots.stream().max(Comparator.comparingInt(x -> x.duration() - x.time())).ifPresent(x -> x.tick(ticks));
@@ -255,19 +244,18 @@ public class Diet {
         return false;
     }
 
-    private void starve(ServerPlayer player, GameRules rules) {
+    private void starve(ServerPlayer player) {
         MinecraftServer server = player.getServer();
 
-        if (slots.isEmpty() && server != null && rules.getBoolean(GameRuleRegistry.DO_STARVATION)) {
+        if (slots.isEmpty() && server != null && ServerConfiguration.getInstance().doStarvation) {
             starving++;
             List<StarvationEntry> reached = StarvationEntry.reached(FoodConfigSavedData.get(server).getFoodConfig().starvation, starving);
             if (reached.isEmpty()) return;
 
-            if (starving % STARVING_MESSAGE_INTERVAL == 0) {
-                player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
-            }
             for (int i = 0; i < reached.size(); i++) {
                 StarvationEntry entry = reached.get(i);
+                if (starving < entry.after) return;
+                if (starving == entry.after) player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
                 Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
 
                 if (effect != null) {
@@ -290,7 +278,7 @@ public class Diet {
         if (index < 0) return;
 
         previous.attributes().forEach(bonus -> detach(player, bonus, true));
-        ConsumableFoodInstance instance = eat(player, item, config);
+        ConsumableFoodInstance instance = eat(item, config);
         slots.set(index, instance);
         attach(player, instance);
     }
@@ -303,7 +291,7 @@ public class Diet {
                 attribute.addPermanentModifier(bonus.modifier());
 
                 if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-                    ticksSinceDamage = player.level().getGameRules().getInt(GameRuleRegistry.REGEN_DELAY_AFTER_DAMAGE);
+                    ticksSinceDamage = ServerConfiguration.getInstance().regenDelayAfterDamage;
                 }
             }
         }
@@ -321,7 +309,8 @@ public class Diet {
                     instance.attributes().remove(j);
                 }
             }
-            if (instance.isExpired()) slots.remove(i);
+            if (instance.isExpired())
+                slots.remove(i);
         }
     }
 
@@ -335,8 +324,8 @@ public class Diet {
         attribute.removeModifier(bonus.modifier());
     }
 
-    private int scale(GameRules rules, int amount) {
-        long total = (long) amount * Math.max(0, rules.getInt(GameRuleRegistry.FOOD_DRAIN_RATE)) + drainRemainder;
+    private int scale(int amount) {
+        long total = (long) amount * Math.max(0, ServerConfiguration.getInstance().foodDrainRate) + drainRemainder;
         drainRemainder = (int) (total % 100L);
         return (int) Math.min(Integer.MAX_VALUE, total / 100L);
     }

@@ -1,8 +1,11 @@
 package com.than00ber.renourisheddelight.mixin;
 
+import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
-import com.than00ber.renourisheddelight.registry.GameRuleRegistry;
+import com.than00ber.renourisheddelight.network.NoSprintPayload;
+
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -59,8 +62,9 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void renourisheddelight$tick(CallbackInfo callback) {
-        if (!((Object) this instanceof ServerPlayer player) || !player.gameMode.isSurvival()) return;
-        int hearts = player.level().getGameRules().getInt(GameRuleRegistry.STARTING_HEARTS);
+        if (!((Object) this instanceof ServerPlayer player) || renourisheddelight$sleepStartDayTime == -1L) return;
+
+        int hearts = ServerConfiguration.getInstance().playerStartingHealth;
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth != null) maxHealth.setBaseValue(Math.clamp(hearts, MIN_HEARTS, MAX_HEARTS));
         Diet diet = getDiet();
@@ -70,6 +74,12 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
             updateDiet();
         } else if (diet.tick(player)) {
             updateDiet();
+        }
+        if (ServerConfiguration.getInstance().doPreventSprint && player.gameMode.isSurvival() && diet.getSlots().isEmpty()) {
+            NetworkManager.sendToPlayer(player, new NoSprintPayload(false));
+            player.setSprinting(false);
+        } else {
+            NetworkManager.sendToPlayer(player, new NoSprintPayload(true));
         }
     }
 
@@ -86,6 +96,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void renourisheddelight$stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers, CallbackInfo callback) {
         if (!((Object) this instanceof ServerPlayer player) || renourisheddelight$sleepStartDayTime == -1L) return;
+
         long gameTime = player.level().getGameTime();
         long slept = gameTime - renourisheddelight$sleepStartGameTime;
         long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
@@ -94,7 +105,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
         MinecraftServer server = player.getServer();
         if (skipped <= 0 || server == null) return;
-        if (!player.level().getGameRules().getBoolean(GameRuleRegistry.DO_SLEEP_FOOD_DRAIN)) return;
+        if (!ServerConfiguration.getInstance().doSleepFoodDrain) return;
         if (renourisheddelight$lastSleepDrainTime == gameTime) return;
         renourisheddelight$lastSleepDrainTime = gameTime;
 

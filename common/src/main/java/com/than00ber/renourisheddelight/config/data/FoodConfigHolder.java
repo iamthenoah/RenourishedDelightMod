@@ -14,7 +14,7 @@ public interface FoodConfigHolder {
         return FoodConfigReloadListener.PRESETS;
     }
 
-    default void setPresets(List<FoodItemEntry> presets) {
+    default void sync(FoodConfig config, List<FoodItemEntry> presets) {
         // do nothing
     }
 }
