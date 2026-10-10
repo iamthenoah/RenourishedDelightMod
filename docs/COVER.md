@@ -46,7 +46,7 @@ Every food item consumed gives you increased max health for a set duration. Like
 <td width="55%" valign="middle">
 <h3>Nutrition Decay (Optional)</h3>
 <p>
-For those looking for a more indepth eating experience, you can enable Nutrition Decay (via the gamerule `doNutritionDecay`). This will add an extra dimension to the game by nudging you to find a range of food source to cycle on. The more varied your diet, the less impact it will have over time.
+For those looking for a more in-depth eating experience, you can enable Nutrition Decay (via the <code>doNutritionDecay</code> server config). This will add an extra dimension to the game by nudging you to find a range of food source to cycle on. The more varied your diet, the less impact it will have over time.
 
 This can be fun if you have multiple food mods and want to find a reason to cook various meals.</p>
 
@@ -59,7 +59,7 @@ This can be fun if you have multiple food mods and want to find a reason to cook
 <td width="55%" valign="middle">
 <h3>Highly Configurable</h3>
 <p>
-Not happy with the attributes or duration? Want to make certain food items special? There are some config screens available to change everything, including amplifiers and some client configs. This mod is shipped with presets for certain mods like <a href="https://github.com/vectorwing/FarmersDelight">Farmer's Delight</a> and <a href="https://github.com/team-abnormals/neapolitan">Neapolitan</a> to work with <a href="https://modrinth.com/mod/irons-spells-n-spellbooks">Iron's Spells 'n Spellbooks</a> and the RPG series. If you want presets for a mod, make an issue <a href="https://github.com/iamthenoah/RenourishedDelightMod/issues">here</a> and I'll gladly look into it :)
+Not happy with the attributes or duration? Want to make certain food items special? The in-game config menu lets you edit the bonuses of every food item, scale bonus durations per attribute, set up starvation effects, and tweak both the server rules and your own HUD. This mod is shipped with presets for certain mods like <a href="https://github.com/vectorwing/FarmersDelight">Farmer's Delight</a> and <a href="https://github.com/team-abnormals/neapolitan">Neapolitan</a> to work with <a href="https://modrinth.com/mod/irons-spells-n-spellbooks">Iron's Spells 'n Spellbooks</a> and the RPG series. If you want presets for a mod, make an issue <a href="https://github.com/iamthenoah/RenourishedDelightMod/issues">here</a> and I'll gladly look into it :)
 </p>
 </td>
 <td width="45%" valign="middle">
@@ -71,9 +71,19 @@ Not happy with the attributes or duration? Want to make certain food items speci
 <br/>
 
 <details>
-<summary><b>Game rules</b></summary>
+<summary><b>Configs</b></summary>
 <br/>
-<p><code>playerStartingHearts</code> — base max health before any food bonuses. Default 20.</p>
+<p>Everything below can be edited from the in-game config menu, or directly in the files under <code>config/renourisheddelight/</code>.</p>
+
+<p><b>Client</b> (<code>client.json5</code>) — your own display, never synced to servers.</p>
+<p><code>foodBarOffsetX</code> / <code>foodBarOffsetY</code> — moves the food bar, in pixels. Easiest to set by dragging it in the config menu. Default 0.</p>
+<p><code>goldenPaletteItem</code> — item whose colors tint the food icons gold while Nourishment is active. Default <code>minecraft:golden_carrot</code>.</p>
+<p><code>showFoodDisplayInInventory</code> — shows your active foods next to the inventory. Default false.</p>
+<p><code>clipOddMaxHealthHeart</code> — hides the half heart that can never fill when max health is odd. Default true.</p>
+<p><code>compactHealthBar</code> — keeps health to a single row of 10 hearts that fill proportionally. Default false.</p>
+
+<p><b>Server</b> (<code>server.json5</code>) — gameplay rules. On a dedicated server, edit the file on the server.</p>
+<p><code>playerStartingHealth</code> — base max health before any food bonuses. Default 20.</p>
 <p><code>maxConsumableFood</code> — how many foods can be active at once. Default 3.</p>
 <p><code>foodDrainRate</code> — how fast slots tick down, in percent. 50 is half speed, 0 never drains. Default 100.</p>
 <p><code>regenHealthTickInterval</code> — ticks between natural regen. Default 60.</p>
@@ -85,6 +95,9 @@ Not happy with the attributes or duration? Want to make certain food items speci
 <p><code>doSleepFoodDrain</code> — skipping the night drains everyone's food. Default true.</p>
 <p><code>doNourishment</code> — a full bar of fresh food grants Nourishment. Default false.</p>
 <p><code>doStarvation</code> — apply starvation effects when the bar is empty. Default true.</p>
+<p><code>doPreventSprint</code> — players can't sprint until they've eaten something. Default false.</p>
+
+<p><b>Common</b> (<code>common.json5</code>) — the food bonuses, duration multipliers and starvation effects new worlds start with. Each world keeps its own copy once created, which operators can edit in-game from the food, duration and starvation screens.</p>
 </details>
 
 <details>
@@ -112,14 +125,11 @@ Not happy with the attributes or duration? Want to make certain food items speci
     "item": "minecraft:cake",
     "attributes": [
       { "attribute": "minecraft:generic.max_health", "operation": "add_value", "amount": 4.0, "duration": 6000 }
-    ],
-    "effects": [
-      { "effect": "minecraft:night_vision", "level": 1, "duration": 3600 }
     ]
   }
 ]</code></pre>
 
-<p><code>attributes</code> and <code>effects</code> are both optional. <code>operation</code> is <code>add_value</code>, <code>add_multiplied_base</code> or <code>add_multiplied_total</code>, where 0.15 means 15%. <code>duration</code> is in ticks, 20 per second. Placeable foods use the item id, like <code>minecraft:cake</code>. Anything you leave out falls back to the value derived from that food's nutrition and saturation.</p>
+<p><code>attributes</code> is optional. <code>operation</code> is <code>add_value</code>, <code>add_multiplied_base</code> or <code>add_multiplied_total</code>, where 0.15 means 15%. <code>duration</code> is in ticks, 20 per second. Placeable foods use the item id, like <code>minecraft:cake</code>. The max health bonus derived from the food's nutrition and saturation is kept unless you declare your own <code>minecraft:generic.max_health</code> entry.</p>
 
 <p><b>Generating a preset with AI</b></p>
 
@@ -130,9 +140,7 @@ Not happy with the attributes or duration? Want to make certain food items speci
 Output one JSON array, no commentary. Each entry:
 { "item": "namespace:id",
   "attributes": [ { "attribute": "...", "operation": "add_value|add_multiplied_base|add_multiplied_total",
-                    "amount": 0, "duration": 0 } ],
-  "effects":    [ { "effect": "...", "level": 1, "duration": 0 } ] }
-Both lists are optional.
+                    "amount": 0, "duration": 0 } ] }
 
 - Cover every edible item, including placeable ones like cakes, pies and stews.
   Use the item id, not the block id.
@@ -143,7 +151,6 @@ Both lists are optional.
   Meat to damage and health, vegetables and soups to speed or mining speed,
   sweets to short bursts, fish to underwater traits.
 - Use an occasional negative attribute to pay for an unusually strong food.
-- Effects sparingly, and shorter than the attribute durations.
 - Only real ids: minecraft:generic.max_health, minecraft:generic.movement_speed,
   minecraft:generic.armor, minecraft:generic.attack_damage,
   minecraft:generic.knockback_resistance, minecraft:generic.safe_fall_distance,
