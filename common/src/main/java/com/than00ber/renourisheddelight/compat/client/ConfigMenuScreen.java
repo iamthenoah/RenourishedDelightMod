@@ -24,14 +24,11 @@ public final class ConfigMenuScreen extends AbstractMenuScreen {
     protected void init() {
         layout(ROWS);
         int left = contentLeft();
-
         addLink(left, top, HALF_WIDTH, "config.renourisheddelight.client", () -> new ClientSettingsScreen(this));
         addLink(left + TOTAL_WIDTH - HALF_WIDTH, top, HALF_WIDTH, "config.renourisheddelight.server", () -> new ServerConfigScreen(this));
-
         addLink(left, top + ROW_HEIGHT, TOTAL_WIDTH, "config.renourisheddelight.food_items", () -> new FoodItemConfigScreen(this));
         addLink(left, top + ROW_HEIGHT * 2, TOTAL_WIDTH, "config.renourisheddelight.duration_multipliers", () -> new DurationMultiplierScreen(this));
         addLink(left, top + ROW_HEIGHT * 3, TOTAL_WIDTH, "config.renourisheddelight.starvation", () -> new StarvationScreen(this));
-
         addDoneButton(left, top + ROW_HEIGHT * (ROWS - 1) + DONE_BUTTON_GAP);
     }
 

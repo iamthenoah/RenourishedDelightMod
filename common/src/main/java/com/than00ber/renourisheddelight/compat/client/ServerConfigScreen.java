@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 public final class ServerConfigScreen extends AbstractMenuScreen {
 
     private static final ServerConfiguration DEFAULTS = new ServerConfiguration();
-
     private static final int ROWS = 14;
 
     private boolean doNutritionDecayValue;
@@ -35,7 +34,6 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
     @Override
     protected void init() {
         ServerConfiguration config = ServerConfiguration.getInstance();
-
         doNutritionDecayValue = config.doNutritionDecay;
         doSleepFoodDrainValue = config.doSleepFoodDrain;
         doNourishmentValue = config.doNourishment;

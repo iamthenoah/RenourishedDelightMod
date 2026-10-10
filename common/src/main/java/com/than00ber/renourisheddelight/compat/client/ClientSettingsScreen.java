@@ -13,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 public final class ClientSettingsScreen extends AbstractMenuScreen {
 
     private static final ClientConfiguration DEFAULTS = new ClientConfiguration();
-
     private static final int ROWS = 6;
 
     private boolean showFoodDisplayInInventoryValue;
@@ -29,7 +28,6 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
     @Override
     protected void init() {
         ClientConfiguration config = ClientConfiguration.getInstance();
-
         showFoodDisplayInInventoryValue = config.showFoodDisplayInInventory;
         clipOddMaxHealthHeartValue = config.clipOddMaxHealthHeart;
         compactHealthBarValue = config.compactHealthBar;
