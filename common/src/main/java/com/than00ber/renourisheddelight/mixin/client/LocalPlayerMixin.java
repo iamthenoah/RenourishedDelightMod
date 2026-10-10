@@ -22,9 +22,9 @@ public abstract class LocalPlayerMixin {
     }
 
     @Inject(method = "hasEnoughFoodToStartSprinting", at = @At("HEAD"), cancellable = true)
-    private void renourisheddelight$blockSprinting(CallbackInfoReturnable<Boolean> cir) {
+    private void renourisheddelight$blockSprinting(CallbackInfoReturnable<Boolean> callback) {
         if (!NoSprintPayload.canSprint()) {
-            cir.setReturnValue(false);
+            callback.setReturnValue(false);
         }
     }
 }

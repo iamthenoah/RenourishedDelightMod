@@ -22,7 +22,7 @@
     "config.renourisheddelight.reset_all": "Reset All",
     "config.renourisheddelight.reset_confirm": "Are you sure?",
     "config.renourisheddelight.client": "Client Settings",
-    "config.renourisheddelight.server": "Additional Server Settings",
+    "config.renourisheddelight.server": "Server Settings",
     "config.renourisheddelight.client.hud_position": "Reposition Hunger HUD",
     "config.renourisheddelight.client.golden_palette_item_hint": "Item ID, minecraft:gold_ingot",
     "config.renourisheddelight.client.hud_position.hint": "Drag the food HUD to reposition, then press Escape to save.",

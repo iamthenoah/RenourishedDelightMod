@@ -38,9 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class Diet {
-    private static ServerConfiguration getServerConfig() {
-        return ServerConfiguration.getInstance();
-    }
 
     public static final int SLEEP_DRAIN = 12000;
     public static final int FULL_NUTRITION = 100;
@@ -100,36 +97,29 @@ public class Diet {
         return decaying ? depletion.getOrDefault(item, 0) : 0;
     }
 
-    private ConsumableFoodInstance eat(ServerPlayer player, Item item, FoodConfig config) {
+    private ConsumableFoodInstance eat(Item item, FoodConfig config) {
         ConsumableFoodInstance instance = ConsumableFoodInstance.create(item, config, nutritionDecay(item));
-        decay(player, item);
-        return instance;
-    }
+        int step = Math.max(0, ServerConfiguration.getInstance().nutritionDecayRate);
 
-    private void decay(ServerPlayer player, Item item) {
-        int step = Math.max(0, getServerConfig().nutritionDecayRate);
-
-        if (getServerConfig().doNutritionDecay && step > 0) {
+        if (ServerConfiguration.getInstance().doNutritionDecay && step > 0) {
             int current = depletion.getOrDefault(item, 0);
             depletion.remove(item);
-            int protect = Math.max(0, getServerConfig().nutritionDecayWindow - 1);
+            int protect = Math.max(0, ServerConfiguration.getInstance().nutritionDecayWindow - 1);
             List<Item> tracked = new ArrayList<>(depletion.keySet());
 
             for (int i = 0; i < tracked.size() - protect; i++) {
                 Item stale = tracked.get(i);
                 int value = depletion.get(stale) - step;
-                if (value > 0)
-                    depletion.put(stale, value);
-                else
-                    depletion.remove(stale);
+                if (value > 0) depletion.put(stale, value);
+                else depletion.remove(stale);
             }
             depletion.put(item, Math.min(current + step, maxDecay()));
         }
+        return instance;
     }
 
     public boolean resetDecay() {
-        if (depletion.isEmpty())
-            return false;
+        if (depletion.isEmpty()) return false;
         depletion.clear();
         return true;
     }
@@ -139,29 +129,26 @@ public class Diet {
     }
 
     private static int maxDecay() {
-        return FULL_NUTRITION - Mth.clamp(getServerConfig().nutritionDecayFloor, 0, FULL_NUTRITION);
+        return FULL_NUTRITION - Mth.clamp(ServerConfiguration.getInstance().nutritionDecayFloor, 0, FULL_NUTRITION);
     }
 
     public void consume(ServerPlayer player, Item item) {
         MinecraftServer server = player.getServer();
-        if (server == null)
-            return;
+        if (server == null) return;
 
         FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
-        int maxFoods = Math.max(1, getServerConfig().maxConsumableFood);
+        int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
 
         if (active != null) {
             replaceSlot(player, config, item, active);
         } else if (slots.size() < maxFoods) {
-            addToSlot(player, eat(player, item, config));
+            addToSlot(player, eat(item, config));
         } else {
-            replaceSlot(player, config, item,
-                    slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null));
+            replaceSlot(player, config, item, slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null));
         }
         FoodProperties properties = item.components().get(DataComponents.FOOD);
-        boolean harmful = properties != null && properties.effects().stream()
-                .anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
+        boolean harmful = properties != null && properties.effects().stream().anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
 
         if (slots.size() >= maxFoods && !harmful) {
             nourish(player);
@@ -169,34 +156,28 @@ public class Diet {
     }
 
     public boolean drain(ServerPlayer player, int amount) {
-        if (amount <= 0 || slots.isEmpty())
-            return false;
+        if (amount <= 0 || slots.isEmpty()) return false;
         int ticks = scale(amount);
-
-        if (ticks > 0) {
-            slots.forEach(x -> x.tick(ticks));
-        }
+        if (ticks > 0) slots.forEach(x -> x.tick(ticks));
         expire(player);
         return true;
     }
 
     public boolean tick(ServerPlayer player) {
-        boolean enabled = getServerConfig().doNutritionDecay;
-        int limit = Math.max(1, getServerConfig().maxConsumableFood);
+        boolean enabled = ServerConfiguration.getInstance().doNutritionDecay;
+        int limit = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         boolean toggled = decaying != enabled || capacity != limit;
         decaying = enabled;
         capacity = limit;
 
-        if (!player.gameMode.isSurvival())
-            return toggled;
+        if (!player.gameMode.isSurvival()) return toggled;
         boolean nourished = player.hasEffect(EffectRegistry.nourishment());
         ticksSinceDamage++;
         int amount = 1;
 
         if (++drainTimer >= 20) {
             drainTimer = 0;
-            if (!nourished && player.hasEffect(MobEffects.HUNGER))
-                amount += HUNGER_DRAIN_PER_SECOND;
+            if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
         }
         boolean changed = toggled | drain(player, amount);
         changed |= regenerate(player, nourished);
@@ -213,8 +194,7 @@ public class Diet {
     }
 
     public boolean clear(ServerPlayer player) {
-        if (slots.isEmpty())
-            return false;
+        if (slots.isEmpty()) return false;
         slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, true)));
         slots.clear();
         regen = 0;
@@ -226,11 +206,8 @@ public class Diet {
     }
 
     private void nourish(ServerPlayer player) {
-        if (!getServerConfig().doNourishment || slots.isEmpty())
-            return;
-        if (!slots.stream().allMatch(Diet::isFresh))
-            return;
-
+        if (!ServerConfiguration.getInstance().doNourishment || slots.isEmpty()) return;
+        if (!slots.stream().allMatch(Diet::isFresh)) return;
         int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
 
         if (duration > 0) {
@@ -246,20 +223,17 @@ public class Diet {
         GameRules rules = player.level().getGameRules();
 
         if (!slots.isEmpty() && player.isHurt() && rules.getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
-            if (nourished || ticksSinceDamage >= getServerConfig().regenDelayAfterDamage) {
-                int interval = Math.max(1, getServerConfig().regenHealthTickInterval);
-                if (nourished)
-                    interval = Math.max(1, interval / NOURISHED_REGEN_SPEEDUP);
-                if (++regen < interval)
-                    return false;
+            if (nourished || ticksSinceDamage >= ServerConfiguration.getInstance().regenDelayAfterDamage) {
+                int interval = Math.max(1, ServerConfiguration.getInstance().regenHealthTickInterval);
+                if (nourished) interval = Math.max(1, interval / NOURISHED_REGEN_SPEEDUP);
+                if (++regen < interval) return false;
 
                 regen = 0;
                 player.heal(1.0F);
                 int ticks = scale(REGEN_DRAIN);
 
                 if (ticks > 0) {
-                    slots.stream().max(Comparator.comparingInt(x -> x.duration() - x.time()))
-                            .ifPresent(x -> x.tick(ticks));
+                    slots.stream().max(Comparator.comparingInt(x -> x.duration() - x.time())).ifPresent(x -> x.tick(ticks));
                 }
                 expire(player);
                 return true;
@@ -273,29 +247,19 @@ public class Diet {
     private void starve(ServerPlayer player) {
         MinecraftServer server = player.getServer();
 
-        if (slots.isEmpty() && server != null && getServerConfig().doStarvation) {
+        if (slots.isEmpty() && server != null && ServerConfiguration.getInstance().doStarvation) {
             starving++;
-            List<StarvationEntry> reached = StarvationEntry
-                    .reached(FoodConfigSavedData.get(server).getFoodConfig().starvation, starving);
-            if (reached.isEmpty())
-                return;
+            List<StarvationEntry> reached = StarvationEntry.reached(FoodConfigSavedData.get(server).getFoodConfig().starvation, starving);
+            if (reached.isEmpty()) return;
 
             for (int i = 0; i < reached.size(); i++) {
                 StarvationEntry entry = reached.get(i);
-
-                if (starving < entry.after)
-                    return;
-
-                if (starving == entry.after)
-                    player.displayClientMessage(
-                            Component.translatable("message.starving").withStyle(ChatFormatting.RED),
-                            true);
-
+                if (starving < entry.after) return;
+                if (starving == entry.after) player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
                 Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
 
                 if (effect != null) {
-                    player.addEffect(new MobEffectInstance(effect, 2, entry.levelAt(reached.size() - 1 - i) - 1, true,
-                            false, true));
+                    player.addEffect(new MobEffectInstance(effect, 2, entry.levelAt(reached.size() - 1 - i) - 1, true, false, true));
                 }
             }
         } else {
@@ -308,16 +272,13 @@ public class Diet {
         attach(player, instance);
     }
 
-    private void replaceSlot(ServerPlayer player, FoodConfig config, Item item,
-            @Nullable ConsumableFoodInstance previous) {
-        if (previous == null)
-            return;
+    private void replaceSlot(ServerPlayer player, FoodConfig config, Item item, @Nullable ConsumableFoodInstance previous) {
+        if (previous == null) return;
         int index = slots.indexOf(previous);
-        if (index < 0)
-            return;
+        if (index < 0) return;
 
         previous.attributes().forEach(bonus -> detach(player, bonus, true));
-        ConsumableFoodInstance instance = eat(player, item, config);
+        ConsumableFoodInstance instance = eat(item, config);
         slots.set(index, instance);
         attach(player, instance);
     }
@@ -330,7 +291,7 @@ public class Diet {
                 attribute.addPermanentModifier(bonus.modifier());
 
                 if (bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-                    ticksSinceDamage = getServerConfig().regenDelayAfterDamage;
+                    ticksSinceDamage = ServerConfiguration.getInstance().regenDelayAfterDamage;
                 }
             }
         }
@@ -355,8 +316,7 @@ public class Diet {
 
     private void detach(ServerPlayer player, AttributeModifierInstance bonus, boolean notify) {
         AttributeInstance attribute = player.getAttribute(bonus.attribute());
-        if (attribute == null)
-            return;
+        if (attribute == null) return;
 
         if (notify && bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
             NetworkManager.sendToPlayer(player, new SuppressHurtFlashPayload());
@@ -365,7 +325,7 @@ public class Diet {
     }
 
     private int scale(int amount) {
-        long total = (long) amount * Math.max(0, getServerConfig().foodDrainRate) + drainRemainder;
+        long total = (long) amount * Math.max(0, ServerConfiguration.getInstance().foodDrainRate) + drainRemainder;
         drainRemainder = (int) (total % 100L);
         return (int) Math.min(Integer.MAX_VALUE, total / 100L);
     }
@@ -405,8 +365,7 @@ public class Diet {
         for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {
             CompoundTag stored = (CompoundTag) entry;
             Item item = resolveItem(stored.getString("Item"));
-            if (item != null)
-                diet.depletion.put(item, stored.getInt("Value"));
+            if (item != null) diet.depletion.put(item, stored.getInt("Value"));
         }
         return diet;
     }

@@ -10,6 +10,7 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 
 @Config(name = RenourishedDelightMod.MOD_ID + "/server")
 public final class ServerConfiguration implements ConfigData {
+
     public static void init() {
         AutoConfig.register(ServerConfiguration.class, JanksonConfigSerializer::new);
     }
