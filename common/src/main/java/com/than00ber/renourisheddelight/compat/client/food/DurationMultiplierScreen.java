@@ -1,4 +1,4 @@
-package com.than00ber.renourisheddelight.compat.client;
+package com.than00ber.renourisheddelight.compat.client.food;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;

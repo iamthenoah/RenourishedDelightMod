@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.network;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.compat.client.AbstractFoodConfigScreen;
+import com.than00ber.renourisheddelight.compat.client.food.AbstractFoodConfigScreen;
 import com.than00ber.renourisheddelight.config.data.*;
 import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.AttributeBonus;

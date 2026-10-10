@@ -1,4 +1,4 @@
-package com.than00ber.renourisheddelight.compat.client;
+package com.than00ber.renourisheddelight.compat.client.food;
 
 import com.than00ber.renourisheddelight.config.data.FoodItemEntry;
 import com.than00ber.renourisheddelight.food.AttributeBonus;
