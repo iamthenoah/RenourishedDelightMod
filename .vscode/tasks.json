@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Gradle: Build",
+            "type": "shell",
+            "command": "JAVA_HOME=/usr/lib/jvm/java-21-openjdk",
+            "args": [
+                "./gradlew",
+                "build"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Gradle: Run NeoForge Client",
+            "type": "shell",
+            "command": "JAVA_HOME=/usr/lib/jvm/java-21-openjdk",
+            "args": [
+                "./gradlew",
+                ":neoforge:runClient"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Gradle: Run Fabric Client",
+            "type": "shell",
+            "command": "JAVA_HOME=/usr/lib/jvm/java-21-openjdk",
+            "args": [
+                "./gradlew",
+                ":fabric:runClient"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
