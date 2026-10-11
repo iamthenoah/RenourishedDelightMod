@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.client.atlas;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -14,7 +15,6 @@ import java.util.Objects;
 public record TextureAtlas(ResourceLocation name, Map<Item, Texture[]> textures) {
 
     private static final int ICONS_PER_ROW = 5;
-    private static final int MAX_ROWS = 30;
 
     public @Nullable Texture[] getTextures(Item item) {
         return textures.get(item);
@@ -33,11 +33,19 @@ public record TextureAtlas(ResourceLocation name, Map<Item, Texture[]> textures)
         protected int uOffset;
         protected int vOffset;
         protected int dimensions;
+        protected int rows;
 
         protected Builder(String name, int dimensions, int count) {
             this.dimensions = dimensions;
-            int width = (count / MAX_ROWS + 1) * (dimensions * ICONS_PER_ROW);
-            int height = MAX_ROWS * dimensions;
+            this.rows = Math.max(1, (int) Math.ceil(Math.sqrt(count * (double) ICONS_PER_ROW)));
+            int columns = Math.max(1, (count + rows - 1) / rows);
+            int width = columns * dimensions * ICONS_PER_ROW;
+            int height = rows * dimensions;
+            int max = RenderSystem.maxSupportedTextureSize();
+
+            if (width > max || height > max) {
+                throw new IllegalStateException("atlas of " + width + "x" + height + " exceeds the maximum texture size of " + max);
+            }
             this.texture = new DynamicTexture(new NativeImage(width, height, true));
             this.name = Minecraft.getInstance().getTextureManager().register(name, texture);
         }
@@ -60,7 +68,7 @@ public record TextureAtlas(ResourceLocation name, Map<Item, Texture[]> textures)
             if (index == ICONS_PER_ROW - 1) {
                 vOffset += input.getHeight();
 
-                if ((vOffset / input.getHeight()) >= MAX_ROWS) {
+                if ((vOffset / input.getHeight()) >= rows) {
                     vOffset = 0;
                     uOffset += input.getWidth() * ICONS_PER_ROW;
                 }
