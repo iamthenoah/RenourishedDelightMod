@@ -12,7 +12,8 @@
     "client.GameRendererMixin",
     "client.GuiMixin",
     "client.ItemStackMixin",
-    "client.LocalPlayerMixin"
+    "client.LocalPlayerMixin",
+    "client.MinecraftMixin"
   ],
   "mixins": [
     "FoodDataMixin",
