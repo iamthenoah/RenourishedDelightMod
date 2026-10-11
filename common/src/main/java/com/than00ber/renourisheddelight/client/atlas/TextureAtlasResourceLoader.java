@@ -59,6 +59,12 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
         build();
     }
 
+    public void onGameLoadFinished() {
+        if (miniAtlas == null || largeAtlas == null) {
+            Minecraft.getInstance().tell(this::build);
+        }
+    }
+
     private void build() {
         long startNanos = System.nanoTime();
 
