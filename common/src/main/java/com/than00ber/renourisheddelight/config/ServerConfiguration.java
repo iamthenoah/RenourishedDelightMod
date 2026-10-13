@@ -34,6 +34,12 @@ public final class ServerConfiguration implements ConfigData {
     @Comment("Prevents the player from sprinting if no food has been consumed. (default: false)")
     public boolean doPreventSprint = false;
 
+    @Comment("Whether eating with every slot full replaces the active food closest to running out. When disabled, players must wait for a slot to free up before eating something new. (default: true)")
+    public boolean doReplaceLowestFood = true;
+
+    @Comment("Prevents eating a food that shares a category (e.g. beef, fish, berries) with an active food. Categories come from item tags and the ingredients a food is made from. (default: false)")
+    public boolean doFoodCategories = false;
+
     @Comment("Base max health a player has before any food bonuses are applied. (default: 20)")
     public int playerStartingHealth = 20;
 

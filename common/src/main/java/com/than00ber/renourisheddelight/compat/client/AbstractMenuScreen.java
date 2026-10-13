@@ -2,12 +2,10 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
@@ -53,15 +51,19 @@ public abstract class AbstractMenuScreen extends Screen {
     }
 
     protected void addToggle(int x, int y, String labelKey, boolean initial, boolean defaultValue, Consumer<Boolean> onChange) {
+        addToggle(x, y, FIELD_WIDTH, labelKey, initial, defaultValue, onChange);
+    }
+
+    protected void addToggle(int x, int y, int width, String labelKey, boolean initial, boolean defaultValue, Consumer<Boolean> onChange) {
         boolean[] state = { initial };
         Button toggleButton = Button.builder(toggleLabel(labelKey, initial), button -> {
             state[0] = !state[0];
             onChange.accept(state[0]);
             button.setMessage(toggleLabel(labelKey, state[0]));
-        }).bounds(x, y, FIELD_WIDTH, BUTTON_HEIGHT).build();
+        }).bounds(x, y, width, BUTTON_HEIGHT).build();
         toggleButton.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
         addRenderableWidget(toggleButton);
-        addResetButton(x, y, FIELD_WIDTH, () -> {
+        addResetButton(x, y, width, () -> {
             state[0] = defaultValue;
             onChange.accept(defaultValue);
             toggleButton.setMessage(toggleLabel(labelKey, defaultValue));
@@ -84,6 +86,15 @@ public abstract class AbstractMenuScreen extends Screen {
         addRenderableWidget(field);
         addResetButton(fieldX, y, INTEGER_FIELD_WIDTH, () -> field.setValue(String.valueOf(defaultValue)));
         return field;
+    }
+
+    // the range stretches to fit a larger value set in the config file, so opening the screen never clamps it
+    protected IntegerSlider addIntegerSlider(int x, int y, int width, String labelKey, int initial, int defaultValue, int min, int max, String suffix) {
+        IntegerSlider slider = new IntegerSlider(x, y, width, Component.translatable(labelKey), suffix, Math.min(min, initial), Math.max(max, initial), initial);
+        slider.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
+        addRenderableWidget(slider);
+        addResetButton(x, y, width, () -> slider.setInt(defaultValue));
+        return slider;
     }
 
     protected void addResetButton(int x, int y, int fieldWidth, Runnable action) {
@@ -110,6 +121,44 @@ public abstract class AbstractMenuScreen extends Screen {
     }
 
     protected void save() {
+    }
+
+    protected static final class IntegerSlider extends AbstractSliderButton {
+
+        private final Component label;
+        private final String suffix;
+        private final int min;
+        private final int max;
+        private int current;
+
+        private IntegerSlider(int x, int y, int width, Component label, String suffix, int min, int max, int initial) {
+            super(x, y, width, BUTTON_HEIGHT, Component.empty(), 0.0);
+            this.label = label;
+            this.suffix = suffix;
+            this.min = min;
+            this.max = max;
+            setInt(initial);
+        }
+
+        public int getInt() {
+            return current;
+        }
+
+        public void setInt(int value) {
+            current = Mth.clamp(value, min, max);
+            this.value = max > min ? (current - min) / (double) (max - min) : 0.0;
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(label.copy().append(Component.literal(": " + current + suffix)));
+        }
+
+        @Override
+        protected void applyValue() {
+            current = min + (int) Math.round(value * (max - min));
+        }
     }
 
     @Override
