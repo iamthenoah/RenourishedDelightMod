@@ -35,6 +35,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Unique private static long renourisheddelight$lastSleepDrainTime = -1L;
     @Unique private long renourisheddelight$sleepStartDayTime = -1L;
     @Unique private long renourisheddelight$sleepStartGameTime = -1L;
+    @Unique private double renourisheddelight$appliedBaseHealth = Double.NaN;
 
     protected PlayerMixin(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);
@@ -64,9 +65,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     public void renourisheddelight$tick(CallbackInfo callback) {
         if (!((Object) this instanceof ServerPlayer player)) return;
 
-        int hearts = ServerConfiguration.getInstance().playerStartingHealth;
-        AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth != null) maxHealth.setBaseValue(Mth.clamp(hearts, MIN_HEARTS, MAX_HEARTS));
+        renourisheddelight$applyStartingHealth(player);
         Diet diet = getDiet();
 
         if (isDeadOrDying()) {
@@ -80,6 +79,21 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
             player.setSprinting(false);
         } else {
             new NoSprintPayload(true).sendTo(player);
+        }
+    }
+
+    @Unique
+    private void renourisheddelight$applyStartingHealth(ServerPlayer player) {
+        AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealth == null) return;
+
+        double target = Mth.clamp(ServerConfiguration.getInstance().playerStartingHealth, MIN_HEARTS, MAX_HEARTS);
+        double current = maxHealth.getBaseValue();
+        if (current == target) return;
+
+        if (current == Attributes.MAX_HEALTH.getDefaultValue() || current == renourisheddelight$appliedBaseHealth) {
+            maxHealth.setBaseValue(target);
+            renourisheddelight$appliedBaseHealth = target;
         }
     }
 
@@ -122,10 +136,12 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void renourisheddelight$addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         compoundTag.put("Diet", Diet.save(getDiet()));
+        if (!Double.isNaN(renourisheddelight$appliedBaseHealth)) compoundTag.putDouble("AppliedBaseHealth", renourisheddelight$appliedBaseHealth);
     }
 
     @Inject(method = "readAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void renourisheddelight$readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         entityData.set(DIET_ACCESSOR, Diet.load(compoundTag.getCompound("Diet")), true);
+        if (compoundTag.contains("AppliedBaseHealth")) renourisheddelight$appliedBaseHealth = compoundTag.getDouble("AppliedBaseHealth");
     }
 }
