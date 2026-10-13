@@ -93,24 +93,12 @@ public abstract class ItemStackMixin {
     @Unique
     private static Component renourisheddelight$status(Item item, Diet diet) {
         DietRestrictions lookup = DietRestrictions.client();
-        EatingOutcome outcome = diet.outcome(item, lookup);
-        ConsumableFoodInstance target = diet.target(outcome, item, lookup);
-
-        Component status = switch (outcome) {
-            case CONSUME -> Component.translatable("tooltip.eating.consume").withStyle(ChatFormatting.GREEN);
-            case REPLENISH -> Component.translatable("tooltip.eating.replenish").withStyle(ChatFormatting.GREEN);
-            case REPLACE_RESTRICTED, REPLACE_LOW -> target != null
-                    ? Component.translatable("tooltip.eating.replace", target.item().getDescription()).withStyle(ChatFormatting.GOLD)
-                    : Component.translatable("tooltip.eating.consume").withStyle(ChatFormatting.GREEN);
-            case RESTRICTED, TOO_FULL -> {
-                Component reason = diet.reason(outcome, item, lookup);
-                yield reason != null ? reason : Component.translatable("tooltip.eating.blocked").withStyle(ChatFormatting.RED);
-            }
-        };
+        EatingOutcome outcome = EatingOutcome.outcome(diet, item, lookup);
+        ConsumableFoodInstance target = outcome.consume(diet, item, lookup);
+        Component status = outcome.getMessage(target != null ? target.item().getDescription() : Component.empty());
         return Component.literal(" ").append(status);
     }
 
-    // restrictions shared with an active food are highlighted, gold when eating swaps that food out, red when it is refused
     @Unique
     private static @Nullable MutableComponent renourisheddelight$restrictions(Item item, Diet diet) {
         DietRestrictions lookup = DietRestrictions.client();
@@ -121,8 +109,8 @@ public abstract class ItemStackMixin {
                 .filter(x -> x.item() != item)
                 .flatMap(x -> lookup.get(x.item()).stream())
                 .collect(Collectors.toSet());
-        ChatFormatting clash = diet.outcome(item, lookup) == EatingOutcome.REPLACE_RESTRICTED ? ChatFormatting.GOLD : ChatFormatting.RED;
-        MutableComponent line = Component.literal(" ").append(Component.translatable("tooltip.restrictions")).append(" ").withStyle(ChatFormatting.GRAY);
+        ChatFormatting clash = EatingOutcome.outcome(diet, item, lookup) == EatingOutcome.REPLACE_RESTRICTED ? ChatFormatting.GOLD : ChatFormatting.RED;
+        MutableComponent line = Component.literal(" ").withStyle(ChatFormatting.GRAY);
         List<ResourceLocation> sorted = restrictions.stream().sorted(Comparator.comparing(ResourceLocation::toString)).toList();
 
         for (int i = 0; i < sorted.size(); i++) {
@@ -142,8 +130,7 @@ public abstract class ItemStackMixin {
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
         int filled = Mth.clamp(Math.round((float) nutrition * NUTRITION_BARS / Diet.FULL_NUTRITION), 0, NUTRITION_BARS);
         int color = renourisheddelight$nutritionColor(nutrition);
-        MutableComponent bar = Component.literal(" ")
-                .append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
+        MutableComponent bar = Component.literal(" ").append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
 
         if (filled < NUTRITION_BARS) {
             bar.append(Component.literal(".".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));

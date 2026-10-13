@@ -45,8 +45,12 @@ public abstract class AbstractMenuScreen extends Screen {
     }
 
     protected void addDoneButton(int x, int y) {
+        addDoneButton(x, y, contentWidth());
+    }
+
+    protected void addDoneButton(int x, int y, int width) {
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .bounds(x, y, contentWidth(), BUTTON_HEIGHT)
+                .bounds(x, y, width, BUTTON_HEIGHT)
                 .build());
     }
 

@@ -76,7 +76,9 @@ public final class DietRestrictions {
                 .filter(x -> !x.isEmpty())
                 .map(x -> Character.toUpperCase(x.charAt(0)) + x.substring(1))
                 .collect(Collectors.joining(" "));
-        return Component.translatableWithFallback("tag.item." + restriction.getNamespace() + "." + path.replace('/', '.'), fallback);
+        String key = "tag.item." + restriction.getNamespace() + "." + path.replace('/', '.');
+        Component name = Component.translatableWithFallback(key, fallback);
+        return Component.literal("#").append(name);
     }
 
     public void rebuild(MinecraftServer server) {
@@ -169,8 +171,6 @@ public final class DietRestrictions {
             return result;
         }
 
-        // an ingredient accepting several items (usually a tag) only counts the restrictions they all share,
-        // falling back to the narrowest restriction tag covering every option ("any raw meat")
         private Set<TagKey<Item>> resolveIngredient(Set<Item> options, int depth) {
             Set<TagKey<Item>> shared = null;
 
@@ -189,8 +189,6 @@ public final class DietRestrictions {
             return mostSpecific(covering);
         }
 
-        // drops tags that strictly contain another of the given tags, so a steak counts as
-        // "cooked beef" rather than also "cooked meat" when a mod provides the finer tag
         private Set<TagKey<Item>> mostSpecific(Set<TagKey<Item>> tags) {
             if (tags.size() < 2) return tags;
             Set<TagKey<Item>> result = new HashSet<>(tags);

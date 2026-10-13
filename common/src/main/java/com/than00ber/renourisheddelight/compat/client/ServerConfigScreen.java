@@ -78,7 +78,8 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         nutritionDecayWindowSlider = addIntegerSlider(right, top + ROW_HEIGHT * 6, field, KEY + "nutritionDecayWindow", config.nutritionDecayWindow, DEFAULTS.nutritionDecayWindow, 1, 10, "");
         nutritionDecayFloorSlider = addIntegerSlider(right, top + ROW_HEIGHT * 7, field, KEY + "nutritionDecayFloor", config.nutritionDecayFloor, DEFAULTS.nutritionDecayFloor, 0, 100, "%");
 
-        addDoneButton(left, top + ROW_HEIGHT * 8 + DONE_BUTTON_GAP);
+        int doneWidth = Math.min(TOTAL_WIDTH, contentWidth());
+        addDoneButton(width / 2 - doneWidth / 2, top + ROW_HEIGHT * 8 + DONE_BUTTON_GAP, doneWidth);
     }
 
     @Override

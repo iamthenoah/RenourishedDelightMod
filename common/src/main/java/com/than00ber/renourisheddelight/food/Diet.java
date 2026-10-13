@@ -75,8 +75,8 @@ public class Diet {
     private int drainTimer;
     private int drainRemainder;
     private int starving;
-    private boolean decaying = true;
     private int capacity;
+    private boolean decaying = true;
     private boolean replacing = true;
     private boolean restricted;
 
@@ -88,60 +88,38 @@ public class Diet {
         ticksSinceDamage = 0;
     }
 
-    public boolean isDecaying() {
-        return decaying;
-    }
-
     public int getCapacity() {
         return capacity;
+    }
+
+    public boolean isDecaying() {
+        return decaying;
     }
 
     public boolean isRestricted() {
         return restricted;
     }
 
-    /**
-     * Decides what eating the item would do. Relies only on synced state so the client reaches the
-     * same outcome as the server before eating starts, and can preview which slot it would affect.
-     */
-    public EatingOutcome outcome(Item item, DietRestrictions restrictions) {
-        if (slots.stream().anyMatch(x -> x.item() == item)) return EatingOutcome.REPLENISH;
-
-        if (restricted) {
-            List<ConsumableFoodInstance> conflicts = conflicts(item, restrictions);
-            if (conflicts.size() > 1) return EatingOutcome.RESTRICTED;
-            if (conflicts.size() == 1) return replacing ? EatingOutcome.REPLACE_RESTRICTED : EatingOutcome.RESTRICTED;
-        }
-        if (capacity <= 0 || slots.size() < capacity) return EatingOutcome.CONSUME;
-        return replacing ? EatingOutcome.REPLACE_LOW : EatingOutcome.TOO_FULL;
+    public boolean isReplacing() {
+        return replacing;
     }
-
-    // the slot the outcome tops up or swaps out, or the one in the way when eating is refused
-    public @Nullable ConsumableFoodInstance target(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
-        return switch (outcome) {
-            case REPLENISH -> slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
-            case REPLACE_RESTRICTED, RESTRICTED -> conflicts(item, restrictions).stream().findFirst().orElse(null);
-            case REPLACE_LOW -> slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null);
-            case CONSUME, TOO_FULL -> null;
-        };
-    }
-
-    private List<ConsumableFoodInstance> conflicts(Item item, DietRestrictions restrictions) {
-        Set<ResourceLocation> eating = restrictions.get(item);
-        if (eating.isEmpty()) return List.of();
-        return slots.stream().filter(x -> restrictions.get(x.item()).stream().anyMatch(eating::contains)).toList();
-    }
-
+    
     public @Nullable Component reason(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
-        if (outcome == EatingOutcome.TOO_FULL) {
+        if (outcome != EatingOutcome.TOO_FULL) {
+            ConsumableFoodInstance blocking = outcome == EatingOutcome.RESTRICTED ? outcome.consume(this, item, restrictions) : null;
+
+            if (blocking != null) {
+                Set<ResourceLocation> eating = restrictions.get(item);
+                ResourceLocation restriction = restrictions.get(blocking.item()).stream().filter(eating::contains).findFirst().orElse(null);
+
+                if (restriction != null) {
+                    return Component.translatable("message.diet_restricted", DietRestrictions.name(restriction), blocking.item().getDescription()).withStyle(ChatFormatting.RED);
+                }
+            }
+            return null;
+        } else {
             return Component.translatable("message.diet_full").withStyle(ChatFormatting.RED);
         }
-        ConsumableFoodInstance blocking = outcome == EatingOutcome.RESTRICTED ? target(outcome, item, restrictions) : null;
-        if (blocking == null) return null;
-        Set<ResourceLocation> eating = restrictions.get(item);
-        ResourceLocation restriction = restrictions.get(blocking.item()).stream().filter(eating::contains).findFirst().orElse(null);
-        if (restriction == null) return null;
-        return Component.translatable("message.diet_restricted", DietRestrictions.name(restriction), blocking.item().getDescription()).withStyle(ChatFormatting.RED);
     }
 
     public int nutritionDecay(Item item) {
@@ -170,9 +148,11 @@ public class Diet {
     }
 
     public boolean resetDecay() {
-        if (depletion.isEmpty()) return false;
-        depletion.clear();
-        return true;
+        if (!depletion.isEmpty()) {
+            depletion.clear();
+            return true;
+        }
+        return false;
     }
 
     public boolean resetDecay(Item item) {
@@ -183,11 +163,10 @@ public class Diet {
         return FULL_NUTRITION - Mth.clamp(ServerConfiguration.getInstance().nutritionDecayFloor, 0, FULL_NUTRITION);
     }
 
-    // checked on both sides before eating starts, the server also tells the player why
     public static boolean blocksEating(Player player, Item item) {
         if (player.getAbilities().invulnerable || !(player instanceof DietHolder holder)) return false;
         DietRestrictions restrictions = DietRestrictions.of(player.level());
-        EatingOutcome outcome = holder.getDiet().outcome(item, restrictions);
+        EatingOutcome outcome = EatingOutcome.outcome(holder.getDiet(), item, restrictions);
         if (outcome.isAllowed()) return false;
 
         if (player instanceof ServerPlayer) {
@@ -199,34 +178,42 @@ public class Diet {
 
     public void consume(ServerPlayer player, Item item) {
         MinecraftServer server = player.getServer();
-        if (server == null) return;
 
-        DietRestrictions restrictions = DietRestrictions.server();
-        EatingOutcome outcome = outcome(item, restrictions);
-        if (!outcome.isAllowed()) return;
+        if (server != null) {
+            DietRestrictions restrictions = DietRestrictions.server();
+            EatingOutcome outcome = EatingOutcome.outcome(this, item, restrictions);
 
-        FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
-        int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
+            if (outcome.isAllowed()) {
+                FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
+                int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
 
-        if (outcome == EatingOutcome.CONSUME) {
-            addToSlot(player, eat(item, config));
-        } else {
-            replaceSlot(player, config, item, target(outcome, item, restrictions));
-        }
-        FoodProperties properties = item.components().get(DataComponents.FOOD);
-        boolean harmful = properties != null && properties.effects().stream().anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
+                if (outcome == EatingOutcome.CONSUME) {
+                    addToSlot(player, eat(item, config));
+                } else {
+                    replaceSlot(player, config, item, outcome.consume(this, item, restrictions));
+                }
+                FoodProperties properties = item.components().get(DataComponents.FOOD);
+                boolean harmful = properties != null && properties.effects().stream()
+                        .anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
 
-        if (slots.size() >= maxFoods && !harmful) {
-            nourish(player);
+                if (slots.size() >= maxFoods && !harmful) {
+                    nourish(player);
+                }
+            }
         }
     }
 
     public boolean drain(ServerPlayer player, int amount) {
-        if (amount <= 0 || slots.isEmpty()) return false;
-        int ticks = scale(amount);
-        if (ticks > 0) slots.forEach(x -> x.tick(ticks));
-        expire(player);
-        return true;
+        if (amount > 0 && !slots.isEmpty()) {
+            int ticks = scale(amount);
+
+            if (ticks > 0) {
+                slots.forEach(x -> x.tick(ticks));
+            }
+            expire(player);
+            return true;
+        }
+        return false;
     }
 
     public boolean tick(ServerPlayer player) {
@@ -247,7 +234,10 @@ public class Diet {
 
         if (++drainTimer >= 20) {
             drainTimer = 0;
-            if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
+
+            if (!nourished && player.hasEffect(MobEffects.HUNGER)) {
+                amount += HUNGER_DRAIN_PER_SECOND;
+            }
         }
         boolean changed = toggled | drain(player, amount);
         changed |= regenerate(player, nourished);
@@ -260,12 +250,12 @@ public class Diet {
     }
 
     public void clearModifiers(ServerPlayer player) {
-        slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, false)));
+        slots.forEach(x -> x.attributes().forEach(bonus -> detach(player, bonus, false)));
     }
 
     public boolean clear(ServerPlayer player) {
         if (slots.isEmpty()) return false;
-        slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, true)));
+        slots.forEach(x -> x.attributes().forEach(bonus -> detach(player, bonus, true)));
         slots.clear();
         regen = 0;
         drainTimer = 0;
@@ -276,12 +266,14 @@ public class Diet {
     }
 
     private void nourish(ServerPlayer player) {
-        if (!ServerConfiguration.getInstance().doNourishment || slots.isEmpty()) return;
-        if (!slots.stream().allMatch(Diet::isFresh)) return;
-        int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
+        if (ServerConfiguration.getInstance().doNourishment && !slots.isEmpty()) {
+            if (slots.stream().allMatch(Diet::isFresh)) {
+                int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
 
-        if (duration > 0) {
-            player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
+                if (duration > 0) {
+                    player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
+                }
+            }
         }
     }
 
@@ -320,16 +312,18 @@ public class Diet {
         if (slots.isEmpty() && server != null && ServerConfiguration.getInstance().doStarvation) {
             starving++;
             List<StarvationEntry> reached = StarvationEntry.reached(FoodConfigSavedData.get(server).getFoodConfig().starvation, starving);
-            if (reached.isEmpty()) return;
+ 
+            if (!reached.isEmpty()) {
+                for (int i = 0; i < reached.size(); i++) {
+                    StarvationEntry entry = reached.get(i);
+                    if (starving < entry.after) return;
+                    if (starving == entry.after)
+                        player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
+                    Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
 
-            for (int i = 0; i < reached.size(); i++) {
-                StarvationEntry entry = reached.get(i);
-                if (starving < entry.after) return;
-                if (starving == entry.after) player.displayClientMessage(Component.translatable("message.starving").withStyle(ChatFormatting.RED), true);
-                Holder<MobEffect> effect = StarvationEntry.resolveEffect(entry.effect);
-
-                if (effect != null) {
-                    player.addEffect(new MobEffectInstance(effect, 2, entry.levelAt(reached.size() - 1 - i) - 1, true, false, true));
+                    if (effect != null) {
+                        player.addEffect(new MobEffectInstance(effect, 2, entry.levelAt(reached.size() - 1 - i) - 1, true, false, true));
+                    }
                 }
             }
         } else {
@@ -386,12 +380,13 @@ public class Diet {
 
     private void detach(ServerPlayer player, AttributeModifierInstance bonus, boolean notify) {
         AttributeInstance attribute = player.getAttribute(bonus.attribute());
-        if (attribute == null) return;
 
-        if (notify && bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
-            NetworkManager.sendToPlayer(player, new SuppressHurtFlashPayload());
+        if (attribute != null) {
+            if (notify && bonus.attribute().value() == Attributes.MAX_HEALTH.value()) {
+                NetworkManager.sendToPlayer(player, new SuppressHurtFlashPayload());
+            }
+            attribute.removeModifier(bonus.modifier());
         }
-        attribute.removeModifier(bonus.modifier());
     }
 
     private int scale(int amount) {

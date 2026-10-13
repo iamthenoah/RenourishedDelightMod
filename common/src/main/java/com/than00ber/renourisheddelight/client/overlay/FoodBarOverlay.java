@@ -97,21 +97,23 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
 
     private static Preview preview(Player player, Diet diet, DeltaTracker deltaTracker) {
         Item item = targetItem(player);
-        if (item == null) return Preview.NONE;
 
-        int tick = Minecraft.getInstance().gui.getGuiTicks() % PULSE_DURATION;
-        float time = (tick + deltaTracker.getGameTimeDeltaPartialTick(false)) / PULSE_DURATION;
-        float wave = (1.0F - Mth.cos(time * Mth.TWO_PI)) / 2.0F;
-        float alpha = Mth.lerp(wave, PULSE_MIN_ALPHA, 1.0F);
+        if (item != null) {
+            int tick = Minecraft.getInstance().gui.getGuiTicks() % PULSE_DURATION;
+            float time = (tick + deltaTracker.getGameTimeDeltaPartialTick(false)) / PULSE_DURATION;
+            float wave = (1.0F - Mth.cos(time * Mth.TWO_PI)) / 2.0F;
+            float alpha = Mth.lerp(wave, PULSE_MIN_ALPHA, 1.0F);
 
-        EatingOutcome outcome = diet.outcome(item, DietRestrictions.client());
-        ConsumableFoodInstance target = diet.target(outcome, item, DietRestrictions.client());
+            EatingOutcome outcome = EatingOutcome.outcome(diet, item, DietRestrictions.client());
+            ConsumableFoodInstance target = outcome.consume(diet, item, DietRestrictions.client());
 
-        return switch (outcome) {
-            case REPLENISH -> new Preview(item, null, alpha);
-            case REPLACE_RESTRICTED, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
-            case CONSUME, RESTRICTED, TOO_FULL -> Preview.NONE;
-        };
+            return switch (outcome) {
+                case REPLENISH -> new Preview(item, null, alpha);
+                case REPLACE_RESTRICTED, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
+                case CONSUME, RESTRICTED, TOO_FULL -> Preview.NONE;
+            };
+        }
+        return Preview.NONE;
     }
 
     private static @Nullable Item targetItem(Player player) {
