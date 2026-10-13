@@ -45,6 +45,7 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     private @Nullable TextureAtlas miniAtlas;
     private @Nullable TextureAtlas largeAtlas;
+    private boolean dirty = true;
 
     public @Nullable TextureAtlas getMiniAtlas() {
         return miniAtlas;
@@ -56,12 +57,20 @@ public class TextureAtlasResourceLoader implements ResourceManagerReloadListener
 
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
-        build();
+        dirty = true;
     }
 
-    public void onGameLoadFinished() {
-        if (miniAtlas == null || largeAtlas == null) {
-            Minecraft.getInstance().tell(this::build);
+    public void onClientTick() {
+        // do not remove, this is ugly but its the only fix I found that prevents 
+        // the hunger bar from being invisible when loading into the game.
+        // you would think that resource (re)load event would be called when the
+        // game loads but thats not the case.
+        // We cannot use events like `TextureAtlasStitchedEvent` to stitch the
+        // textures together because we use the `ItemRenderer` which is only
+        // available after such events fire.
+        if (dirty && Minecraft.getInstance().getOverlay() == null) {
+            dirty = false;
+            build();
         }
     }
 
