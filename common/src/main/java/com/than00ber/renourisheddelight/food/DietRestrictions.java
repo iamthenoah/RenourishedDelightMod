@@ -22,7 +22,7 @@ import net.minecraft.world.level.Level;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public final class FoodCategories {
+public final class DietRestrictions {
 
     private static final String TAG_NAMESPACE = "c";
     private static final String TAG_PREFIX = "foods/";
@@ -30,34 +30,34 @@ public final class FoodCategories {
     private static final TagKey<Item> EDIBLE_WHEN_PLACED = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(TAG_NAMESPACE, "foods/edible_when_placed"));
     private static final int MAX_DEPTH = 8;
 
-    private static final FoodCategories SERVER = new FoodCategories();
-    private static final FoodCategories CLIENT = new FoodCategories();
+    private static final DietRestrictions SERVER = new DietRestrictions();
+    private static final DietRestrictions CLIENT = new DietRestrictions();
 
-    private volatile Map<Item, Set<ResourceLocation>> categories = Map.of();
+    private volatile Map<Item, Set<ResourceLocation>> restrictions = Map.of();
     private volatile boolean dirty = true;
 
-    public static FoodCategories server() {
+    public static DietRestrictions server() {
         return SERVER;
     }
 
-    public static FoodCategories client() {
+    public static DietRestrictions client() {
         return CLIENT;
     }
 
-    public static FoodCategories of(Level level) {
+    public static DietRestrictions of(Level level) {
         return level.isClientSide() ? CLIENT : SERVER;
     }
 
     public Set<ResourceLocation> get(Item item) {
-        return categories.getOrDefault(item, Set.of());
+        return restrictions.getOrDefault(item, Set.of());
     }
 
     public Map<Item, Set<ResourceLocation>> all() {
-        return categories;
+        return restrictions;
     }
 
-    public void set(Map<Item, Set<ResourceLocation>> categories) {
-        this.categories = Map.copyOf(categories);
+    public void set(Map<Item, Set<ResourceLocation>> restrictions) {
+        this.restrictions = Map.copyOf(restrictions);
         this.dirty = false;
     }
 
@@ -69,23 +69,23 @@ public final class FoodCategories {
         return dirty;
     }
 
-    public static MutableComponent name(ResourceLocation category) {
-        String path = category.getPath();
+    public static MutableComponent name(ResourceLocation restriction) {
+        String path = restriction.getPath();
         String last = path.substring(path.lastIndexOf('/') + 1);
         String fallback = Arrays.stream(last.split("_"))
                 .filter(x -> !x.isEmpty())
                 .map(x -> Character.toUpperCase(x.charAt(0)) + x.substring(1))
                 .collect(Collectors.joining(" "));
-        return Component.translatableWithFallback("tag.item." + category.getNamespace() + "." + path.replace('/', '.'), fallback);
+        return Component.translatableWithFallback("tag.item." + restriction.getNamespace() + "." + path.replace('/', '.'), fallback);
     }
 
     public void rebuild(MinecraftServer server) {
         long startNanos = System.nanoTime();
         set(new Resolver(server).resolveAll());
-        RenourishedDelightMod.LOGGER.info("Resolved categories for {} foods in {} ms", categories.size(), (System.nanoTime() - startNanos) / 1_000_000L);
+        RenourishedDelightMod.LOGGER.info("Resolved diet restrictions for {} foods in {} ms", restrictions.size(), (System.nanoTime() - startNanos) / 1_000_000L);
     }
 
-    private static boolean isCategoryTag(TagKey<Item> tag) {
+    private static boolean isRestrictionTag(TagKey<Item> tag) {
         ResourceLocation id = tag.location();
         return id.getNamespace().equals(TAG_NAMESPACE) && id.getPath().startsWith(TAG_PREFIX) && !IGNORED_TAGS.contains(id.getPath());
     }
@@ -100,7 +100,7 @@ public final class FoodCategories {
         private final Set<Item> visiting = new HashSet<>();
 
         private Resolver(MinecraftServer server) {
-            BuiltInRegistries.ITEM.getTagNames().filter(FoodCategories::isCategoryTag).forEach(tag -> {
+            BuiltInRegistries.ITEM.getTagNames().filter(DietRestrictions::isRestrictionTag).forEach(tag -> {
                 Set<Item> items = BuiltInRegistries.ITEM.getTag(tag).stream()
                         .flatMap(x -> x.stream().map(Holder::value))
                         .filter(x -> x != Items.AIR)
@@ -139,17 +139,17 @@ public final class FoodCategories {
         }
 
         private Map<Item, Set<ResourceLocation>> resolveAll() {
-            Map<Item, Set<ResourceLocation>> categories = new HashMap<>();
+            Map<Item, Set<ResourceLocation>> restrictions = new HashMap<>();
 
             for (Item item : BuiltInRegistries.ITEM) {
                 if (!item.components().has(DataComponents.FOOD) && !item.builtInRegistryHolder().is(EDIBLE_WHEN_PLACED)) continue;
                 Set<TagKey<Item>> tags = resolve(item, 0);
 
                 if (!tags.isEmpty()) {
-                    categories.put(item, tags.stream().map(TagKey::location).collect(Collectors.toUnmodifiableSet()));
+                    restrictions.put(item, tags.stream().map(TagKey::location).collect(Collectors.toUnmodifiableSet()));
                 }
             }
-            return categories;
+            return restrictions;
         }
 
         private Set<TagKey<Item>> resolve(Item item, int depth) {
@@ -169,8 +169,8 @@ public final class FoodCategories {
             return result;
         }
 
-        // an ingredient accepting several items (usually a tag) only counts the categories they all share,
-        // falling back to the narrowest category tag covering every option ("any raw meat")
+        // an ingredient accepting several items (usually a tag) only counts the restrictions they all share,
+        // falling back to the narrowest restriction tag covering every option ("any raw meat")
         private Set<TagKey<Item>> resolveIngredient(Set<Item> options, int depth) {
             Set<TagKey<Item>> shared = null;
 

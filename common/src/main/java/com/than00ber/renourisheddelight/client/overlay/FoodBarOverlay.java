@@ -104,13 +104,13 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         float wave = (1.0F - Mth.cos(time * Mth.TWO_PI)) / 2.0F;
         float alpha = Mth.lerp(wave, PULSE_MIN_ALPHA, 1.0F);
 
-        EatingOutcome outcome = diet.outcome(item, FoodCategories.client());
-        ConsumableFoodInstance target = diet.target(outcome, item, FoodCategories.client());
+        EatingOutcome outcome = diet.outcome(item, DietRestrictions.client());
+        ConsumableFoodInstance target = diet.target(outcome, item, DietRestrictions.client());
 
         return switch (outcome) {
             case REPLENISH -> new Preview(item, null, alpha);
-            case REPLACE_CATEGORY, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
-            case CONSUME, CATEGORY_CONFLICT, TOO_FULL -> Preview.NONE;
+            case REPLACE_RESTRICTED, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
+            case CONSUME, RESTRICTED, TOO_FULL -> Preview.NONE;
         };
     }
 

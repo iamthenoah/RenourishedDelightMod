@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
+import com.than00ber.renourisheddelight.client.KeyBindings;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.*;
@@ -53,7 +54,8 @@ public abstract class ItemStackMixin {
 
         List<Component> tooltip = new ArrayList<>(callback.getReturnValue());
         tooltip.add(Component.translatable("tooltip.eaten").withStyle(ChatFormatting.DARK_PURPLE));
-        if (diet != null && diet.isDecaying()) tooltip.add(renourisheddelight$nutritionBar(nutrition));
+        boolean decaying = diet != null && diet.isDecaying();
+        int nutritionColor = renourisheddelight$nutritionColor(nutrition);
 
         for (AttributeModifierInstance bonus : instance.attributes()) {
             AttributeModifier.Operation operation = bonus.modifier().operation();
@@ -62,32 +64,45 @@ public abstract class ItemStackMixin {
             String key = "attribute.modifier." + (display >= 0 ? "plus" : "take") + "." + operation.id();
             String amount = ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(Math.abs(display));
             Component description = Component.translatable(bonus.attribute().value().getDescriptionId());
+            MutableComponent duration = Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")");
+            if (decaying) duration.withStyle(style -> style.withColor(nutritionColor));
             tooltip.add(Component.literal(" ")
                     .append(Component.translatable(key, amount, description))
-                    .append(Component.literal(" (" + StringUtil.formatTickDuration(bonus.duration(), 20) + ")"))
+                    .append(duration)
                     .withStyle(display >= 0 ? ChatFormatting.BLUE : ChatFormatting.RED));
         }
-        if (diet != null && diet.isCategorized()) {
-            MutableComponent categories = renourisheddelight$categories(stack.getItem(), diet);
-            if (categories != null) tooltip.add(categories);
-            tooltip.add(renourisheddelight$status(stack.getItem(), diet));
+        boolean restricted = diet != null && diet.isRestricted();
+
+        if (decaying || restricted) {
+            if (KeyBindings.isDown(KeyBindings.VIEW_NUTRITION)) {
+                if (decaying) tooltip.add(renourisheddelight$nutritionBar(nutrition));
+
+                if (restricted) {
+                    MutableComponent restrictions = renourisheddelight$restrictions(stack.getItem(), diet);
+                    if (restrictions != null) tooltip.add(restrictions);
+                    tooltip.add(renourisheddelight$status(stack.getItem(), diet));
+                }
+            } else {
+                Component keybind = KeyBindings.VIEW_NUTRITION.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.YELLOW);
+                tooltip.add(Component.literal(" ").append(Component.translatable("tooltip.view_nutrition", keybind)).withStyle(ChatFormatting.DARK_GRAY));
+            }
         }
         callback.setReturnValue(tooltip);
     }
 
     @Unique
     private static Component renourisheddelight$status(Item item, Diet diet) {
-        FoodCategories lookup = FoodCategories.client();
+        DietRestrictions lookup = DietRestrictions.client();
         EatingOutcome outcome = diet.outcome(item, lookup);
         ConsumableFoodInstance target = diet.target(outcome, item, lookup);
 
         Component status = switch (outcome) {
             case CONSUME -> Component.translatable("tooltip.eating.consume").withStyle(ChatFormatting.GREEN);
             case REPLENISH -> Component.translatable("tooltip.eating.replenish").withStyle(ChatFormatting.GREEN);
-            case REPLACE_CATEGORY, REPLACE_LOW -> target != null
+            case REPLACE_RESTRICTED, REPLACE_LOW -> target != null
                     ? Component.translatable("tooltip.eating.replace", target.item().getDescription()).withStyle(ChatFormatting.GOLD)
                     : Component.translatable("tooltip.eating.consume").withStyle(ChatFormatting.GREEN);
-            case CATEGORY_CONFLICT, TOO_FULL -> {
+            case RESTRICTED, TOO_FULL -> {
                 Component reason = diet.reason(outcome, item, lookup);
                 yield reason != null ? reason : Component.translatable("tooltip.eating.blocked").withStyle(ChatFormatting.RED);
             }
@@ -95,41 +110,45 @@ public abstract class ItemStackMixin {
         return Component.literal(" ").append(status);
     }
 
-    // categories shared with an active food are highlighted, gold when eating swaps that food out, red when it is refused
+    // restrictions shared with an active food are highlighted, gold when eating swaps that food out, red when it is refused
     @Unique
-    private static @Nullable MutableComponent renourisheddelight$categories(Item item, Diet diet) {
-        FoodCategories lookup = FoodCategories.client();
-        Set<ResourceLocation> categories = lookup.get(item);
-        if (categories.isEmpty()) return null;
+    private static @Nullable MutableComponent renourisheddelight$restrictions(Item item, Diet diet) {
+        DietRestrictions lookup = DietRestrictions.client();
+        Set<ResourceLocation> restrictions = lookup.get(item);
+        if (restrictions.isEmpty()) return null;
 
         Set<ResourceLocation> active = diet.getSlots().stream()
                 .filter(x -> x.item() != item)
                 .flatMap(x -> lookup.get(x.item()).stream())
                 .collect(Collectors.toSet());
-        ChatFormatting clash = diet.outcome(item, lookup) == EatingOutcome.REPLACE_CATEGORY ? ChatFormatting.GOLD : ChatFormatting.RED;
-        MutableComponent line = Component.literal(" ").append(Component.translatable("tooltip.categories")).append(" ").withStyle(ChatFormatting.GRAY);
-        List<ResourceLocation> sorted = categories.stream().sorted(Comparator.comparing(ResourceLocation::toString)).toList();
+        ChatFormatting clash = diet.outcome(item, lookup) == EatingOutcome.REPLACE_RESTRICTED ? ChatFormatting.GOLD : ChatFormatting.RED;
+        MutableComponent line = Component.literal(" ").append(Component.translatable("tooltip.restrictions")).append(" ").withStyle(ChatFormatting.GRAY);
+        List<ResourceLocation> sorted = restrictions.stream().sorted(Comparator.comparing(ResourceLocation::toString)).toList();
 
         for (int i = 0; i < sorted.size(); i++) {
             if (i > 0) line.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
-            ResourceLocation category = sorted.get(i);
-            line.append(FoodCategories.name(category).withStyle(active.contains(category) ? clash : ChatFormatting.GRAY));
+            ResourceLocation restriction = sorted.get(i);
+            line.append(DietRestrictions.name(restriction).withStyle(active.contains(restriction) ? clash : ChatFormatting.GRAY));
         }
         return line;
     }
 
     @Unique
+    private static int renourisheddelight$nutritionColor(int nutrition) {
+        return Mth.hsvToRgb(nutrition * NUTRITION_HUE_RANGE / Diet.FULL_NUTRITION, 1.0F, 1.0F);
+    }
+
+    @Unique
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
         int filled = Mth.clamp(Math.round((float) nutrition * NUTRITION_BARS / Diet.FULL_NUTRITION), 0, NUTRITION_BARS);
-        int color = Mth.hsvToRgb(nutrition * NUTRITION_HUE_RANGE / Diet.FULL_NUTRITION, 1.0F, 1.0F);
-        MutableComponent bar = Component.literal(" [").withStyle(ChatFormatting.GRAY)
+        int color = renourisheddelight$nutritionColor(nutrition);
+        MutableComponent bar = Component.literal(" ")
                 .append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
 
         if (filled < NUTRITION_BARS) {
             bar.append(Component.literal(".".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));
         }
         String tier = NUTRITION_TIERS[Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1)];
-        return bar.append(Component.literal("]").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(ChatFormatting.WHITE));
+        return bar.append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(ChatFormatting.WHITE));
     }
 }

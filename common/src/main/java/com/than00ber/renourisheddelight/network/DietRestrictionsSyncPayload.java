@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.network;
 
 import com.than00ber.renourisheddelight.RenourishedDelightMod;
-import com.than00ber.renourisheddelight.food.FoodCategories;
+import com.than00ber.renourisheddelight.food.DietRestrictions;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
@@ -22,34 +22,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public record FoodCategoriesSyncPayload(Map<ResourceLocation, List<ResourceLocation>> categories) implements CustomPacketPayload {
+public record DietRestrictionsSyncPayload(Map<ResourceLocation, List<ResourceLocation>> restrictions) implements CustomPacketPayload {
 
-    private static final Type<FoodCategoriesSyncPayload> TYPE = new Type<>(RenourishedDelightMod.key("food_categories_sync"));
-    private static final StreamCodec<RegistryFriendlyByteBuf, FoodCategoriesSyncPayload> CODEC = ByteBufCodecs.<RegistryFriendlyByteBuf, ResourceLocation, List<ResourceLocation>, Map<ResourceLocation, List<ResourceLocation>>>map(
+    private static final Type<DietRestrictionsSyncPayload> TYPE = new Type<>(RenourishedDelightMod.key("diet_restrictions_sync"));
+    private static final StreamCodec<RegistryFriendlyByteBuf, DietRestrictionsSyncPayload> CODEC = ByteBufCodecs.<RegistryFriendlyByteBuf, ResourceLocation, List<ResourceLocation>, Map<ResourceLocation, List<ResourceLocation>>>map(
             HashMap::new,
             ResourceLocation.STREAM_CODEC,
             ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list())
-    ).map(FoodCategoriesSyncPayload::new, FoodCategoriesSyncPayload::categories);
+    ).map(DietRestrictionsSyncPayload::new, DietRestrictionsSyncPayload::restrictions);
 
     public static void init() {
         NetworkManager.registerReceiver(NetworkManager.s2c(), TYPE, CODEC, (payload, context) -> context.queue(() -> {
-            Map<Item, Set<ResourceLocation>> categories = new HashMap<>();
+            Map<Item, Set<ResourceLocation>> restrictions = new HashMap<>();
 
-            payload.categories().forEach((id, tags) -> {
+            payload.restrictions().forEach((id, tags) -> {
                 Item item = BuiltInRegistries.ITEM.get(id);
-                if (item != Items.AIR) categories.put(item, Set.copyOf(tags));
+                if (item != Items.AIR) restrictions.put(item, Set.copyOf(tags));
             });
-            FoodCategories.client().set(categories);
+            DietRestrictions.client().set(restrictions);
         }));
 
         // tags and recipes are only final once a (re)load has fully finished, so resolve on the next tick
         TickEvent.SERVER_POST.register(server -> {
-            if (FoodCategories.server().isDirty()) {
-                FoodCategories.server().rebuild(server);
+            if (DietRestrictions.server().isDirty()) {
+                DietRestrictions.server().rebuild(server);
                 NetworkManager.sendToPlayers(server.getPlayerList().getPlayers(), of(server));
             }
         });
-        LifecycleEvent.SERVER_STOPPED.register(server -> FoodCategories.server().onUpdateTags());
+        LifecycleEvent.SERVER_STOPPED.register(server -> DietRestrictions.server().onUpdateTags());
 
         PlayerEvent.PLAYER_JOIN.register(player -> {
             MinecraftServer server = player.getServer();
@@ -57,12 +57,12 @@ public record FoodCategoriesSyncPayload(Map<ResourceLocation, List<ResourceLocat
         });
     }
 
-    public static FoodCategoriesSyncPayload of(MinecraftServer server) {
-        FoodCategories categories = FoodCategories.server();
-        if (categories.isDirty()) categories.rebuild(server);
+    public static DietRestrictionsSyncPayload of(MinecraftServer server) {
+        DietRestrictions restrictions = DietRestrictions.server();
+        if (restrictions.isDirty()) restrictions.rebuild(server);
         Map<ResourceLocation, List<ResourceLocation>> encoded = new HashMap<>();
-        categories.all().forEach((item, tags) -> encoded.put(BuiltInRegistries.ITEM.getKey(item), List.copyOf(tags)));
-        return new FoodCategoriesSyncPayload(encoded);
+        restrictions.all().forEach((item, tags) -> encoded.put(BuiltInRegistries.ITEM.getKey(item), List.copyOf(tags)));
+        return new DietRestrictionsSyncPayload(encoded);
     }
 
     @Override

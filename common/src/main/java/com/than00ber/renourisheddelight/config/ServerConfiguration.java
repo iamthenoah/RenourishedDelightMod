@@ -37,8 +37,8 @@ public final class ServerConfiguration implements ConfigData {
     @Comment("Whether eating with every slot full replaces the active food closest to running out. When disabled, players must wait for a slot to free up before eating something new. (default: true)")
     public boolean doReplaceLowestFood = true;
 
-    @Comment("Prevents eating a food that shares a category (e.g. beef, fish, berries) with an active food. Categories come from item tags and the ingredients a food is made from. (default: false)")
-    public boolean doFoodCategories = false;
+    @Comment("Restricts eating a food that shares an item tag (e.g. beef, fish, berries) with an active food: it replaces that food if only one shares it, otherwise it cannot be eaten. (default: false)")
+    public boolean doDietRestrictions = false;
 
     @Comment("Base max health a player has before any food bonuses are applied. (default: 20)")
     public int playerStartingHealth = 20;

@@ -20,7 +20,7 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
     private boolean doStarvationValue;
     private boolean doPreventSprintValue;
     private boolean doReplaceLowestFoodValue;
-    private boolean doFoodCategoriesValue;
+    private boolean doDietRestrictionsValue;
 
     private IntegerSlider playerStartingHealthSlider;
     private IntegerSlider maxConsumableFoodSlider;
@@ -54,7 +54,7 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         doStarvationValue = config.doStarvation;
         doPreventSprintValue = config.doPreventSprint;
         doReplaceLowestFoodValue = config.doReplaceLowestFood;
-        doFoodCategoriesValue = config.doFoodCategories;
+        doDietRestrictionsValue = config.doDietRestrictions;
 
         layout(ROWS);
         int left = contentLeft();
@@ -67,7 +67,7 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         addToggle(left, top + ROW_HEIGHT * 3, field, KEY + "doStarvation", doStarvationValue, DEFAULTS.doStarvation, value -> doStarvationValue = value);
         addToggle(left, top + ROW_HEIGHT * 4, field, KEY + "doPreventSprint", doPreventSprintValue, DEFAULTS.doPreventSprint, value -> doPreventSprintValue = value);
         addToggle(left, top + ROW_HEIGHT * 5, field, KEY + "doReplaceLowestFood", doReplaceLowestFoodValue, DEFAULTS.doReplaceLowestFood, value -> doReplaceLowestFoodValue = value);
-        addToggle(left, top + ROW_HEIGHT * 6, field, KEY + "doFoodCategories", doFoodCategoriesValue, DEFAULTS.doFoodCategories, value -> doFoodCategoriesValue = value);
+        addToggle(left, top + ROW_HEIGHT * 6, field, KEY + "doDietRestrictions", doDietRestrictionsValue, DEFAULTS.doDietRestrictions, value -> doDietRestrictionsValue = value);
 
         playerStartingHealthSlider = addIntegerSlider(right, top, field, KEY + "playerStartingHealth", config.playerStartingHealth, DEFAULTS.playerStartingHealth, 2, 40, "");
         maxConsumableFoodSlider = addIntegerSlider(right, top + ROW_HEIGHT, field, KEY + "maxConsumableFood", config.maxConsumableFood, DEFAULTS.maxConsumableFood, 1, 10, "");
@@ -90,7 +90,7 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         config.doStarvation = doStarvationValue;
         config.doPreventSprint = doPreventSprintValue;
         config.doReplaceLowestFood = doReplaceLowestFoodValue;
-        config.doFoodCategories = doFoodCategoriesValue;
+        config.doDietRestrictions = doDietRestrictionsValue;
         config.playerStartingHealth = playerStartingHealthSlider.getInt();
         config.maxConsumableFood = maxConsumableFoodSlider.getInt();
         config.foodDrainRate = foodDrainRateSlider.getInt();

@@ -1,6 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
-import com.than00ber.renourisheddelight.food.FoodCategories;
+import com.than00ber.renourisheddelight.food.DietRestrictions;
 import net.minecraft.server.ReloadableServerResources;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +12,6 @@ public abstract class ReloadableServerResourcesMixin {
 
     @Inject(method = "updateRegistryTags*", at = @At("TAIL"))
     private void renourisheddelight$updateRegistryTags(CallbackInfo callback) {
-        FoodCategories.server().onUpdateTags();
+        DietRestrictions.server().onUpdateTags();
     }
 }

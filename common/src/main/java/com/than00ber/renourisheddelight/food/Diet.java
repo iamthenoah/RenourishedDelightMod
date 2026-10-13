@@ -78,7 +78,7 @@ public class Diet {
     private boolean decaying = true;
     private int capacity;
     private boolean replacing = true;
-    private boolean categorized;
+    private boolean restricted;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -96,52 +96,52 @@ public class Diet {
         return capacity;
     }
 
-    public boolean isCategorized() {
-        return categorized;
+    public boolean isRestricted() {
+        return restricted;
     }
 
     /**
      * Decides what eating the item would do. Relies only on synced state so the client reaches the
      * same outcome as the server before eating starts, and can preview which slot it would affect.
      */
-    public EatingOutcome outcome(Item item, FoodCategories categories) {
+    public EatingOutcome outcome(Item item, DietRestrictions restrictions) {
         if (slots.stream().anyMatch(x -> x.item() == item)) return EatingOutcome.REPLENISH;
 
-        if (categorized) {
-            List<ConsumableFoodInstance> conflicts = conflicts(item, categories);
-            if (conflicts.size() > 1) return EatingOutcome.CATEGORY_CONFLICT;
-            if (conflicts.size() == 1) return replacing ? EatingOutcome.REPLACE_CATEGORY : EatingOutcome.CATEGORY_CONFLICT;
+        if (restricted) {
+            List<ConsumableFoodInstance> conflicts = conflicts(item, restrictions);
+            if (conflicts.size() > 1) return EatingOutcome.RESTRICTED;
+            if (conflicts.size() == 1) return replacing ? EatingOutcome.REPLACE_RESTRICTED : EatingOutcome.RESTRICTED;
         }
         if (capacity <= 0 || slots.size() < capacity) return EatingOutcome.CONSUME;
         return replacing ? EatingOutcome.REPLACE_LOW : EatingOutcome.TOO_FULL;
     }
 
     // the slot the outcome tops up or swaps out, or the one in the way when eating is refused
-    public @Nullable ConsumableFoodInstance target(EatingOutcome outcome, Item item, FoodCategories categories) {
+    public @Nullable ConsumableFoodInstance target(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
         return switch (outcome) {
             case REPLENISH -> slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
-            case REPLACE_CATEGORY, CATEGORY_CONFLICT -> conflicts(item, categories).stream().findFirst().orElse(null);
+            case REPLACE_RESTRICTED, RESTRICTED -> conflicts(item, restrictions).stream().findFirst().orElse(null);
             case REPLACE_LOW -> slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null);
             case CONSUME, TOO_FULL -> null;
         };
     }
 
-    private List<ConsumableFoodInstance> conflicts(Item item, FoodCategories categories) {
-        Set<ResourceLocation> eating = categories.get(item);
+    private List<ConsumableFoodInstance> conflicts(Item item, DietRestrictions restrictions) {
+        Set<ResourceLocation> eating = restrictions.get(item);
         if (eating.isEmpty()) return List.of();
-        return slots.stream().filter(x -> categories.get(x.item()).stream().anyMatch(eating::contains)).toList();
+        return slots.stream().filter(x -> restrictions.get(x.item()).stream().anyMatch(eating::contains)).toList();
     }
 
-    public @Nullable Component reason(EatingOutcome outcome, Item item, FoodCategories categories) {
+    public @Nullable Component reason(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
         if (outcome == EatingOutcome.TOO_FULL) {
             return Component.translatable("message.diet_full").withStyle(ChatFormatting.RED);
         }
-        ConsumableFoodInstance blocking = outcome == EatingOutcome.CATEGORY_CONFLICT ? target(outcome, item, categories) : null;
+        ConsumableFoodInstance blocking = outcome == EatingOutcome.RESTRICTED ? target(outcome, item, restrictions) : null;
         if (blocking == null) return null;
-        Set<ResourceLocation> eating = categories.get(item);
-        ResourceLocation category = categories.get(blocking.item()).stream().filter(eating::contains).findFirst().orElse(null);
-        if (category == null) return null;
-        return Component.translatable("message.category_conflict", FoodCategories.name(category), blocking.item().getDescription()).withStyle(ChatFormatting.RED);
+        Set<ResourceLocation> eating = restrictions.get(item);
+        ResourceLocation restriction = restrictions.get(blocking.item()).stream().filter(eating::contains).findFirst().orElse(null);
+        if (restriction == null) return null;
+        return Component.translatable("message.diet_restricted", DietRestrictions.name(restriction), blocking.item().getDescription()).withStyle(ChatFormatting.RED);
     }
 
     public int nutritionDecay(Item item) {
@@ -186,12 +186,12 @@ public class Diet {
     // checked on both sides before eating starts, the server also tells the player why
     public static boolean blocksEating(Player player, Item item) {
         if (player.getAbilities().invulnerable || !(player instanceof DietHolder holder)) return false;
-        FoodCategories categories = FoodCategories.of(player.level());
-        EatingOutcome outcome = holder.getDiet().outcome(item, categories);
+        DietRestrictions restrictions = DietRestrictions.of(player.level());
+        EatingOutcome outcome = holder.getDiet().outcome(item, restrictions);
         if (outcome.isAllowed()) return false;
 
         if (player instanceof ServerPlayer) {
-            Component reason = holder.getDiet().reason(outcome, item, categories);
+            Component reason = holder.getDiet().reason(outcome, item, restrictions);
             if (reason != null) player.displayClientMessage(reason, true);
         }
         return true;
@@ -201,8 +201,8 @@ public class Diet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 
-        FoodCategories categories = FoodCategories.server();
-        EatingOutcome outcome = outcome(item, categories);
+        DietRestrictions restrictions = DietRestrictions.server();
+        EatingOutcome outcome = outcome(item, restrictions);
         if (!outcome.isAllowed()) return;
 
         FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
@@ -211,7 +211,7 @@ public class Diet {
         if (outcome == EatingOutcome.CONSUME) {
             addToSlot(player, eat(item, config));
         } else {
-            replaceSlot(player, config, item, target(outcome, item, categories));
+            replaceSlot(player, config, item, target(outcome, item, restrictions));
         }
         FoodProperties properties = item.components().get(DataComponents.FOOD);
         boolean harmful = properties != null && properties.effects().stream().anyMatch(x -> x.effect().getEffect().value().getCategory() == MobEffectCategory.HARMFUL);
@@ -233,12 +233,12 @@ public class Diet {
         boolean enabled = ServerConfiguration.getInstance().doNutritionDecay;
         int limit = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         boolean replace = ServerConfiguration.getInstance().doReplaceLowestFood;
-        boolean categories = ServerConfiguration.getInstance().doFoodCategories;
-        boolean toggled = decaying != enabled || capacity != limit || replacing != replace || categorized != categories;
+        boolean restrictions = ServerConfiguration.getInstance().doDietRestrictions;
+        boolean toggled = decaying != enabled || capacity != limit || replacing != replace || restricted != restrictions;
         decaying = enabled;
         capacity = limit;
         replacing = replace;
-        categorized = categories;
+        restricted = restrictions;
 
         if (!player.gameMode.isSurvival()) return toggled;
         boolean nourished = player.hasEffect(EffectRegistry.nourishment());
@@ -411,7 +411,7 @@ public class Diet {
         compoundTag.putBoolean("Decaying", diet.decaying);
         compoundTag.putInt("Capacity", diet.capacity);
         compoundTag.putBoolean("Replacing", diet.replacing);
-        compoundTag.putBoolean("Categorized", diet.categorized);
+        compoundTag.putBoolean("Restricted", diet.restricted);
         ListTag depleted = new ListTag();
 
         diet.depletion.forEach((item, value) -> {
@@ -433,7 +433,7 @@ public class Diet {
         diet.decaying = !tag.contains("Decaying") || tag.getBoolean("Decaying");
         diet.capacity = tag.getInt("Capacity");
         diet.replacing = !tag.contains("Replacing") || tag.getBoolean("Replacing");
-        diet.categorized = tag.getBoolean("Categorized");
+        diet.restricted = tag.getBoolean("Restricted");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
 
         for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {

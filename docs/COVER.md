@@ -56,6 +56,19 @@ This can be fun if you have multiple food mods and want to find a reason to cook
 
 <table width="100%" border="0" cellspacing="0" cellpadding="18">
 <tr>
+<td width="100%" valign="middle">
+<h3>Diet Restrictions (Optional)</h3>
+<p>
+Enable Diet Restrictions (via the <code>doDietRestrictions</code> server config) to stop players from filling every slot with the same kind of meal. Each food is grouped by its main ingredients, such as beef, fish or berries, and you can't have two active foods that share one. Eating a food that shares an ingredient with exactly one active food swaps that food out instead.
+
+There is nothing to set up. Ingredients are worked out from the item tags food mods already ship with, and from recipes, so a steak and a beef stew both count as beef. Hold <b>Shift</b> over a food to see its ingredients and whether you can eat it right now.</p>
+
+</td>
+</tr>
+</table>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="18">
+<tr>
 <td width="55%" valign="middle">
 <h3>Highly Configurable</h3>
 <p>
@@ -97,7 +110,7 @@ Not happy with the attributes or duration? Want to make certain food items speci
 <p><code>doStarvation</code> — apply starvation effects when the bar is empty. Default true.</p>
 <p><code>doPreventSprint</code> — players can't sprint until they've eaten something. Default false.</p>
 <p><code>doReplaceLowestFood</code> — eating with every slot full replaces the food closest to running out. When off, you have to wait for a slot to free up. Default true.</p>
-<p><code>doFoodCategories</code> — eating a food that shares a category (beef, fish, berries...) with an active food swaps that food out, as long as only one active food shares it and <code>doReplaceLowestFood</code> is on. Otherwise you can't eat it. Categories are worked out automatically from item tags and recipe ingredients, so steak and beef stew both count as beef. Default false.</p>
+<p><code>doDietRestrictions</code> — eating a food that shares a main ingredient (beef, fish, berries...) with an active food swaps that food out, as long as only one active food shares it and <code>doReplaceLowestFood</code> is on. Otherwise you can't eat it. Ingredients are worked out automatically from item tags and recipes, so steak and beef stew both count as beef. Default false.</p>
 
 <p><b>Common</b> (<code>common.json5</code>) — the food bonuses, duration multipliers and starvation effects new worlds start with. Each world keeps its own copy once created, which operators can edit in-game from the food, duration and starvation screens.</p>
 </details>
@@ -132,6 +145,21 @@ Not happy with the attributes or duration? Want to make certain food items speci
 ]</code></pre>
 
 <p><code>attributes</code> is optional. <code>operation</code> is <code>add_value</code>, <code>add_multiplied_base</code> or <code>add_multiplied_total</code>, where 0.15 means 15%. <code>duration</code> is in ticks, 20 per second. Placeable foods use the item id, like <code>minecraft:cake</code>. The max health bonus derived from the food's nutrition and saturation is kept unless you declare your own <code>minecraft:generic.max_health</code> entry.</p>
+
+<p><b>Diet restrictions</b></p>
+
+<p>Restrictions come from the <code>c:foods/*</code> item tags, so a datapack can reshape them with ordinary tag files. Add items to an existing tag, or make a new tag to create a new restriction.</p>
+
+<pre><code>your_pack/
+  pack.mcmeta
+  data/c/tags/item/foods/beef.json</code></pre>
+
+<pre><code>{
+  "replace": false,
+  "values": [ "minecraft:beef" ]
+}</code></pre>
+
+<p>Tag the raw ingredient rather than every dish: recipes carry it into anything made from it, so this one entry covers steak, stews and sandwiches. When a food is in both a broad tag and a narrower one, like <code>c:foods/raw_meat</code> and <code>c:foods/beef</code>, only the narrower one counts. <code>c:foods/edible_when_placed</code>, <code>c:foods/food_poisoning</code> and <code>c:foods/golden</code> are ignored since they describe how a food behaves, not what is in it. The name shown in tooltips comes from the <code>tag.item.c.foods.beef</code> translation key, falling back to the tag's name. Run <code>/reload</code> after editing.</p>
 
 <p><b>Generating a preset with AI</b></p>
 
