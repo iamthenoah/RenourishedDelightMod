@@ -10,8 +10,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
 
-    @Inject(method = "onGameLoadFinished", at = @At("TAIL"))
-    private void renourisheddelight$onGameLoadFinished(CallbackInfo callback) {
-        TextureAtlasResourceLoader.getInstance().onGameLoadFinished();
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void renourisheddelight$tick(CallbackInfo callback) {
+        TextureAtlasResourceLoader.getInstance().onClientTick();
     }
 }
