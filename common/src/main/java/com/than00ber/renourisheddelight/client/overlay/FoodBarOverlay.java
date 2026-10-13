@@ -8,9 +8,7 @@ import com.than00ber.renourisheddelight.client.atlas.TextureAtlasResourceLoader;
 import com.than00ber.renourisheddelight.compat.client.HudPositionScreen;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
-import com.than00ber.renourisheddelight.food.ConsumableFoodInstance;
-import com.than00ber.renourisheddelight.food.Diet;
-import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.food.*;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import dev.architectury.event.events.client.ClientGuiEvent;
 import net.minecraft.client.DeltaTracker;
@@ -27,7 +25,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +96,6 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     }
 
     private static Preview preview(Player player, Diet diet, DeltaTracker deltaTracker) {
-        List<ConsumableFoodInstance> slots = diet.getSlots();
         Item item = targetItem(player);
         if (item == null) return Preview.NONE;
 
@@ -108,13 +104,14 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         float wave = (1.0F - Mth.cos(time * Mth.TWO_PI)) / 2.0F;
         float alpha = Mth.lerp(wave, PULSE_MIN_ALPHA, 1.0F);
 
-        if (isActive(slots, item)) return new Preview(item, null, alpha);
-        if (diet.getCapacity() <= 0 || slots.size() < diet.getCapacity()) return Preview.NONE;
+        EatingOutcome outcome = diet.outcome(item, FoodCategories.client());
+        ConsumableFoodInstance target = diet.target(outcome, item, FoodCategories.client());
 
-        return slots.stream()
-                .min(Comparator.comparingInt(x -> x.duration() - x.time()))
-                .map(x -> new Preview(null, x.item(), alpha))
-                .orElse(Preview.NONE);
+        return switch (outcome) {
+            case REPLENISH -> new Preview(item, null, alpha);
+            case REPLACE_CATEGORY, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
+            case CONSUME, CATEGORY_CONFLICT, TOO_FULL -> Preview.NONE;
+        };
     }
 
     private static @Nullable Item targetItem(Player player) {
@@ -131,10 +128,6 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
     private static boolean isEatable(Item item) {
         if (item.components().has(DataComponents.FOOD)) return true;
         return Minecraft.getInstance().getConnection() instanceof FoodConfigHolder holder && holder.getFoodConfig().entry(item) != null;
-    }
-
-    private static boolean isActive(List<ConsumableFoodInstance> slots, Item item) {
-        return slots.stream().anyMatch(x -> x.item() == item);
     }
 
     public static int countIconSlots(List<ConsumableFoodInstance> slots) {
