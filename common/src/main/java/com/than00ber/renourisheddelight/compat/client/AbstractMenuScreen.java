@@ -88,7 +88,6 @@ public abstract class AbstractMenuScreen extends Screen {
         return field;
     }
 
-    // the range stretches to fit a larger value set in the config file, so opening the screen never clamps it
     protected IntegerSlider addIntegerSlider(int x, int y, int width, String labelKey, int initial, int defaultValue, int min, int max, String suffix) {
         IntegerSlider slider = new IntegerSlider(x, y, width, Component.translatable(labelKey), suffix, Math.min(min, initial), Math.max(max, initial), initial);
         slider.setTooltip(Tooltip.create(Component.translatable(labelKey + ".@Tooltip")));
