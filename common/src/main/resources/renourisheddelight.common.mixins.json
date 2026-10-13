@@ -19,6 +19,7 @@
     "FoodDataMixin",
     "ItemStackMixin",
     "LivingEntityMixin",
-    "PlayerMixin"
+    "PlayerMixin",
+    "ReloadableServerResourcesMixin"
   ]
 }

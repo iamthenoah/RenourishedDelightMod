@@ -7,6 +7,7 @@ import com.than00ber.renourisheddelight.network.NoSprintPayload;
 
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -17,12 +18,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
@@ -80,6 +85,17 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
             player.setSprinting(false);
         } else {
             NetworkManager.sendToPlayer(player, new NoSprintPayload(true));
+        }
+    }
+
+    // held foods are checked in ItemStack#use, this covers foods eaten as placed blocks (cakes, pies)
+    @Inject(method = "canEat", at = @At("HEAD"), cancellable = true)
+    private void renourisheddelight$canEat(boolean canAlwaysEat, CallbackInfoReturnable<Boolean> callback) {
+        if (getMainHandItem().has(DataComponents.FOOD) || getOffhandItem().has(DataComponents.FOOD)) return;
+
+        if (pick(5.0D, 0.0F, false) instanceof BlockHitResult result && result.getType() == HitResult.Type.BLOCK) {
+            Item item = level().getBlockState(result.getBlockPos()).getBlock().asItem();
+            if (Diet.blocksEating((Player) (Object) this, item)) callback.setReturnValue(false);
         }
     }
 

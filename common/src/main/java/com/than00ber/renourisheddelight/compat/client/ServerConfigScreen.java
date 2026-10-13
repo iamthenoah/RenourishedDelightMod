@@ -2,7 +2,6 @@ package com.than00ber.renourisheddelight.compat.client;
 
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import me.shedaniel.autoconfig.AutoConfig;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -10,25 +9,40 @@ import org.jetbrains.annotations.Nullable;
 public final class ServerConfigScreen extends AbstractMenuScreen {
 
     private static final ServerConfiguration DEFAULTS = new ServerConfiguration();
-    private static final int ROWS = 14;
+    private static final String KEY = "text.autoconfig.renourisheddelight/server.option.";
+    private static final int ROWS = 9;
+    private static final int COLUMN_GAP = 10;
+    private static final int SIDE_MARGIN = 10;
 
     private boolean doNutritionDecayValue;
     private boolean doSleepFoodDrainValue;
     private boolean doNourishmentValue;
     private boolean doStarvationValue;
     private boolean doPreventSprintValue;
+    private boolean doReplaceLowestFoodValue;
+    private boolean doDietRestrictionsValue;
 
-    private EditBox playerStartingHealthField;
-    private EditBox maxConsumableFoodField;
-    private EditBox foodDrainRateField;
-    private EditBox regenHealthTickIntervalField;
-    private EditBox regenDelayAfterDamageField;
-    private EditBox nutritionDecayRateField;
-    private EditBox nutritionDecayWindowField;
-    private EditBox nutritionDecayFloorField;
+    private IntegerSlider playerStartingHealthSlider;
+    private IntegerSlider maxConsumableFoodSlider;
+    private IntegerSlider foodDrainRateSlider;
+    private IntegerSlider regenHealthTickIntervalSlider;
+    private IntegerSlider regenDelayAfterDamageSlider;
+    private IntegerSlider nutritionDecayRateSlider;
+    private IntegerSlider nutritionDecayWindowSlider;
+    private IntegerSlider nutritionDecayFloorSlider;
 
     public ServerConfigScreen(@Nullable Screen parent) {
         super(Component.translatable("config.renourisheddelight.server"), parent);
+    }
+
+    // shrinks to fit side by side on narrow (high gui scale) windows
+    private int columnWidth() {
+        return Math.min(TOTAL_WIDTH, (width - SIDE_MARGIN * 2 - COLUMN_GAP) / 2);
+    }
+
+    @Override
+    protected int contentWidth() {
+        return columnWidth() * 2 + COLUMN_GAP;
     }
 
     @Override
@@ -39,26 +53,32 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         doNourishmentValue = config.doNourishment;
         doStarvationValue = config.doStarvation;
         doPreventSprintValue = config.doPreventSprint;
+        doReplaceLowestFoodValue = config.doReplaceLowestFood;
+        doDietRestrictionsValue = config.doDietRestrictions;
 
         layout(ROWS);
         int left = contentLeft();
+        int right = left + columnWidth() + COLUMN_GAP;
+        int field = columnWidth() - RESET_GAP - RESET_WIDTH;
 
-        addToggle(left, top, "text.autoconfig.renourisheddelight/server.option.doNutritionDecay", doNutritionDecayValue, DEFAULTS.doNutritionDecay, value -> doNutritionDecayValue = value);
-        addToggle(left, top + ROW_HEIGHT, "text.autoconfig.renourisheddelight/server.option.doSleepFoodDrain", doSleepFoodDrainValue, DEFAULTS.doSleepFoodDrain, value -> doSleepFoodDrainValue = value);
-        addToggle(left, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/server.option.doNourishment", doNourishmentValue, DEFAULTS.doNourishment, value -> doNourishmentValue = value);
-        addToggle(left, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/server.option.doStarvation", doStarvationValue, DEFAULTS.doStarvation, value -> doStarvationValue = value);
-        addToggle(left, top + ROW_HEIGHT * 4, "text.autoconfig.renourisheddelight/server.option.doPreventSprint", doPreventSprintValue, DEFAULTS.doPreventSprint, value -> doPreventSprintValue = value);
+        addToggle(left, top, field, KEY + "doNutritionDecay", doNutritionDecayValue, DEFAULTS.doNutritionDecay, value -> doNutritionDecayValue = value);
+        addToggle(left, top + ROW_HEIGHT, field, KEY + "doSleepFoodDrain", doSleepFoodDrainValue, DEFAULTS.doSleepFoodDrain, value -> doSleepFoodDrainValue = value);
+        addToggle(left, top + ROW_HEIGHT * 2, field, KEY + "doNourishment", doNourishmentValue, DEFAULTS.doNourishment, value -> doNourishmentValue = value);
+        addToggle(left, top + ROW_HEIGHT * 3, field, KEY + "doStarvation", doStarvationValue, DEFAULTS.doStarvation, value -> doStarvationValue = value);
+        addToggle(left, top + ROW_HEIGHT * 4, field, KEY + "doPreventSprint", doPreventSprintValue, DEFAULTS.doPreventSprint, value -> doPreventSprintValue = value);
+        addToggle(left, top + ROW_HEIGHT * 5, field, KEY + "doReplaceLowestFood", doReplaceLowestFoodValue, DEFAULTS.doReplaceLowestFood, value -> doReplaceLowestFoodValue = value);
+        addToggle(left, top + ROW_HEIGHT * 6, field, KEY + "doDietRestrictions", doDietRestrictionsValue, DEFAULTS.doDietRestrictions, value -> doDietRestrictionsValue = value);
 
-        playerStartingHealthField = addIntegerField(left, top + ROW_HEIGHT * 5, "text.autoconfig.renourisheddelight/server.option.playerStartingHealth", config.playerStartingHealth, DEFAULTS.playerStartingHealth);
-        maxConsumableFoodField = addIntegerField(left, top + ROW_HEIGHT * 6, "text.autoconfig.renourisheddelight/server.option.maxConsumableFood", config.maxConsumableFood, DEFAULTS.maxConsumableFood);
-        foodDrainRateField = addIntegerField(left, top + ROW_HEIGHT * 7, "text.autoconfig.renourisheddelight/server.option.foodDrainRate", config.foodDrainRate, DEFAULTS.foodDrainRate);
-        regenHealthTickIntervalField = addIntegerField(left, top + ROW_HEIGHT * 8, "text.autoconfig.renourisheddelight/server.option.regenHealthTickInterval", config.regenHealthTickInterval, DEFAULTS.regenHealthTickInterval);
-        regenDelayAfterDamageField = addIntegerField(left, top + ROW_HEIGHT * 9, "text.autoconfig.renourisheddelight/server.option.regenDelayAfterDamage", config.regenDelayAfterDamage, DEFAULTS.regenDelayAfterDamage);
-        nutritionDecayRateField = addIntegerField(left, top + ROW_HEIGHT * 10, "text.autoconfig.renourisheddelight/server.option.nutritionDecayRate", config.nutritionDecayRate, DEFAULTS.nutritionDecayRate);
-        nutritionDecayWindowField = addIntegerField(left, top + ROW_HEIGHT * 11, "text.autoconfig.renourisheddelight/server.option.nutritionDecayWindow", config.nutritionDecayWindow, DEFAULTS.nutritionDecayWindow);
-        nutritionDecayFloorField = addIntegerField(left, top + ROW_HEIGHT * 12, "text.autoconfig.renourisheddelight/server.option.nutritionDecayFloor", config.nutritionDecayFloor, DEFAULTS.nutritionDecayFloor);
+        playerStartingHealthSlider = addIntegerSlider(right, top, field, KEY + "playerStartingHealth", config.playerStartingHealth, DEFAULTS.playerStartingHealth, 2, 40, "");
+        maxConsumableFoodSlider = addIntegerSlider(right, top + ROW_HEIGHT, field, KEY + "maxConsumableFood", config.maxConsumableFood, DEFAULTS.maxConsumableFood, 1, 10, "");
+        foodDrainRateSlider = addIntegerSlider(right, top + ROW_HEIGHT * 2, field, KEY + "foodDrainRate", config.foodDrainRate, DEFAULTS.foodDrainRate, 0, 300, "%");
+        regenHealthTickIntervalSlider = addIntegerSlider(right, top + ROW_HEIGHT * 3, field, KEY + "regenHealthTickInterval", config.regenHealthTickInterval, DEFAULTS.regenHealthTickInterval, 1, 200, "");
+        regenDelayAfterDamageSlider = addIntegerSlider(right, top + ROW_HEIGHT * 4, field, KEY + "regenDelayAfterDamage", config.regenDelayAfterDamage, DEFAULTS.regenDelayAfterDamage, 0, 200, "");
+        nutritionDecayRateSlider = addIntegerSlider(right, top + ROW_HEIGHT * 5, field, KEY + "nutritionDecayRate", config.nutritionDecayRate, DEFAULTS.nutritionDecayRate, 0, 20, "%");
+        nutritionDecayWindowSlider = addIntegerSlider(right, top + ROW_HEIGHT * 6, field, KEY + "nutritionDecayWindow", config.nutritionDecayWindow, DEFAULTS.nutritionDecayWindow, 1, 10, "");
+        nutritionDecayFloorSlider = addIntegerSlider(right, top + ROW_HEIGHT * 7, field, KEY + "nutritionDecayFloor", config.nutritionDecayFloor, DEFAULTS.nutritionDecayFloor, 0, 100, "%");
 
-        addDoneButton(left, top + ROW_HEIGHT * 13 + DONE_BUTTON_GAP);
+        addDoneButton(left, top + ROW_HEIGHT * 8 + DONE_BUTTON_GAP);
     }
 
     @Override
@@ -69,14 +89,16 @@ public final class ServerConfigScreen extends AbstractMenuScreen {
         config.doNourishment = doNourishmentValue;
         config.doStarvation = doStarvationValue;
         config.doPreventSprint = doPreventSprintValue;
-        config.playerStartingHealth = parseInteger(playerStartingHealthField, DEFAULTS.playerStartingHealth);
-        config.maxConsumableFood = parseInteger(maxConsumableFoodField, DEFAULTS.maxConsumableFood);
-        config.foodDrainRate = parseInteger(foodDrainRateField, DEFAULTS.foodDrainRate);
-        config.regenHealthTickInterval = parseInteger(regenHealthTickIntervalField, DEFAULTS.regenHealthTickInterval);
-        config.regenDelayAfterDamage = parseInteger(regenDelayAfterDamageField, DEFAULTS.regenDelayAfterDamage);
-        config.nutritionDecayRate = parseInteger(nutritionDecayRateField, DEFAULTS.nutritionDecayRate);
-        config.nutritionDecayWindow = parseInteger(nutritionDecayWindowField, DEFAULTS.nutritionDecayWindow);
-        config.nutritionDecayFloor = parseInteger(nutritionDecayFloorField, DEFAULTS.nutritionDecayFloor);
+        config.doReplaceLowestFood = doReplaceLowestFoodValue;
+        config.doDietRestrictions = doDietRestrictionsValue;
+        config.playerStartingHealth = playerStartingHealthSlider.getInt();
+        config.maxConsumableFood = maxConsumableFoodSlider.getInt();
+        config.foodDrainRate = foodDrainRateSlider.getInt();
+        config.regenHealthTickInterval = regenHealthTickIntervalSlider.getInt();
+        config.regenDelayAfterDamage = regenDelayAfterDamageSlider.getInt();
+        config.nutritionDecayRate = nutritionDecayRateSlider.getInt();
+        config.nutritionDecayWindow = nutritionDecayWindowSlider.getInt();
+        config.nutritionDecayFloor = nutritionDecayFloorSlider.getInt();
         AutoConfig.getConfigHolder(ServerConfiguration.class).save();
     }
 }
