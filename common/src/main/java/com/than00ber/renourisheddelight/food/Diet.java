@@ -78,6 +78,7 @@ public class Diet {
     private int capacity;
     private boolean decaying = true;
     private boolean replacing = true;
+    private boolean toppingUp = true;
     private boolean restricted;
 
     public List<ConsumableFoodInstance> getSlots() {
@@ -103,9 +104,15 @@ public class Diet {
     public boolean isReplacing() {
         return replacing;
     }
+
+    public boolean isToppingUp() {
+        return toppingUp;
+    }
     
     public @Nullable Component reason(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
-        if (outcome != EatingOutcome.TOO_FULL) {
+        if (outcome == EatingOutcome.ALREADY_ACTIVE) {
+            return Component.translatable("message.already_active", item.getDescription()).withStyle(ChatFormatting.RED);
+        } else if (outcome != EatingOutcome.TOO_FULL) {
             ConsumableFoodInstance blocking = outcome == EatingOutcome.RESTRICTED ? outcome.consume(this, item, restrictions) : null;
 
             if (blocking != null) {
@@ -164,16 +171,22 @@ public class Diet {
     }
 
     public static boolean blocksEating(Player player, Item item) {
-        if (player.getAbilities().invulnerable || !(player instanceof DietHolder holder)) return false;
-        DietRestrictions restrictions = DietRestrictions.of(player.level());
-        EatingOutcome outcome = EatingOutcome.outcome(holder.getDiet(), item, restrictions);
-        if (outcome.isAllowed()) return false;
+        if (!player.getAbilities().invulnerable && player instanceof DietHolder holder) {
+            DietRestrictions restrictions = DietRestrictions.of(player.level());
+            EatingOutcome outcome = EatingOutcome.outcome(holder.getDiet(), item, restrictions);
 
-        if (player instanceof ServerPlayer) {
-            Component reason = holder.getDiet().reason(outcome, item, restrictions);
-            if (reason != null) player.displayClientMessage(reason, true);
+            if (!outcome.success) {
+                if (player instanceof ServerPlayer) {
+                    Component reason = holder.getDiet().reason(outcome, item, restrictions);
+
+                    if (reason != null) {
+                        player.displayClientMessage(reason, true);
+                    }
+                }
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
     public void consume(ServerPlayer player, Item item) {
@@ -183,7 +196,7 @@ public class Diet {
             DietRestrictions restrictions = DietRestrictions.server();
             EatingOutcome outcome = EatingOutcome.outcome(this, item, restrictions);
 
-            if (outcome.isAllowed()) {
+            if (outcome.success) {
                 FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
                 int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
 
@@ -220,11 +233,13 @@ public class Diet {
         boolean enabled = ServerConfiguration.getInstance().doNutritionDecay;
         int limit = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
         boolean replace = ServerConfiguration.getInstance().doReplaceLowestFood;
+        boolean topUp = ServerConfiguration.getInstance().doFoodTopUps;
         boolean restrictions = ServerConfiguration.getInstance().doDietRestrictions;
-        boolean toggled = decaying != enabled || capacity != limit || replacing != replace || restricted != restrictions;
+        boolean toggled = decaying != enabled || capacity != limit || replacing != replace || toppingUp != topUp || restricted != restrictions;
         decaying = enabled;
         capacity = limit;
         replacing = replace;
+        toppingUp = topUp;
         restricted = restrictions;
 
         if (!player.gameMode.isSurvival()) return toggled;
@@ -406,6 +421,7 @@ public class Diet {
         compoundTag.putBoolean("Decaying", diet.decaying);
         compoundTag.putInt("Capacity", diet.capacity);
         compoundTag.putBoolean("Replacing", diet.replacing);
+        compoundTag.putBoolean("ToppingUp", diet.toppingUp);
         compoundTag.putBoolean("Restricted", diet.restricted);
         ListTag depleted = new ListTag();
 
@@ -428,6 +444,7 @@ public class Diet {
         diet.decaying = !tag.contains("Decaying") || tag.getBoolean("Decaying");
         diet.capacity = tag.getInt("Capacity");
         diet.replacing = !tag.contains("Replacing") || tag.getBoolean("Replacing");
+        diet.toppingUp = !tag.contains("ToppingUp") || tag.getBoolean("ToppingUp");
         diet.restricted = tag.getBoolean("Restricted");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
 

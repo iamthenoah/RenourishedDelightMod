@@ -110,7 +110,7 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             return switch (outcome) {
                 case REPLENISH -> new Preview(item, null, alpha);
                 case REPLACE_RESTRICTED, REPLACE_LOW -> target != null ? new Preview(null, target.item(), alpha) : Preview.NONE;
-                case CONSUME, RESTRICTED, TOO_FULL -> Preview.NONE;
+                case CONSUME, RESTRICTED, TOO_FULL, ALREADY_ACTIVE -> Preview.NONE;
             };
         }
         return Preview.NONE;

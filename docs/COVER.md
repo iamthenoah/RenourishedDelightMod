@@ -61,7 +61,7 @@ This can be fun if you have multiple food mods and want to find a reason to cook
 <p>
 Enable Diet Restrictions (via the <code>doDietRestrictions</code> server config) to stop players from filling every slot with the same kind of meal. Each food is grouped by its main ingredients, such as beef, fish or berries, and you can't have two active foods that share one. Eating a food that shares an ingredient with exactly one active food swaps that food out instead.
 
-There is nothing to set up. Ingredients are worked out from the item tags food mods already ship with, and from recipes, so a steak and a beef stew both count as beef. Hold <b>Shift</b> over a food to see its ingredients and whether you can eat it right now.</p>
+Ingredients are worked out from the item tags food mods already ship with, and from recipes, so a steak and a beef stew both count as beef. Hold <b>Shift</b> over a food to see its ingredients and whether you can eat it right now.</p>
 
 </td>
 </tr>
@@ -110,6 +110,7 @@ Not happy with the attributes or duration? Want to make certain food items speci
 <p><code>doStarvation</code> — apply starvation effects when the bar is empty. Default true.</p>
 <p><code>doPreventSprint</code> — players can't sprint until they've eaten something. Default false.</p>
 <p><code>doReplaceLowestFood</code> — eating with every slot full replaces the food closest to running out. When off, you have to wait for a slot to free up. Default true.</p>
+<p><code>doFoodTopUps</code> — eating a food that is already active tops it back up. When off, you have to wait for it to run out before eating it again. Default true.</p>
 <p><code>doDietRestrictions</code> — eating a food that shares a main ingredient (beef, fish, berries...) with an active food swaps that food out, as long as only one active food shares it and <code>doReplaceLowestFood</code> is on. Otherwise you can't eat it. Ingredients are worked out automatically from item tags and recipes, so steak and beef stew both count as beef. Default false.</p>
 
 <p><b>Common</b> (<code>common.json5</code>) — the food bonuses, duration multipliers and starvation effects new worlds start with. Each world keeps its own copy once created, which operators can edit in-game from the food, duration and starvation screens.</p>

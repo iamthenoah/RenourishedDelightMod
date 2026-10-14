@@ -11,26 +11,24 @@ import java.util.List;
 import java.util.Set;
 
 public enum EatingOutcome {
-    CONSUME("tooltip.eating.consume", ChatFormatting.GREEN),            // takes a free slot
-    REPLENISH("tooltip.eating.replenish", ChatFormatting.GREEN),        // tops up the slot already holding the same item
-    REPLACE_RESTRICTED("tooltip.eating.replace", ChatFormatting.GOLD),  // swaps out the one active food sharing a restriction with it
-    REPLACE_LOW("tooltip.eating.consume", ChatFormatting.GREEN),        // every slot is full, swaps out the food closest to running out
-    RESTRICTED("tooltip.eating.blocked", ChatFormatting.RED),           // shares a restriction with an active food that cannot be swapped out
-    TOO_FULL("tooltip.eating.blocked", ChatFormatting.RED);             // every slot is full and replacing is disabled
+    CONSUME("tooltip.eating.consume", true),                // takes a free slot
+    REPLENISH("tooltip.eating.replenish", true),            // tops up the slot already holding the same item
+    REPLACE_RESTRICTED("tooltip.eating.replace", true),     // swaps out the one active food sharing a restriction with it
+    REPLACE_LOW("tooltip.eating.consume", true),            // every slot is full, swaps out the food closest to running out
+    RESTRICTED("tooltip.eating.blocked", false),            // shares a restriction with an active food that cannot be swapped out
+    TOO_FULL("tooltip.eating.blocked", false),              // every slot is full and replacing is disabled
+    ALREADY_ACTIVE("tooltip.eating.already_active", false); // already active and top-ups are disabled
 
     final String key;
-    final ChatFormatting color;
+    final boolean success;
 
-    EatingOutcome(String key, ChatFormatting color) {
+    EatingOutcome(String key, boolean success) {
         this.key = key;
-        this.color = color;
+        this.success = success;
     }
 
-    public boolean isAllowed() {
-        return this != RESTRICTED && this != TOO_FULL;
-    }
-    
     public Component getMessage(Object ...objects) {
+        ChatFormatting color = success ? ChatFormatting.GREEN : ChatFormatting.RED;
         return Component.translatable(key, objects).withStyle(color);
     }
 
@@ -50,12 +48,12 @@ public enum EatingOutcome {
                     ? EatingOutcome.REPLACE_LOW
                     : EatingOutcome.TOO_FULL;
         }
-        return EatingOutcome.REPLENISH;
+        return diet.isToppingUp() ? EatingOutcome.REPLENISH : EatingOutcome.ALREADY_ACTIVE;
     }
 
     public @Nullable ConsumableFoodInstance consume(Diet diet, Item item, DietRestrictions restrictions) {
         return switch (this) {
-            case REPLENISH -> diet.getSlots().stream().filter(x -> x.item() == item).findFirst().orElse(null);
+            case REPLENISH, ALREADY_ACTIVE -> diet.getSlots().stream().filter(x -> x.item() == item).findFirst().orElse(null);
             case REPLACE_RESTRICTED, RESTRICTED -> conflicts(diet, item, restrictions).stream().findFirst().orElse(null);
             case REPLACE_LOW -> diet.getSlots().stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null);
             case CONSUME, TOO_FULL -> null;

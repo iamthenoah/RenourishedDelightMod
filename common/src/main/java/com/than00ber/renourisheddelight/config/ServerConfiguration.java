@@ -37,6 +37,9 @@ public final class ServerConfiguration implements ConfigData {
     @Comment("Whether eating with every slot full replaces the active food closest to running out. When disabled, players must wait for a slot to free up before eating something new. (default: true)")
     public boolean doReplaceLowestFood = true;
 
+    @Comment("Whether eating a food that is already active tops it back up. When disabled, players must wait for it to run out before eating it again. (default: true)")
+    public boolean doFoodTopUps = true;
+
     @Comment("Restricts eating a food that shares an item tag (e.g. beef, fish, berries) with an active food: it replaces that food if only one shares it, otherwise it cannot be eaten. (default: false)")
     public boolean doDietRestrictions = false;
 
