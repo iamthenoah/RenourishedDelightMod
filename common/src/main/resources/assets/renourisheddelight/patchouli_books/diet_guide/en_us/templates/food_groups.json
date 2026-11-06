@@ -1,0 +1,10 @@
+{
+  "components": [
+    {
+      "type": "patchouli:custom",
+      "class": "com.than00ber.renourisheddelight.compat.patchouli.FoodGroupsComponent",
+      "x": 0,
+      "y": 0
+    }
+  ]
+}

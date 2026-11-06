@@ -36,6 +36,7 @@
     "minecraft": "~${minecraftVersion}"
   },
   "suggests": {
-    "modmenu": "*"
+    "modmenu": "*",
+    "patchouli": "*"
   }
 }

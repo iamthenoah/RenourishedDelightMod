@@ -40,6 +40,13 @@ versionRange = "[${clothConfigVersion},)"
 ordering = "AFTER"
 side = "BOTH"
 
+[[dependencies.${modId}]]
+modId = "patchouli"
+type = "optional"
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"
+
 [[mixins]]
 config = "${modId}.common.mixins.json"
 
