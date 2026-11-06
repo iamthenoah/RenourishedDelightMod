@@ -1,0 +1,9 @@
+{
+  "name": "book.renourisheddelight.diet_guide.name",
+  "landing_text": "book.renourisheddelight.diet_guide.landing",
+  "subtitle": "Renourished Delight",
+  "use_resource_pack": true,
+  "i18n": true,
+  "model": "patchouli:book_brown",
+  "show_progress": false
+}

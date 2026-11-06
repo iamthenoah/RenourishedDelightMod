@@ -1,0 +1,10 @@
+{
+  "components": [
+    {
+      "type": "patchouli:custom",
+      "class": "com.than00ber.renourisheddelight.compat.patchouli.OptimalMealComponent",
+      "x": 0,
+      "y": 0
+    }
+  ]
+}
