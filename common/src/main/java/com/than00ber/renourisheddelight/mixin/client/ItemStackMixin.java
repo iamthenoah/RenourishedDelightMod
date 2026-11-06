@@ -1,6 +1,7 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
 import com.than00ber.renourisheddelight.client.KeyBindings;
+import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfig;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.*;
@@ -34,7 +35,9 @@ import java.util.stream.Collectors;
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
 
-    @Unique private static final int NUTRITION_BARS = 10;
+    // same block characters as Create's stress and capacity bars
+    @Unique private static final String NUTRITION_FILLED = "\u2588";
+    @Unique private static final String NUTRITION_EMPTY = "\u2592";
     @Unique private static final float NUTRITION_HUE_RANGE = 1.0F / 3.0F;
     @Unique private static final String[] NUTRITION_TIERS = { "tasteless", "bland", "fulfilling", "nourishing" };
 
@@ -74,7 +77,7 @@ public abstract class ItemStackMixin {
         boolean restricted = diet != null && diet.isRestricted();
 
         if (decaying || restricted) {
-            if (KeyBindings.isDown(KeyBindings.VIEW_NUTRITION)) {
+            if (!ClientConfiguration.getInstance().holdToViewNutrition || KeyBindings.isDown(KeyBindings.VIEW_NUTRITION)) {
                 if (decaying) tooltip.add(renourisheddelight$nutritionBar(nutrition));
 
                 if (restricted) {
@@ -128,14 +131,15 @@ public abstract class ItemStackMixin {
 
     @Unique
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
-        int filled = Mth.clamp(Math.round((float) nutrition * NUTRITION_BARS / Diet.FULL_NUTRITION), 0, NUTRITION_BARS);
+        // one square per tier, so the fill always matches the tier name next to it
+        int tier = Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1);
+        int filled = tier + 1;
         int color = renourisheddelight$nutritionColor(nutrition);
-        MutableComponent bar = Component.literal(" ").append(Component.literal("|".repeat(filled)).withStyle(style -> style.withColor(color)));
+        MutableComponent bar = Component.literal(" ").append(Component.literal(NUTRITION_FILLED.repeat(filled)).withStyle(style -> style.withColor(color)));
 
-        if (filled < NUTRITION_BARS) {
-            bar.append(Component.literal(".".repeat(NUTRITION_BARS - filled)).withStyle(ChatFormatting.DARK_GRAY));
+        if (filled < NUTRITION_TIERS.length) {
+            bar.append(Component.literal(NUTRITION_EMPTY.repeat(NUTRITION_TIERS.length - filled)).withStyle(ChatFormatting.DARK_GRAY));
         }
-        String tier = NUTRITION_TIERS[Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1)];
-        return bar.append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + tier)).withStyle(ChatFormatting.WHITE));
+        return bar.append(Component.literal(" ").append(Component.translatable("tooltip.nutrition." + NUTRITION_TIERS[tier])).withStyle(ChatFormatting.WHITE));
     }
 }

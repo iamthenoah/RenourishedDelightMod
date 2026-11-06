@@ -94,6 +94,7 @@ Not happy with the attributes or duration? Want to make certain food items speci
 <p><code>showFoodDisplayInInventory</code> — shows your active foods next to the inventory. Default false.</p>
 <p><code>clipOddMaxHealthHeart</code> — hides the half heart that can never fill when max health is odd. Default true.</p>
 <p><code>compactHealthBar</code> — keeps health to a single row of 10 hearts that fill proportionally. Default false.</p>
+<p><code>holdToViewNutrition</code> — food tooltips only show nutrition, diet restrictions and whether you can eat it while you hold the View Nutrition key (Left Shift by default). When off, it is always shown. Default true.</p>
 
 <p><b>Server</b> (<code>server.json5</code>) — gameplay rules. On a dedicated server, edit the file on the server.</p>
 <p><code>playerStartingHealth</code> — base max health before any food bonuses. Default 20.</p>

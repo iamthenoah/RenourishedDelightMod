@@ -36,4 +36,7 @@ public final class ClientConfiguration implements ConfigData {
 
     @Comment("Whether to compress the health bar into a single row of 10 hearts that fill proportionally to max health, instead of stacking extra heart rows (default: false)")
     public boolean compactHealthBar = false;
+
+    @Comment("Whether the nutrition section of food tooltips only shows while the View Nutrition key (default: Left Shift) is held. When disabled, it is always shown (default: true)")
+    public boolean holdToViewNutrition = true;
 }
