@@ -87,6 +87,11 @@ public final class DietRestrictions {
         RenourishedDelightMod.LOGGER.info("Resolved diet restrictions for {} foods in {} ms", restrictions.size(), (System.nanoTime() - startNanos) / 1_000_000L);
     }
 
+    // foods and foods eaten as placed blocks (cakes), but not other blocks
+    public static boolean isEdible(Item item) {
+        return item.components().has(DataComponents.FOOD) || item.builtInRegistryHolder().is(EDIBLE_WHEN_PLACED);
+    }
+
     private static boolean isRestrictionTag(TagKey<Item> tag) {
         ResourceLocation id = tag.location();
         return id.getNamespace().equals(TAG_NAMESPACE) && id.getPath().startsWith(TAG_PREFIX) && !IGNORED_TAGS.contains(id.getPath());
@@ -144,7 +149,7 @@ public final class DietRestrictions {
             Map<Item, Set<ResourceLocation>> restrictions = new HashMap<>();
 
             for (Item item : BuiltInRegistries.ITEM) {
-                if (!item.components().has(DataComponents.FOOD) && !item.builtInRegistryHolder().is(EDIBLE_WHEN_PLACED)) continue;
+                if (!isEdible(item)) continue;
                 Set<TagKey<Item>> tags = resolve(item, 0);
 
                 if (!tags.isEmpty()) {

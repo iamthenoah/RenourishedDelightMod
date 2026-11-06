@@ -30,12 +30,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
 
-    // same block characters as Create's stress and capacity bars
     @Unique private static final String NUTRITION_FILLED = "\u2588";
     @Unique private static final String NUTRITION_EMPTY = "\u2592";
     @Unique private static final float NUTRITION_HUE_RANGE = 1.0F / 3.0F;
@@ -81,7 +79,7 @@ public abstract class ItemStackMixin {
                 if (decaying) tooltip.add(renourisheddelight$nutritionBar(nutrition));
 
                 if (restricted) {
-                    MutableComponent restrictions = renourisheddelight$restrictions(stack.getItem(), diet);
+                    MutableComponent restrictions = renourisheddelight$restrictions(stack.getItem());
                     if (restrictions != null) tooltip.add(restrictions);
                     tooltip.add(renourisheddelight$status(stack.getItem(), diet));
                 }
@@ -103,23 +101,18 @@ public abstract class ItemStackMixin {
     }
 
     @Unique
-    private static @Nullable MutableComponent renourisheddelight$restrictions(Item item, Diet diet) {
+    private static @Nullable MutableComponent renourisheddelight$restrictions(Item item) {
         DietRestrictions lookup = DietRestrictions.client();
         Set<ResourceLocation> restrictions = lookup.get(item);
         if (restrictions.isEmpty()) return null;
 
-        Set<ResourceLocation> active = diet.getSlots().stream()
-                .filter(x -> x.item() != item)
-                .flatMap(x -> lookup.get(x.item()).stream())
-                .collect(Collectors.toSet());
-        ChatFormatting clash = EatingOutcome.outcome(diet, item, lookup) == EatingOutcome.REPLACE_RESTRICTED ? ChatFormatting.GOLD : ChatFormatting.RED;
         MutableComponent line = Component.literal(" ").withStyle(ChatFormatting.GRAY);
         List<ResourceLocation> sorted = restrictions.stream().sorted(Comparator.comparing(ResourceLocation::toString)).toList();
 
         for (int i = 0; i < sorted.size(); i++) {
             if (i > 0) line.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
             ResourceLocation restriction = sorted.get(i);
-            line.append(DietRestrictions.name(restriction).withStyle(active.contains(restriction) ? clash : ChatFormatting.GRAY));
+            line.append(DietRestrictions.name(restriction).withStyle(ChatFormatting.GRAY));
         }
         return line;
     }
@@ -131,7 +124,6 @@ public abstract class ItemStackMixin {
 
     @Unique
     private static MutableComponent renourisheddelight$nutritionBar(int nutrition) {
-        // one square per tier, so the fill always matches the tier name next to it
         int tier = Mth.clamp(nutrition * NUTRITION_TIERS.length / Diet.FULL_NUTRITION, 0, NUTRITION_TIERS.length - 1);
         int filled = tier + 1;
         int color = renourisheddelight$nutritionColor(nutrition);
