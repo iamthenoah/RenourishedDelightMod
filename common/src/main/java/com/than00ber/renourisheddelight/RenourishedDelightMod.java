@@ -6,6 +6,7 @@ import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.data.FoodConfigReloadListener;
+import com.than00ber.renourisheddelight.network.DietRestrictionsSyncPayload;
 import com.than00ber.renourisheddelight.network.FoodConfigSyncPayload;
 import com.than00ber.renourisheddelight.network.NoSprintPayload;
 import com.than00ber.renourisheddelight.network.SuppressHurtFlashPayload;
@@ -36,6 +37,7 @@ public final class RenourishedDelightMod {
 
         // networking
         FoodConfigSyncPayload.init();
+        DietRestrictionsSyncPayload.init();
         NoSprintPayload.init();
         SuppressHurtFlashPayload.init();
     }

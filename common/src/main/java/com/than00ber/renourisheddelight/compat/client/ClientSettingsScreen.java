@@ -13,11 +13,12 @@ import org.jetbrains.annotations.Nullable;
 public final class ClientSettingsScreen extends AbstractMenuScreen {
 
     private static final ClientConfiguration DEFAULTS = new ClientConfiguration();
-    private static final int ROWS = 6;
+    private static final int ROWS = 7;
 
     private boolean showFoodDisplayInInventoryValue;
     private boolean clipOddMaxHealthHeartValue;
     private boolean compactHealthBarValue;
+    private boolean holdToViewNutritionValue;
 
     private EditBox goldenPaletteItemField;
 
@@ -31,6 +32,7 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
         showFoodDisplayInInventoryValue = config.showFoodDisplayInInventory;
         clipOddMaxHealthHeartValue = config.clipOddMaxHealthHeart;
         compactHealthBarValue = config.compactHealthBar;
+        holdToViewNutritionValue = config.holdToViewNutrition;
 
         layout(ROWS);
         int left = contentLeft();
@@ -40,7 +42,8 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
         addToggle(left, top + ROW_HEIGHT * 2, "text.autoconfig.renourisheddelight/client.option.showFoodDisplayInInventory", showFoodDisplayInInventoryValue, DEFAULTS.showFoodDisplayInInventory, value -> showFoodDisplayInInventoryValue = value);
         addToggle(left, top + ROW_HEIGHT * 3, "text.autoconfig.renourisheddelight/client.option.clipOddMaxHealthHeart", clipOddMaxHealthHeartValue, DEFAULTS.clipOddMaxHealthHeart, value -> clipOddMaxHealthHeartValue = value);
         addToggle(left, top + ROW_HEIGHT * 4, "text.autoconfig.renourisheddelight/client.option.compactHealthBar", compactHealthBarValue, DEFAULTS.compactHealthBar, value -> compactHealthBarValue = value);
-        addDoneButton(left, top + ROW_HEIGHT * 5 + DONE_BUTTON_GAP);
+        addToggle(left, top + ROW_HEIGHT * 5, "text.autoconfig.renourisheddelight/client.option.holdToViewNutrition", holdToViewNutritionValue, DEFAULTS.holdToViewNutrition, value -> holdToViewNutritionValue = value);
+        addDoneButton(left, top + ROW_HEIGHT * 6 + DONE_BUTTON_GAP);
     }
 
     private void addHudPositionButton(int x, int y, ClientConfiguration config) {
@@ -74,6 +77,7 @@ public final class ClientSettingsScreen extends AbstractMenuScreen {
         config.showFoodDisplayInInventory = showFoodDisplayInInventoryValue;
         config.clipOddMaxHealthHeart = clipOddMaxHealthHeartValue;
         config.compactHealthBar = compactHealthBarValue;
+        config.holdToViewNutrition = holdToViewNutritionValue;
         AutoConfig.getConfigHolder(ClientConfiguration.class).save();
     }
 }
