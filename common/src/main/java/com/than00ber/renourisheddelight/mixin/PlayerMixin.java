@@ -1,8 +1,10 @@
 package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.food.DietRestrictions;
 import com.than00ber.renourisheddelight.network.NoSprintPayload;
 
 import dev.architectury.networking.NetworkManager;
@@ -12,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -57,6 +60,16 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
         entityData.set(DIET_ACCESSOR, getDiet(), true);
     }
 
+    @Override
+    public void startSleeping(BlockPos pos) {
+        super.startSleeping(pos);
+
+        if ((Object) this instanceof ServerPlayer player) {
+            renourisheddelight$sleepStartDayTime = player.level().getDayTime();
+            renourisheddelight$sleepStartGameTime = player.level().getGameTime();
+        }
+    }
+
     @Inject(method = "defineSynchedData", at = @At("TAIL"))
     private void renourisheddelight$defineSynchedData(SynchedEntityData.Builder builder, CallbackInfo callback) {
         builder.define(DIET_ACCESSOR, new Diet());
@@ -69,83 +82,72 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void renourisheddelight$tick(CallbackInfo callback) {
-        if (!((Object) this instanceof ServerPlayer player)) return;
+        if ((Object) this instanceof ServerPlayer player) {
+            AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
 
-        renourisheddelight$applyStartingHealth(player);
-        Diet diet = getDiet();
+            if (maxHealth != null) {
+                double target = Math.clamp(ServerConfiguration.getInstance().playerStartingHealth, MIN_HEARTS, MAX_HEARTS);
+                double current = maxHealth.getBaseValue();
 
-        if (isDeadOrDying()) {
-            diet.clearModifiers(player);
-            updateDiet();
-        } else if (diet.tick(player)) {
-            updateDiet();
-        }
-        if (ServerConfiguration.getInstance().doPreventSprint && player.gameMode.isSurvival() && diet.getSlots().isEmpty()) {
-            NetworkManager.sendToPlayer(player, new NoSprintPayload(false));
-            player.setSprinting(false);
-        } else {
-            NetworkManager.sendToPlayer(player, new NoSprintPayload(true));
+                if (current != target && (current == Attributes.MAX_HEALTH.value().getDefaultValue() || current == renourisheddelight$appliedBaseHealth)) {
+                    maxHealth.setBaseValue(target);
+                    renourisheddelight$appliedBaseHealth = target;
+                }
+            }
+            Diet diet = getDiet();
+
+            if (isDeadOrDying()) {
+                diet.clearModifiers(player);
+                updateDiet();
+            } else if (diet.tick(player)) {
+                updateDiet();
+            }
+            if (ServerConfiguration.getInstance().doPreventSprint && player.gameMode.isSurvival() && diet.getSlots().isEmpty()) {
+                NetworkManager.sendToPlayer(player, new NoSprintPayload(false));
+                player.setSprinting(false);
+            } else {
+                NetworkManager.sendToPlayer(player, new NoSprintPayload(true));
+            }
         }
     }
 
-    // held foods are checked in ItemStack#use, this covers foods eaten as placed blocks (cakes, pies)
     @Inject(method = "canEat", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$canEat(boolean canAlwaysEat, CallbackInfoReturnable<Boolean> callback) {
-        if (getMainHandItem().has(DataComponents.FOOD) || getOffhandItem().has(DataComponents.FOOD)) return;
+        if (!getMainHandItem().has(DataComponents.FOOD) && !getOffhandItem().has(DataComponents.FOOD)) {
+            if (pick(5.0D, 0.0F, false) instanceof BlockHitResult result && result.getType() == HitResult.Type.BLOCK) {
+                Item item = level().getBlockState(result.getBlockPos()).getBlock().asItem();
 
-        if (pick(5.0D, 0.0F, false) instanceof BlockHitResult result && result.getType() == HitResult.Type.BLOCK) {
-            Item item = level().getBlockState(result.getBlockPos()).getBlock().asItem();
-            if (Diet.blocksEating((Player) (Object) this, item)) callback.setReturnValue(false);
-        }
-    }
-
-    @Unique
-    private void renourisheddelight$applyStartingHealth(ServerPlayer player) {
-        AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth == null) return;
-
-        double target = Math.clamp(ServerConfiguration.getInstance().playerStartingHealth, MIN_HEARTS, MAX_HEARTS);
-        double current = maxHealth.getBaseValue();
-        if (current == target) return;
-
-        if (current == Attributes.MAX_HEALTH.value().getDefaultValue() || current == renourisheddelight$appliedBaseHealth) {
-            maxHealth.setBaseValue(target);
-            renourisheddelight$appliedBaseHealth = target;
-        }
-    }
-
-    @Override
-    public void startSleeping(BlockPos pos) {
-        super.startSleeping(pos);
-
-        if ((Object) this instanceof ServerPlayer player) {
-            renourisheddelight$sleepStartDayTime = player.level().getDayTime();
-            renourisheddelight$sleepStartGameTime = player.level().getGameTime();
+                if ((DietRestrictions.isEdible(item)
+                        || level() instanceof ServerLevel server
+                        && FoodConfigSavedData.get(server.getServer()).getFoodConfig().entry(item) != null) 
+                        && Diet.blocksEating((Player) (Object) this, item)) {
+                    callback.setReturnValue(false);
+                }
+            }
         }
     }
 
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void renourisheddelight$stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers, CallbackInfo callback) {
-        if (!((Object) this instanceof ServerPlayer player) || renourisheddelight$sleepStartDayTime == -1L) return;
+        if ((Object) this instanceof ServerPlayer player && renourisheddelight$sleepStartDayTime != -1L) {
+            long gameTime = player.level().getGameTime();
+            long slept = gameTime - renourisheddelight$sleepStartGameTime;
+            long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
+            renourisheddelight$sleepStartDayTime = -1L;
+            renourisheddelight$sleepStartGameTime = -1L;
 
-        long gameTime = player.level().getGameTime();
-        long slept = gameTime - renourisheddelight$sleepStartGameTime;
-        long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
-        renourisheddelight$sleepStartDayTime = -1L;
-        renourisheddelight$sleepStartGameTime = -1L;
+            MinecraftServer server = player.getServer();
+            if (skipped <= 0 || server == null) return;
+            if (!ServerConfiguration.getInstance().doSleepFoodDrain) return;
+            if (renourisheddelight$lastSleepDrainTime == gameTime) return;
+            renourisheddelight$lastSleepDrainTime = gameTime;
+            double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
+            int drain = (int) Math.round(Diet.SLEEP_DRAIN * fraction);
 
-        MinecraftServer server = player.getServer();
-        if (skipped <= 0 || server == null) return;
-        if (!ServerConfiguration.getInstance().doSleepFoodDrain) return;
-        if (renourisheddelight$lastSleepDrainTime == gameTime) return;
-        renourisheddelight$lastSleepDrainTime = gameTime;
-
-        double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
-        int drain = (int) Math.round(Diet.SLEEP_DRAIN * fraction);
-
-        for (ServerPlayer other : server.getPlayerList().getPlayers()) {
-            if (other.gameMode.isSurvival() && other instanceof DietHolder holder && holder.getDiet().drain(other, drain)) {
-                holder.updateDiet();
+            for (ServerPlayer other : server.getPlayerList().getPlayers()) {
+                if (other.gameMode.isSurvival() && other instanceof DietHolder holder && holder.getDiet().drain(other, drain)) {
+                    holder.updateDiet();
+                }
             }
         }
     }
@@ -153,12 +155,18 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Inject(method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void renourisheddelight$addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         compoundTag.put("Diet", Diet.save(getDiet()));
-        if (!Double.isNaN(renourisheddelight$appliedBaseHealth)) compoundTag.putDouble("AppliedBaseHealth", renourisheddelight$appliedBaseHealth);
+        
+        if (!Double.isNaN(renourisheddelight$appliedBaseHealth)) {
+            compoundTag.putDouble("AppliedBaseHealth", renourisheddelight$appliedBaseHealth);
+        }
     }
 
     @Inject(method = "readAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void renourisheddelight$readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo callback) {
         entityData.set(DIET_ACCESSOR, Diet.load(compoundTag.getCompound("Diet")), true);
-        if (compoundTag.contains("AppliedBaseHealth")) renourisheddelight$appliedBaseHealth = compoundTag.getDouble("AppliedBaseHealth");
+
+        if (compoundTag.contains("AppliedBaseHealth")) {
+            renourisheddelight$appliedBaseHealth = compoundTag.getDouble("AppliedBaseHealth");
+        }
     }
 }
