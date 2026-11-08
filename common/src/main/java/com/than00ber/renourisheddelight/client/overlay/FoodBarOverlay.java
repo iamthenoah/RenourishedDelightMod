@@ -1,6 +1,5 @@
 package com.than00ber.renourisheddelight.client.overlay;
 
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.than00ber.renourisheddelight.client.atlas.Texture;
 import com.than00ber.renourisheddelight.client.atlas.TextureAtlas;
@@ -10,8 +9,6 @@ import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.data.FoodConfigHolder;
 import com.than00ber.renourisheddelight.food.*;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
-import dev.architectury.event.events.client.ClientGuiEvent;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.component.DataComponents;
@@ -24,28 +21,44 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
+public final class FoodBarOverlay {
 
     private static final int MAX_ICONS = 10;
     private static final int ICON_WIDTH = 8;
-    private static final int ICON_HEIGHT = 9;
+    private static final int BAR_WIDTH = MAX_ICONS * ICON_WIDTH + 1;
+    private static final int VANILLA_BOTTOM_OFFSET = 39;
     private static final int BLINK_DURATION = 20;
     private static final int PULSE_DURATION = 20;
     private static final float PULSE_MIN_ALPHA = 0.25F;
 
-    private int previousFoodCount;
-    private int foodBlinkEndTick;
+    private static int previousFoodCount;
+    private static int foodBlinkEndTick;
+    private static int anchorShiftX;
+    private static int anchorShiftY;
 
-    public static void init() {
-        ClientGuiEvent.RENDER_HUD.register(new FoodBarOverlay());
+    public static int defaultAnchorX(int screenWidth) {
+        return screenWidth / 2 + 10;
     }
 
-    private boolean isVisible() {
+    public static int defaultAnchorY(int screenHeight) {
+        return screenHeight - VANILLA_BOTTOM_OFFSET;
+    }
+
+    public static int anchorX(int screenWidth) {
+        return defaultAnchorX(screenWidth) + anchorShiftX;
+    }
+
+    public static int anchorY(int screenHeight) {
+        return defaultAnchorY(screenHeight) + anchorShiftY;
+    }
+
+    private static boolean isVisible() {
         Minecraft minecraft = Minecraft.getInstance();
 
         return minecraft.player != null && !(minecraft.player.getVehicle() != null
@@ -57,8 +70,12 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
                 && !(minecraft.screen instanceof HudPositionScreen);
     }
 
-    @Override
-    public void renderHud(GuiGraphics graphics, DeltaTracker deltaTracker) {
+    public static void render(GuiGraphics graphics, int right, int top) {
+        int left = right - BAR_WIDTH;
+        Matrix4f pose = graphics.pose().last().pose();
+        anchorShiftX = left + Math.round(pose.m30()) - defaultAnchorX(graphics.guiWidth());
+        anchorShiftY = top + Math.round(pose.m31()) - defaultAnchorY(graphics.guiHeight());
+
         TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getMiniAtlas();
         Player player = Minecraft.getInstance().player;
 
@@ -66,18 +83,19 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             List<ConsumableFoodInstance> slots = holder.getDiet().getSlots();
 
             if (!slots.isEmpty()) {
-                Window window = Minecraft.getInstance().getWindow();
-                int x = window.getGuiScaledWidth() / 2 + 10 + ClientConfiguration.getInstance().foodBarOffsetX;
-                int y = window.getGuiScaledHeight() - 39 + ClientConfiguration.getInstance().foodBarOffsetY;
+                ClientConfiguration config = ClientConfiguration.getInstance();
+                int x = left + config.foodBarOffsetX;
+                int y = top + config.foodBarOffsetY;
                 boolean blink = updateBlink(slots.size());
                 boolean hunger = player.hasEffect(MobEffects.HUNGER);
                 boolean nourished = player.hasEffect(EffectRegistry.nourishment());
-                renderSlots(graphics, atlas, x, y, slots, blink, hunger, nourished, preview(player, holder.getDiet(), deltaTracker));
+                float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+                renderSlots(graphics, atlas, x, y, slots, blink, hunger, nourished, preview(player, holder.getDiet(), partialTick));
             }
         }
     }
 
-    private boolean updateBlink(int count) {
+    private static boolean updateBlink(int count) {
         int tick = Minecraft.getInstance().gui.getGuiTicks();
 
         if (count < previousFoodCount) {
@@ -95,12 +113,12 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
         }
     }
 
-    private static Preview preview(Player player, Diet diet, DeltaTracker deltaTracker) {
+    private static Preview preview(Player player, Diet diet, float partialTick) {
         Item item = targetItem(player);
 
         if (item != null) {
             int tick = Minecraft.getInstance().gui.getGuiTicks() % PULSE_DURATION;
-            float time = (tick + deltaTracker.getGameTimeDeltaPartialTick(false)) / PULSE_DURATION;
+            float time = (tick + partialTick) / PULSE_DURATION;
             float wave = (1.0F - Mth.cos(time * Mth.TWO_PI)) / 2.0F;
             float alpha = Mth.lerp(wave, PULSE_MIN_ALPHA, 1.0F);
 
@@ -121,10 +139,11 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
             ItemStack stack = player.getItemInHand(hand);
             if (stack.has(DataComponents.FOOD)) return stack.getItem();
         }
-        if (!(Minecraft.getInstance().hitResult instanceof BlockHitResult result) || result.getType() != HitResult.Type.BLOCK) return null;
-
-        Item item = player.level().getBlockState(result.getBlockPos()).getBlock().asItem();
-        return isEatable(item) ? item : null;
+        if (Minecraft.getInstance().hitResult instanceof BlockHitResult result && result.getType() == HitResult.Type.BLOCK) {
+            Item item = player.level().getBlockState(result.getBlockPos()).getBlock().asItem();
+            return isEatable(item) ? item : null;
+        }
+        return null;
     }
 
     private static boolean isEatable(Item item) {
@@ -163,15 +182,10 @@ public final class FoodBarOverlay implements ClientGuiEvent.RenderHud {
                 int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[2].render(graphics, x + i * ICON_WIDTH, offset, fade(0xFF282828, opacity));
             }
-            graphics.pose().pushPose();
-            graphics.enableScissor(x, y, x + width, y + ICON_HEIGHT);
-
             for (int i = 0; i < size; i++) {
                 int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
-                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, fade(0xFFFFFFFF, opacity));
+                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, width - i * ICON_WIDTH, fade(0xFFFFFFFF, opacity));
             }
-            graphics.disableScissor();
-            graphics.pose().popPose();
 
             if (preview.tops(instance)) {
                 for (int i = 0; i < size; i++) {

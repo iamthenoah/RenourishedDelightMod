@@ -11,6 +11,11 @@ import java.util.Objects;
 public record Texture(ResourceLocation name, DynamicTexture texture, int u, int v, int dimensions) {
 
     public void render(GuiGraphics graphics, int x, int y, int color) {
+        render(graphics, x, y, dimensions, color);
+    }
+
+    public void render(GuiGraphics graphics, int x, int y, int width, int color) {
+        if (width <= 0) return;
         float a = ((color >> 24) & 0xFF) / 255.0F;
         float r = ((color >> 16) & 0xFF) / 255.0F;
         float g = ((color >> 8) & 0xFF) / 255.0F;
@@ -18,7 +23,7 @@ public record Texture(ResourceLocation name, DynamicTexture texture, int u, int 
 
         RenderSystem.setShaderColor(r, g, b, a);
         NativeImage image = Objects.requireNonNull(texture.getPixels());
-        graphics.blit(name, x, y, u, v, dimensions, dimensions, image.getWidth(), image.getHeight());
+        graphics.blit(name, x, y, u, v, Math.min(width, dimensions), dimensions, image.getWidth(), image.getHeight());
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 }

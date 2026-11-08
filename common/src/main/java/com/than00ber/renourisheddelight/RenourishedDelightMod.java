@@ -1,7 +1,6 @@
 package com.than00ber.renourisheddelight;
 
 import com.mojang.logging.LogUtils;
-import com.than00ber.renourisheddelight.client.overlay.FoodBarOverlay;
 import com.than00ber.renourisheddelight.config.ClientConfiguration;
 import com.than00ber.renourisheddelight.config.CommonConfiguration;
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
@@ -43,7 +42,7 @@ public final class RenourishedDelightMod {
     }
 
     public static void initClient() {
-        FoodBarOverlay.init();
+        // do nothing
     }
 
     public static ResourceLocation key(String name) {
