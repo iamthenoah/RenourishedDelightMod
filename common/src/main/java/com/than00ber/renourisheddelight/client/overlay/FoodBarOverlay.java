@@ -31,7 +31,6 @@ public final class FoodBarOverlay {
 
     private static final int MAX_ICONS = 10;
     private static final int ICON_WIDTH = 8;
-    private static final int ICON_HEIGHT = 9;
     private static final int BAR_WIDTH = MAX_ICONS * ICON_WIDTH + 1;
     private static final int VANILLA_BOTTOM_OFFSET = 39;
     private static final int BLINK_DURATION = 20;
@@ -183,15 +182,10 @@ public final class FoodBarOverlay {
                 int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
                 textures[2].render(graphics, x + i * ICON_WIDTH, offset, fade(0xFF282828, opacity));
             }
-            graphics.pose().pushPose();
-            graphics.enableScissor(x, y, x + width, y + ICON_HEIGHT);
-
             for (int i = 0; i < size; i++) {
                 int offset = y + computeWobbleOffset(instance, globalIndexStart + i, tick, hunger, nourished);
-                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, fade(0xFFFFFFFF, opacity));
+                textures[nourished ? 4 : hunger ? 1 : 0].render(graphics, x + i * ICON_WIDTH, offset, width - i * ICON_WIDTH, fade(0xFFFFFFFF, opacity));
             }
-            graphics.disableScissor();
-            graphics.pose().popPose();
 
             if (preview.tops(instance)) {
                 for (int i = 0; i < size; i++) {
