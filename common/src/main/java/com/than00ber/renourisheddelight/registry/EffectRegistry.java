@@ -7,7 +7,9 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.LivingEntity;
 
 public final class EffectRegistry {
 
@@ -15,11 +17,17 @@ public final class EffectRegistry {
 
     public static final RegistrySupplier<MobEffect> NOURISHMENT = EFFECTS.register("nourishment", NourishmentMobEffect::new);
 
+    private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
+
     public static void init() {
         EFFECTS.register();
     }
 
     public static Holder<MobEffect> nourishment() {
         return BuiltInRegistries.MOB_EFFECT.wrapAsHolder(NOURISHMENT.get());
+    }
+
+    public static boolean isNourished(LivingEntity entity) {
+        return entity.hasEffect(nourishment()) || BuiltInRegistries.MOB_EFFECT.getHolder(FARMERS_DELIGHT_NOURISHMENT).map(entity::hasEffect).orElse(false);
     }
 }

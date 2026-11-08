@@ -88,7 +88,7 @@ public final class FoodBarOverlay {
                 int y = top + config.foodBarOffsetY;
                 boolean blink = updateBlink(slots.size());
                 boolean hunger = player.hasEffect(MobEffects.HUNGER);
-                boolean nourished = player.hasEffect(EffectRegistry.nourishment());
+                boolean nourished = EffectRegistry.isNourished(player);
                 float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
                 renderSlots(graphics, atlas, x, y, slots, blink, hunger, nourished, preview(player, holder.getDiet(), partialTick));
             }

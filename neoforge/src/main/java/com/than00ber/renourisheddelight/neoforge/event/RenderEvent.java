@@ -4,6 +4,7 @@ import com.than00ber.renourisheddelight.client.overlay.HealthBarCompat;
 import com.than00ber.renourisheddelight.food.DietHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -14,6 +15,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 public final class RenderEvent {
 
     private static final int ROW_HEIGHT = 10;
+    private static final ResourceLocation FARMERS_DELIGHT_NOURISHMENT = ResourceLocation.fromNamespaceAndPath("farmersdelight", "nourishment");
 
     private static int leftHeight;
 
@@ -26,6 +28,9 @@ public final class RenderEvent {
             if (!(Minecraft.getInstance().player instanceof DietHolder holder) || holder.getDiet().getSlots().isEmpty()) {
                 event.setCanceled(true);
             }
+        }
+        if (event.getName().equals(FARMERS_DELIGHT_NOURISHMENT)) {
+            event.setCanceled(true); // our food bar replaces the hunger bar that this layer draws over
         }
     }
 
