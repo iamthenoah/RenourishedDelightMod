@@ -22,18 +22,17 @@ public abstract class LivingEntityMixin {
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {
         if (!ServerConfiguration.getInstance().doNourishment) return;
+        if (!FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(instance.getEffect().value()))) return;
+        LivingEntity self = (LivingEntity) (Object) this;
 
-        if (FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(instance.getEffect().value()))) {
-            callback.setReturnValue(true);
-            LivingEntity self = (LivingEntity) (Object) this;
-            self.addEffect(new MobEffectInstance(
-                    EffectRegistry.nourishment(),
-                    instance.getDuration(),
-                    instance.getAmplifier(),
-                    instance.isAmbient(),
-                    instance.isVisible(),
-                    instance.showIcon()));
-        }
+        callback.setReturnValue(true);
+        self.addEffect(new MobEffectInstance(
+                EffectRegistry.nourishment(),
+                instance.getDuration(),
+                instance.getAmplifier(),
+                instance.isAmbient(),
+                instance.isVisible(),
+                instance.showIcon()));
     }
 
     @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
