@@ -67,7 +67,7 @@ public abstract class EffectRenderingInventoryScreenMixin<T extends AbstractCont
         Font font = Minecraft.getInstance().font;
         TextureAtlas atlas = TextureAtlasResourceLoader.getInstance().getLargeAtlas();
         boolean hunger = player.hasEffect(MobEffects.HUNGER);
-        boolean nourished = player.hasEffect(EffectRegistry.nourishment());
+        boolean nourished = EffectRegistry.isNourished(player);
         int y = topPos;
         ConsumableFoodInstance hovered = null;
 

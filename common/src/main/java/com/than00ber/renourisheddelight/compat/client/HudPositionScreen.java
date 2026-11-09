@@ -82,14 +82,20 @@ public final class HudPositionScreen extends Screen {
         clampOffsets();
     }
 
+    private static int anchorX() {
+        return FoodBarOverlay.anchorX(Minecraft.getInstance().getWindow().getGuiScaledWidth());
+    }
+
+    private static int anchorY() {
+        return FoodBarOverlay.anchorY(Minecraft.getInstance().getWindow().getGuiScaledHeight());
+    }
+
     private int hudX() {
-        Window window = Minecraft.getInstance().getWindow();
-        return window.getGuiScaledWidth() / 2 + 10 + offsetX;
+        return anchorX() + offsetX;
     }
 
     private int hudY() {
-        Window window = Minecraft.getInstance().getWindow();
-        return window.getGuiScaledHeight() - 39 + offsetY;
+        return anchorY() + offsetY;
     }
 
     private void clampOffsets() {
@@ -97,10 +103,10 @@ public final class HudPositionScreen extends Screen {
         int screenWidth = window.getGuiScaledWidth();
         int screenHeight = window.getGuiScaledHeight();
 
-        int minX = 1 - (screenWidth / 2 + 10);
-        int maxX = screenWidth - boxWidth - 1 - (screenWidth / 2 + 10);
-        int minY = 1 - (screenHeight - 39);
-        int maxY = screenHeight - boxHeight - 1 - (screenHeight - 39);
+        int minX = 1 - anchorX();
+        int maxX = screenWidth - boxWidth - 1 - anchorX();
+        int minY = 1 - anchorY();
+        int maxY = screenHeight - boxHeight - 1 - anchorY();
 
         offsetX = Mth.clamp(offsetX, minX, maxX);
         offsetY = Mth.clamp(offsetY, minY, maxY);

@@ -1,5 +1,6 @@
 package com.than00ber.renourisheddelight.mixin;
 
+import com.than00ber.renourisheddelight.config.ServerConfiguration;
 import com.than00ber.renourisheddelight.registry.EffectRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -19,21 +20,23 @@ public abstract class LivingEntityMixin {
 
     @Inject(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;)Z", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$addEffect(MobEffectInstance instance, CallbackInfoReturnable<Boolean> callback) {
-        if (FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(instance.getEffect()))) {
-            callback.setReturnValue(true);
-            LivingEntity self = (LivingEntity) (Object) this;
-            self.addEffect(new MobEffectInstance(
-                    EffectRegistry.nourishment(),
-                    instance.getDuration(),
-                    instance.getAmplifier(),
-                    instance.isAmbient(),
-                    instance.isVisible(),
-                    instance.showIcon()));
-        }
+        if (!ServerConfiguration.getInstance().doNourishment) return;
+        if (!FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(instance.getEffect()))) return;
+        LivingEntity self = (LivingEntity) (Object) this;
+
+        callback.setReturnValue(true);
+        self.addEffect(new MobEffectInstance(
+                EffectRegistry.nourishment(),
+                instance.getDuration(),
+                instance.getAmplifier(),
+                instance.isAmbient(),
+                instance.isVisible(),
+                instance.showIcon()));
     }
 
     @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
     private void renourisheddelight$hasEffect(MobEffect effect, CallbackInfoReturnable<Boolean> callback) {
+        if (!ServerConfiguration.getInstance().doNourishment) return;
         if (!FARMERS_DELIGHT_NOURISHMENT.equals(BuiltInRegistries.MOB_EFFECT.getKey(effect))) return;
         LivingEntity self = (LivingEntity) (Object) this;
 

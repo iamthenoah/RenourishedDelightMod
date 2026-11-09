@@ -1,8 +1,10 @@
 package com.than00ber.renourisheddelight.mixin;
 
 import com.than00ber.renourisheddelight.config.ServerConfiguration;
+import com.than00ber.renourisheddelight.data.level.FoodConfigSavedData;
 import com.than00ber.renourisheddelight.food.Diet;
 import com.than00ber.renourisheddelight.food.DietHolder;
+import com.than00ber.renourisheddelight.food.DietRestrictions;
 import com.than00ber.renourisheddelight.network.NoSprintPayload;
 
 import net.minecraft.core.BlockPos;
@@ -10,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -17,12 +20,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements DietHolder {
@@ -33,6 +40,7 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Unique private static final int MAX_HEARTS = 40;
 
     @Unique private static long renourisheddelight$lastSleepDrainTime = -1L;
+
     @Unique private long renourisheddelight$sleepStartDayTime = -1L;
     @Unique private long renourisheddelight$sleepStartGameTime = -1L;
     @Unique private double renourisheddelight$appliedBaseHealth = Double.NaN;
@@ -49,6 +57,16 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
     @Override
     public void updateDiet() {
         entityData.set(DIET_ACCESSOR, getDiet(), true);
+    }
+
+    @Override
+    public void startSleeping(BlockPos pos) {
+        super.startSleeping(pos);
+
+        if ((Object) this instanceof ServerPlayer player) {
+            renourisheddelight$sleepStartDayTime = player.level().getDayTime();
+            renourisheddelight$sleepStartGameTime = player.level().getGameTime();
+        }
     }
 
     @Inject(method = "defineSynchedData", at = @At("TAIL"))
@@ -97,38 +115,43 @@ public abstract class PlayerMixin extends LivingEntity implements DietHolder {
         }
     }
 
-    @Override
-    public void startSleeping(BlockPos pos) {
-        super.startSleeping(pos);
+    @Inject(method = "canEat", at = @At("HEAD"), cancellable = true)
+    private void renourisheddelight$canEat(boolean canAlwaysEat, CallbackInfoReturnable<Boolean> callback) {
+        if (!getMainHandItem().isEdible() && !getOffhandItem().isEdible()) {
+            if (pick(5.0D, 0.0F, false) instanceof BlockHitResult result && result.getType() == HitResult.Type.BLOCK) {
+                Item item = level().getBlockState(result.getBlockPos()).getBlock().asItem();
 
-        if ((Object) this instanceof ServerPlayer player) {
-            renourisheddelight$sleepStartDayTime = player.level().getDayTime();
-            renourisheddelight$sleepStartGameTime = player.level().getGameTime();
+                if ((DietRestrictions.isEdible(item)
+                        || level() instanceof ServerLevel server
+                        && FoodConfigSavedData.get(server.getServer()).getFoodConfig().entry(item) != null) 
+                        && Diet.blocksEating((Player) (Object) this, item)) {
+                    callback.setReturnValue(false);
+                }
+            }
         }
     }
 
     @Inject(method = "stopSleepInBed", at = @At("HEAD"))
     private void renourisheddelight$stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers, CallbackInfo callback) {
-        if (!((Object) this instanceof ServerPlayer player) || renourisheddelight$sleepStartDayTime == -1L) return;
+        if ((Object) this instanceof ServerPlayer player && renourisheddelight$sleepStartDayTime != -1L) {
+            long gameTime = player.level().getGameTime();
+            long slept = gameTime - renourisheddelight$sleepStartGameTime;
+            long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
+            renourisheddelight$sleepStartDayTime = -1L;
+            renourisheddelight$sleepStartGameTime = -1L;
 
-        long gameTime = player.level().getGameTime();
-        long slept = gameTime - renourisheddelight$sleepStartGameTime;
-        long skipped = (player.level().getDayTime() - renourisheddelight$sleepStartDayTime) - slept;
-        renourisheddelight$sleepStartDayTime = -1L;
-        renourisheddelight$sleepStartGameTime = -1L;
+            MinecraftServer server = player.getServer();
+            if (skipped <= 0 || server == null) return;
+            if (!ServerConfiguration.getInstance().doSleepFoodDrain) return;
+            if (renourisheddelight$lastSleepDrainTime == gameTime) return;
+            renourisheddelight$lastSleepDrainTime = gameTime;
+            double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
+            int drain = (int) Math.round(Diet.SLEEP_DRAIN * fraction);
 
-        MinecraftServer server = player.getServer();
-        if (skipped <= 0 || server == null) return;
-        if (!ServerConfiguration.getInstance().doSleepFoodDrain) return;
-        if (renourisheddelight$lastSleepDrainTime == gameTime) return;
-        renourisheddelight$lastSleepDrainTime = gameTime;
-
-        double fraction = Math.min(1.0, skipped / (double) NIGHT_DURATION_TICKS);
-        int drain = (int) Math.round(Diet.SLEEP_DRAIN * fraction);
-
-        for (ServerPlayer other : server.getPlayerList().getPlayers()) {
-            if (other.gameMode.isSurvival() && other instanceof DietHolder holder && holder.getDiet().drain(other, drain)) {
-                holder.updateDiet();
+            for (ServerPlayer other : server.getPlayerList().getPlayers()) {
+                if (other.gameMode.isSurvival() && other instanceof DietHolder holder && holder.getDiet().drain(other, drain)) {
+                    holder.updateDiet();
+                }
             }
         }
     }

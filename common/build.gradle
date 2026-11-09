@@ -5,4 +5,7 @@ architectury {
 dependencies {
     modImplementation "dev.architectury:architectury:$architecturyApiVersion"
     modCompileOnly "me.shedaniel.cloth:cloth-config:$clothConfigVersion"
+
+    // optional, only the diet guide book's page components reference it
+    modCompileOnly "maven.modrinth:patchouli:${patchouliVersion}-fabric"
 }

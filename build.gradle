@@ -83,6 +83,15 @@ subprojects {
         if (tasks.findByName('processResources') && project.name != 'common') {
             tasks.named('processResources') {
                 from(project(':common').file('src/main/resources/renourisheddelight.png'))
+                from(project(':common').file('src/main/resources/data/renourisheddelight/patchouli_books')) {
+                    into 'data/renourisheddelight/patchouli_books'
+                }
+                from(project(':common').file('src/main/resources/data/c/tags/items/foods')) {
+                    into 'data/c/tags/items/foods'
+                }
+                from(project(':common').file('src/main/resources/data/c/tags/items/foods.json')) {
+                    into 'data/c/tags/items'
+                }
             }
         }
     }

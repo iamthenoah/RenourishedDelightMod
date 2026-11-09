@@ -1,0 +1,15 @@
+{
+  "name": "book.renourisheddelight.diet_guide.entry.optimal_meal",
+  "icon": "minecraft:golden_carrot",
+  "category": "renourisheddelight:diet",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "book.renourisheddelight.diet_guide.entry.optimal_meal.intro"
+    },
+    {
+      "type": "renourisheddelight:optimal_meal"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 package com.than00ber.renourisheddelight.mixin.client;
 
 import com.than00ber.renourisheddelight.client.overlay.CompactHealthBar;
-import com.than00ber.renourisheddelight.config.ClientConfiguration;
+import com.than00ber.renourisheddelight.client.overlay.HealthBarCompat;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -35,12 +35,12 @@ public abstract class GuiMixin {
         renourisheddelight$clipActive = false;
         renourisheddelight$clipBlinking = highlight;
 
-        if (ClientConfiguration.getInstance().compactHealthBar) {
+        if (HealthBarCompat.compactHealthBar()) {
             CompactHealthBar.render(guiGraphics, player, random, left, top, tickCount, regenIndex >= 0, maxHealth, health, displayHealth, absorptionAmount, highlight);
             callback.cancel();
             return;
         }
-        if (ClientConfiguration.getInstance().clipOddMaxHealthHeart && Mth.ceil(maxHealth) % 2 != 0) {
+        if (HealthBarCompat.clipOddMaxHealthHeart() && Mth.ceil(maxHealth) % 2 != 0) {
             int index = Mth.ceil((double) maxHealth / 2.0) - 1;
             int row = index / 10;
             int col = index % 10;

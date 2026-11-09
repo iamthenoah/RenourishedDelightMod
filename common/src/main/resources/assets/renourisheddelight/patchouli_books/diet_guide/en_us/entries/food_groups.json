@@ -1,0 +1,15 @@
+{
+  "name": "book.renourisheddelight.diet_guide.entry.food_groups",
+  "icon": "minecraft:apple",
+  "category": "renourisheddelight:diet",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "book.renourisheddelight.diet_guide.entry.food_groups.intro"
+    },
+    {
+      "type": "renourisheddelight:food_groups"
+    }
+  ]
+}

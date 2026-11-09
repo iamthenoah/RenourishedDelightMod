@@ -39,3 +39,10 @@ mandatory = true
 versionRange = "[${clothConfigVersion},)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.${modId}]]
+modId = "patchouli"
+mandatory = false
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"

@@ -24,6 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -67,8 +68,11 @@ public class Diet {
     private int drainTimer;
     private int drainRemainder;
     private int starving;
-    private boolean decaying = true;
     private int capacity;
+    private boolean decaying = true;
+    private boolean replacing = true;
+    private boolean toppingUp = true;
+    private boolean restricted;
 
     public List<ConsumableFoodInstance> getSlots() {
         return slots;
@@ -78,12 +82,44 @@ public class Diet {
         ticksSinceDamage = 0;
     }
 
+    public int getCapacity() {
+        return capacity;
+    }
+
     public boolean isDecaying() {
         return decaying;
     }
 
-    public int getCapacity() {
-        return capacity;
+    public boolean isRestricted() {
+        return restricted;
+    }
+
+    public boolean isReplacing() {
+        return replacing;
+    }
+
+    public boolean isToppingUp() {
+        return toppingUp;
+    }
+    
+    public @Nullable Component reason(EatingOutcome outcome, Item item, DietRestrictions restrictions) {
+        if (outcome == EatingOutcome.ALREADY_ACTIVE) {
+            return Component.translatable("message.already_active", item.getDescription()).withStyle(ChatFormatting.RED);
+        } else if (outcome != EatingOutcome.TOO_FULL) {
+            ConsumableFoodInstance blocking = outcome == EatingOutcome.RESTRICTED ? outcome.consume(this, item, restrictions) : null;
+
+            if (blocking != null) {
+                Set<ResourceLocation> eating = restrictions.get(item);
+                ResourceLocation restriction = restrictions.get(blocking.item()).stream().filter(eating::contains).findFirst().orElse(null);
+
+                if (restriction != null) {
+                    return Component.translatable("message.diet_restricted", DietRestrictions.name(restriction), blocking.item().getDescription()).withStyle(ChatFormatting.RED);
+                }
+            }
+            return null;
+        } else {
+            return Component.translatable("message.diet_full").withStyle(ChatFormatting.RED);
+        }
     }
 
     public int nutritionDecay(Item item) {
@@ -112,9 +148,11 @@ public class Diet {
     }
 
     public boolean resetDecay() {
-        if (depletion.isEmpty()) return false;
-        depletion.clear();
-        return true;
+        if (!depletion.isEmpty()) {
+            depletion.clear();
+            return true;
+        }
+        return false;
     }
 
     public boolean resetDecay(Item item) {
@@ -125,43 +163,77 @@ public class Diet {
         return FULL_NUTRITION - Mth.clamp(ServerConfiguration.getInstance().nutritionDecayFloor, 0, FULL_NUTRITION);
     }
 
+    public static boolean blocksEating(Player player, Item item) {
+        if (!player.getAbilities().invulnerable && player instanceof DietHolder holder) {
+            DietRestrictions restrictions = DietRestrictions.of(player.level());
+            EatingOutcome outcome = EatingOutcome.outcome(holder.getDiet(), item, restrictions);
+
+            if (!outcome.success) {
+                if (player instanceof ServerPlayer) {
+                    Component reason = holder.getDiet().reason(outcome, item, restrictions);
+
+                    if (reason != null) {
+                        player.displayClientMessage(reason, true);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void consume(ServerPlayer player, Item item) {
         MinecraftServer server = player.getServer();
-        if (server == null) return;
 
-        FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
-        int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
-        ConsumableFoodInstance active = slots.stream().filter(x -> x.item() == item).findFirst().orElse(null);
+        if (server != null) {
+            DietRestrictions restrictions = DietRestrictions.server();
+            EatingOutcome outcome = EatingOutcome.outcome(this, item, restrictions);
 
-        if (active != null) {
-            replaceSlot(player, config, item, active);
-        } else if (slots.size() < maxFoods) {
-            addToSlot(player, eat(item, config));
-        } else {
-            replaceSlot(player, config, item, slots.stream().min(Comparator.comparingInt(x -> x.duration() - x.time())).orElse(null));
-        }
-        FoodProperties properties = item.getFoodProperties();
-        boolean harmful = properties != null && properties.getEffects().stream().anyMatch(x -> x.getFirst().getEffect().getCategory() == MobEffectCategory.HARMFUL);
+            if (outcome.success) {
+                FoodConfig config = FoodConfigSavedData.get(server).getFoodConfig();
+                int maxFoods = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
 
-        if (slots.size() >= maxFoods && !harmful) {
-            nourish(player);
+                if (outcome == EatingOutcome.CONSUME) {
+                    addToSlot(player, eat(item, config));
+                } else {
+                    replaceSlot(player, config, item, outcome.consume(this, item, restrictions));
+                }
+                FoodProperties properties = item.getFoodProperties();
+                boolean harmful = properties != null && properties.getEffects().stream()
+                        .anyMatch(x -> x.getFirst().getEffect().getCategory() == MobEffectCategory.HARMFUL);
+
+                if (slots.size() >= maxFoods && !harmful) {
+                    nourish(player);
+                }
+            }
         }
     }
 
     public boolean drain(ServerPlayer player, int amount) {
-        if (amount <= 0 || slots.isEmpty()) return false;
-        int ticks = scale(amount);
-        if (ticks > 0) slots.forEach(x -> x.tick(ticks));
-        expire(player);
-        return true;
+        if (amount > 0 && !slots.isEmpty()) {
+            int ticks = scale(amount);
+
+            if (ticks > 0) {
+                slots.forEach(x -> x.tick(ticks));
+            }
+            expire(player);
+            return true;
+        }
+        return false;
     }
 
     public boolean tick(ServerPlayer player) {
         boolean enabled = ServerConfiguration.getInstance().doNutritionDecay;
         int limit = Math.max(1, ServerConfiguration.getInstance().maxConsumableFood);
-        boolean toggled = decaying != enabled || capacity != limit;
+        boolean replace = ServerConfiguration.getInstance().doReplaceLowestFood;
+        boolean topUp = ServerConfiguration.getInstance().doFoodTopUps;
+        boolean restrictions = ServerConfiguration.getInstance().doDietRestrictions;
+        boolean toggled = decaying != enabled || capacity != limit || replacing != replace || toppingUp != topUp || restricted != restrictions;
         decaying = enabled;
         capacity = limit;
+        replacing = replace;
+        toppingUp = topUp;
+        restricted = restrictions;
 
         if (!player.gameMode.isSurvival()) return toggled;
         boolean nourished = player.hasEffect(EffectRegistry.nourishment());
@@ -170,7 +242,10 @@ public class Diet {
 
         if (++drainTimer >= 20) {
             drainTimer = 0;
-            if (!nourished && player.hasEffect(MobEffects.HUNGER)) amount += HUNGER_DRAIN_PER_SECOND;
+
+            if (!nourished && player.hasEffect(MobEffects.HUNGER)) {
+                amount += HUNGER_DRAIN_PER_SECOND;
+            }
         }
         boolean changed = toggled | drain(player, amount);
         changed |= regenerate(player, nourished);
@@ -183,12 +258,12 @@ public class Diet {
     }
 
     public void clearModifiers(ServerPlayer player) {
-        slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, false)));
+        slots.forEach(x -> x.attributes().forEach(bonus -> detach(player, bonus, false)));
     }
 
     public boolean clear(ServerPlayer player) {
         if (slots.isEmpty()) return false;
-        slots.forEach(instance -> instance.attributes().forEach(bonus -> detach(player, bonus, true)));
+        slots.forEach(x -> x.attributes().forEach(bonus -> detach(player, bonus, true)));
         slots.clear();
         regen = 0;
         drainTimer = 0;
@@ -199,12 +274,14 @@ public class Diet {
     }
 
     private void nourish(ServerPlayer player) {
-        if (!ServerConfiguration.getInstance().doNourishment || slots.isEmpty()) return;
-        if (!slots.stream().allMatch(Diet::isFresh)) return;
-        int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
+        if (ServerConfiguration.getInstance().doNourishment && !slots.isEmpty()) {
+            if (slots.stream().allMatch(Diet::isFresh)) {
+                int duration = slots.stream().mapToInt(ConsumableFoodInstance::duration).min().orElse(0);
 
-        if (duration > 0) {
-            player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
+                if (duration > 0) {
+                    player.addEffect(new MobEffectInstance(EffectRegistry.nourishment(), duration, 0, false, false, true));
+                }
+            }
         }
     }
 
@@ -333,6 +410,9 @@ public class Diet {
         compoundTag.putInt("Starving", diet.starving);
         compoundTag.putBoolean("Decaying", diet.decaying);
         compoundTag.putInt("Capacity", diet.capacity);
+        compoundTag.putBoolean("Replacing", diet.replacing);
+        compoundTag.putBoolean("ToppingUp", diet.toppingUp);
+        compoundTag.putBoolean("Restricted", diet.restricted);
         ListTag depleted = new ListTag();
 
         diet.depletion.forEach((item, value) -> {
@@ -353,6 +433,9 @@ public class Diet {
         diet.starving = tag.getInt("Starving");
         diet.decaying = !tag.contains("Decaying") || tag.getBoolean("Decaying");
         diet.capacity = tag.getInt("Capacity");
+        diet.replacing = !tag.contains("Replacing") || tag.getBoolean("Replacing");
+        diet.toppingUp = !tag.contains("ToppingUp") || tag.getBoolean("ToppingUp");
+        diet.restricted = tag.getBoolean("Restricted");
         list.forEach(x -> diet.slots.add(ConsumableFoodInstance.load((CompoundTag) x)));
 
         for (Tag entry : tag.getList("Depletion", Tag.TAG_COMPOUND)) {
